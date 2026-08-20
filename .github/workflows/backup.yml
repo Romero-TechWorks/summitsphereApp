@@ -1,0 +1,87 @@
+# ============================================================================
+# Respaldo diario cifrado          →  guias/01_GITHUB.md §5
+#
+# Corre `scripts/backup.sh` cada noche: pg_dump → GPG → R2, con rotación.
+#
+# ⚠️ SummitApp es multi-inquilino: este archivo trae los datos de TODA la
+#    cartera de clientes en un solo volcado. En JDM Built un respaldo perdido
+#    era un taller; aquí son todas las organizaciones de la firma a la vez.
+#
+# Secretos (Settings → Secrets and variables → Actions):
+#   SUPABASE_DB_URL         Session Pooler, puerto 5432. NO la conexión directa
+#                           (db.<ref>.supabase.co es IPv6-only y los runners de
+#                           GitHub son IPv4-only) y NO el Transaction Pooler
+#                           (6543 no soporta prepared statements, y pg_dump los
+#                           necesita). La contraseña va percent-encoded dentro
+#                           de la URL.
+#   BACKUP_GPG_PASSPHRASE   openssl rand -base64 32 — se guarda APARTE del bucket
+#   BACKUP_S3_DEST          s3://summit-respaldos/postgres
+#   BACKUP_S3_ENDPOINT      https://<cuenta>.r2.cloudflarestorage.com
+#   AWS_ACCESS_KEY_ID
+#   AWS_SECRET_ACCESS_KEY
+#   AWS_DEFAULT_REGION      'auto' para R2
+# Opcional (variable, no secreto):
+#   BACKUP_RETENTION_DAYS   default 30
+#
+# ⚠️ Esto respalda la BASE, no el Storage. Las fotos de hallazgos y los adjuntos
+#    de evidencia viven en buckets de Supabase y pg_dump no los toca. Mientras
+#    no exista la Fase 03 no hay nada que perder; el día que exista, ver el
+#    pendiente marcado en .github/workflows/README.md.
+# ============================================================================
+
+name: Respaldo diario
+
+on:
+  schedule:
+    - cron: '0 8 * * *'      # 08:00 UTC ≈ 02:00 CDMX
+  workflow_dispatch:
+
+jobs:
+  respaldo:
+    runs-on: ubuntu-latest
+    # Un respaldo sano tarda 2-4 minutos. Si pasa de 30, algo se colgó — casi
+    # siempre un mirror de apt que no contesta. Mejor fallar que correr horas.
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      # pg_dump debe ser >= la versión del servidor o aborta con
+      # "server version mismatch". Supabase corre Postgres 17.
+      # No instalamos awscli por apt: Ubuntu 24.04 lo quitó de sus repos y los
+      # runners ya traen AWS CLI v2. gnupg tampoco: ya viene en la imagen.
+      - name: Instalar cliente de PostgreSQL 17
+        run: |
+          sudo sh -c 'echo "deb https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+          curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/pgdg.gpg
+          sudo apt-get update \
+            -o Acquire::Retries=3 \
+            -o Acquire::http::Timeout=20 \
+            -o Acquire::https::Timeout=20
+          sudo apt-get install -y postgresql-client-17
+          # El runner trae PostgreSQL 16 en /usr/bin y gana en el PATH.
+          # Esto pone el 17 por delante para los pasos SIGUIENTES.
+          echo "/usr/lib/postgresql/17/bin" >> "$GITHUB_PATH"
+          /usr/lib/postgresql/17/bin/pg_dump --version
+          gpg --version | head -1
+          aws --version
+
+      - name: Ejecutar respaldo
+        env:
+          SUPABASE_DB_URL:       ${{ secrets.SUPABASE_DB_URL }}
+          BACKUP_GPG_PASSPHRASE: ${{ secrets.BACKUP_GPG_PASSPHRASE }}
+          BACKUP_S3_DEST:        ${{ secrets.BACKUP_S3_DEST }}
+          BACKUP_S3_ENDPOINT:    ${{ secrets.BACKUP_S3_ENDPOINT }}
+          BACKUP_RETENTION_DAYS: ${{ vars.BACKUP_RETENTION_DAYS }}
+          AWS_ACCESS_KEY_ID:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION:    ${{ secrets.AWS_DEFAULT_REGION }}
+        run: |
+          chmod +x scripts/backup.sh
+          ./scripts/backup.sh
+
+      # ⚠️ Sin esto, un respaldo que falla no avisa: sólo deja de existir.
+      # La tacha roja en la pestaña Actions es el aviso. No la ignores.
+      - name: Avisar si falló
+        if: failure()
+        run: |
+          echo "::error::EL RESPALDO DIARIO FALLÓ ($(date -u +%F)). Revísalo hoy, no el lunes."

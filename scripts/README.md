@@ -1,8 +1,20 @@
 # `scripts/` — utilidades fuera de la aplicación
 
-Scripts de Node que se corren a mano, no en tiempo de ejecución.
+Utilidades que se corren a mano o desde GitHub Actions, nunca en tiempo de
+ejecución de la aplicación.
 
-Previstos:
+## Escritos
+
+| Script | Para qué |
+|---|---|
+| `backup.sh` | Volcado cifrado de la base a R2, con rotación. Lo llama `.github/workflows/backup.yml`, pero corre igual desde cualquier máquina con psql 17, gpg y aws-cli |
+
+⚠️ **`backup.sh` produce un archivo con datos personales de todos los clientes de
+la firma.** La passphrase de GPG es el control técnico que exige la LFPDPPP sobre
+ese archivo, y se guarda en un lugar distinto del bucket. Ver
+`docs/08_SEGURIDAD_Y_RLS.md` §7 y §8.
+
+## Previstos
 
 | Script | Fase | Para qué |
 |---|---|---|

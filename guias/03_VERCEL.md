@@ -5,6 +5,58 @@
 
 ---
 
+## §0 · ⚠️ Vercel no puede desplegar un repositorio sin aplicación
+
+**El andamio ya existe** (F00·B1 y B2), así que esta guía corre de principio a
+fin. Queda escrito el tropiezo porque es el que sorprende a todo el mundo y
+porque va a volver a aparecer si algún día se importa el repo desde cero.
+
+Si Vercel no deja terminar el import —o lo termina y el build truena en el primer
+intento— con alguna variante de:
+
+```
+No Next.js version detected. Make sure your package.json has "next"
+in either "dependencies" or "devDependencies".
+```
+
+no hay nada mal configurado. Vercel busca un `package.json` con `next` adentro y
+un `npm run build` que exista. Elegir *Next.js* en el *Framework Preset* no crea
+la aplicación: sólo le dice a Vercel qué esperar, y luego no lo encuentra.
+
+### El orden correcto
+
+```
+   GitHub  ✅   →   Supabase  ✅   →   ANDAMIO Next.js  ✅   →   Vercel   →   Cloudflare
+                                        └── Fase 00, bloques 1-2 ──┘
+```
+
+Ver [`docs/02_PLAN_DE_FASES.md`](../docs/02_PLAN_DE_FASES.md), Fase 00.
+
+### ⚠️ Antes de desplegar: las variables
+
+Sin `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_ANON_KEY`, la aplicación
+**despliega bien y responde 503** en todas sus rutas, con un texto que dice qué
+variable falta. Es deliberado —falla cerrada y se explica— pero significa que
+cargar las variables del §2 no es opcional para ver algo.
+
+### Si aun así el repositorio ni siquiera aparece en la lista
+
+Eso ya no es el andamio: es permiso de GitHub. `summit-app` pertenece a la
+**organización** `summit-sphere`, no a tu cuenta personal, y la GitHub App de
+Vercel necesita autorización de la organización para verlo.
+
+1. GitHub → `summit-sphere` → *Settings* → *Third-party Access* → **GitHub Apps**
+   → aprobar **Vercel**.
+2. O desde Vercel: *Add New… → Project* → **Adjust GitHub App Permissions** →
+   elegir la organización → *Only select repositories* → `summit-app`.
+
+⚠️ **Los términos de Vercel prohíben el uso comercial en cuentas Hobby.** Una
+aplicación que la firma le cobra a sus clientes es uso comercial. Puedes armar
+todo en Hobby, pero el día que entre el primer cliente real hay que estar en un
+**Team** de pago. Ver §7.
+
+---
+
 ## §1 · Crear el proyecto
 
 1. [vercel.com](https://vercel.com) → *Sign Up* → **Continue with GitHub**.

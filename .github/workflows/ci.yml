@@ -1,0 +1,123 @@
+# ============================================================================
+# Integración continua
+#
+# Lo que revisa cada PR antes de que se pueda mezclar a main.
+#
+# ⚠️ Hoy la aplicación todavía no existe: el repositorio sólo tiene documentación
+#    y migraciones. Los pasos de compilación se saltan solos mientras no haya
+#    package.json y se encienden solos el día que la Fase 00 lo cree. No hay
+#    nada que activar a mano.
+# ============================================================================
+
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  revisar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      # ⚠️ La fuga que de verdad duele es la service_role key en un commit.
+      # Una vez empujada al historial, rotarla es lo único que sirve — borrar
+      # el archivo en un commit posterior no la borra de GitHub.
+      - name: Buscar secretos en el código
+        run: |
+          set -uo pipefail
+          # El patrón exige un JWT COMPLETO —tres segmentos separados por punto—
+          # y no sólo un texto que empiece con 'eyJ'.
+          # ⚠️ La versión corta daba falsos positivos con `package-lock.json`:
+          # los hashes `integrity` son base64 de bytes aleatorios y de vez en
+          # cuando contienen 'eyJ'. Un CI que grita en falso se ignora, y el día
+          # que grite de verdad también lo van a ignorar.
+          #
+          # Se excluye la documentación: ahí las llaves aparecen citadas como
+          # ejemplo y son texto, no credenciales.
+          HALLAZGOS="$(grep -rInE \
+            'eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}|sb_secret_[A-Za-z0-9]{10,}|SUPABASE_SERVICE_ROLE_KEY[[:space:]]*=[[:space:]]*[A-Za-z0-9]' \
+            --exclude-dir=.git \
+            --exclude-dir=node_modules \
+            --exclude-dir=.next \
+            --exclude-dir=docs \
+            --exclude-dir=guias \
+            --exclude='*.md' \
+            --exclude='.env.example' \
+            --exclude='package-lock.json' \
+            . || true)"
+          if [ -n "$HALLAZGOS" ]; then
+            echo "::error::Parece haber credenciales en el código:"
+            echo "$HALLAZGOS" | sed 's/\(.\{100\}\).*/\1…/'
+            echo ""
+            echo "Si es una llave real: ROTARLA en Supabase antes que nada."
+            echo "Ver guias/05_VARIABLES_DE_ENTORNO.md §4."
+            exit 1
+          fi
+          echo "Sin credenciales aparentes en el código."
+
+      - name: ¿Ya existe la aplicación?
+        id: app
+        run: |
+          if [ -f package.json ]; then
+            echo "existe=si" >> "$GITHUB_OUTPUT"
+          else
+            echo "existe=no" >> "$GITHUB_OUTPUT"
+            echo "::notice::Todavía no hay package.json. Se omite compilación (Fase 00)."
+          fi
+
+      - uses: actions/setup-node@v4
+        if: steps.app.outputs.existe == 'si'
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Instalar dependencias
+        if: steps.app.outputs.existe == 'si'
+        run: npm ci
+
+      - name: Revisar tipos
+        if: steps.app.outputs.existe == 'si'
+        run: npx tsc --noEmit
+
+      # ⚠️ `tsc --noEmit` NO basta y no sustituye a esto. No ve los errores que
+      # sólo aparecen al compilar rutas de Next.js —tipos de params, componentes
+      # de servidor usados como cliente, imports que no resuelven en el bundler—
+      # y ha dejado pasar builds rotos. Lo que decide es `next build`.
+      #
+      # ⚠️ Aquí NO se inyecta ninguna variable de entorno, ni siquiera de
+      # mentiras, y es a propósito: el proyecto lee la configuración de Supabase
+      # dentro de funciones (`src/lib/supabase/entorno.ts`), nunca en el cuerpo
+      # de un módulo, justamente para que el build no dependa de credenciales.
+      #
+      # Si algún día este paso empieza a fallar por una variable ausente, no se
+      # arregla agregándola aquí: significa que alguien leyó `process.env` al
+      # importar, y eso rompe el build en cualquier máquina sin `.env.local`.
+      #
+      # Sin SENTRY_AUTH_TOKEN el plugin de Sentry compila igual y sólo se salta
+      # la subida de sourcemaps. Es lo que queremos en un PR.
+      - name: Compilar
+        if: steps.app.outputs.existe == 'si'
+        run: npm run build
+
+      - name: Revisar migraciones
+        run: |
+          set -uo pipefail
+          VACIAS="$(find supabase/migrations -name '*.sql' -size -2c 2>/dev/null || true)"
+          if [ -n "$VACIAS" ]; then
+            echo "::warning::Migraciones vacías (se aplican sin hacer nada):"
+            echo "$VACIAS"
+          fi
+          # El CLI ordena por el timestamp del nombre. Dos migraciones con el
+          # mismo prefijo se aplican en orden indefinido.
+          DUPES="$(ls supabase/migrations/*.sql 2>/dev/null | xargs -r -n1 basename \
+            | cut -d_ -f1 | sort | uniq -d || true)"
+          if [ -n "$DUPES" ]; then
+            echo "::error::Timestamps de migración repetidos: $DUPES"
+            exit 1
+          fi
+          echo "Migraciones: $(ls supabase/migrations/*.sql 2>/dev/null | wc -l) archivo(s), sin timestamps repetidos."

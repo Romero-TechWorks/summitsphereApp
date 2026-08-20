@@ -27,6 +27,11 @@ use al final.
    └───────────────────────────┬──────────────────────────────────┘
                                │
    ┌───────────────────────────▼──────────────────────────────────┐
+   │  2.5 ANDAMIO Next.js — package.json, next.config, src/   ✅  │
+   │      Vercel NO PUEDE desplegar sin esto. Es Fase 00.         │
+   └───────────────────────────┬──────────────────────────────────┘
+                               │
+   ┌───────────────────────────▼──────────────────────────────────┐
    │  3. VERCEL — proyecto, variables, dominio, crons             │
    │     Consume todo lo anterior.                                │
    └───────────────────────────┬──────────────────────────────────┘
@@ -41,9 +46,16 @@ use al final.
 | 0 | [`04_CLOUDFLARE.md`](04_CLOUDFLARE.md) §1 — sólo el dominio | 15 min + espera |
 | 1 | [`01_GITHUB.md`](01_GITHUB.md) | 30 min |
 | 2 | [`02_SUPABASE.md`](02_SUPABASE.md) | 45 min |
+| 2.5 | **Andamio Next.js** — [`docs/02_PLAN_DE_FASES.md`](../docs/02_PLAN_DE_FASES.md) Fase 00 | ✅ hecho |
 | 3 | [`03_VERCEL.md`](03_VERCEL.md) | 30 min |
 | 4 | [`04_CLOUDFLARE.md`](04_CLOUDFLARE.md) §2 en adelante | 30 min |
 | — | [`05_VARIABLES_DE_ENTORNO.md`](05_VARIABLES_DE_ENTORNO.md) | consulta |
+
+⚠️ **El paso 2.5 es el que sorprende a todos, y ya está hecho.** Vercel busca un
+`package.json` con `next` adentro; si el repositorio sólo tiene documentación y
+migraciones, el import no termina o el build truena en el primer intento. Elegir
+*Next.js* en el *Framework Preset* no crea la aplicación. Detalle en
+[`03_VERCEL.md`](03_VERCEL.md) §0.
 
 ---
 

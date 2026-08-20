@@ -1,0 +1,84 @@
+# ============================================================================
+# Deriva del esquema          →  guias/01_GITHUB.md §6
+#
+# Compara las migraciones versionadas de `supabase/migrations/` contra la base
+# remota. Si alguien cambió una tabla, una función o una política RLS a mano
+# desde el panel de Supabase sin registrarla como migración, este job falla.
+#
+# Pasa más de lo que parece: se arregla algo urgente a las once de la noche
+# desde el SQL Editor y tres semanas después el repositorio ya no describe la
+# realidad. En un sistema multi-inquilino eso significa que nadie sabe con
+# certeza qué políticas están vigentes.
+#
+# Secretos:
+#   SUPABASE_ACCESS_TOKEN   token personal → https://supabase.com/dashboard/account/tokens
+#   SUPABASE_DB_PASSWORD    contraseña de la base (la de la tarea A02)
+#   SUPABASE_PROJECT_REF    ref del proyecto, la parte <ref> de <ref>.supabase.co
+# ============================================================================
+
+name: Deriva del esquema
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/**'
+      - '.github/workflows/supabase-drift.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/**'
+  workflow_dispatch:
+
+jobs:
+  deriva:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Vincular proyecto
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD:  ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: supabase link --project-ref "${{ secrets.SUPABASE_PROJECT_REF }}"
+
+      - name: Comparar contra la base remota
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD:  ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: |
+          echo "Comparando supabase/migrations/ contra la base remota (schema public)..."
+          DIFF="$(supabase db diff --linked --schema public)"
+          if [ -n "$DIFF" ]; then
+            echo "::error::Hay cambios en la base remota que NO están en supabase/migrations/."
+            echo "$DIFF"
+            echo ""
+            echo "Para arreglarlo: supabase db diff -f <nombre_descriptivo>  y commitea el archivo."
+            exit 1
+          fi
+          echo "Sin deriva: la base remota coincide con las migraciones versionadas."
+
+      # ⚠️ `db diff --schema public` NO ve las políticas de storage.objects, y
+      # ahí es donde viven las fotos de hallazgos y la evidencia de los clientes.
+      # No se compara automáticamente porque Supabase administra ese schema y
+      # generaría ruido constante; se deja el inventario impreso para que un
+      # cambio inesperado se note al leer el log del PR.
+      - name: Inventario de políticas de Storage (informativo)
+        env:
+          PGURL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          if [ -z "${PGURL:-}" ]; then
+            echo "::notice::Sin SUPABASE_DB_URL; se omite el inventario de Storage."
+            exit 0
+          fi
+          sudo apt-get update -o Acquire::Retries=3 -o Acquire::http::Timeout=20 >/dev/null
+          sudo apt-get install -y postgresql-client >/dev/null
+          psql "$PGURL" -X -c "
+            SELECT policyname AS politica, cmd AS operacion
+            FROM pg_policies
+            WHERE schemaname = 'storage' AND tablename = 'objects'
+            ORDER BY policyname;"

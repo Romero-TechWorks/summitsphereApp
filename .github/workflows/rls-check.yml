@@ -1,0 +1,168 @@
+# ============================================================================
+# Auditoría de aislamiento          →  CLAUDE.md regla 1, docs/08_SEGURIDAD_Y_RLS.md
+#
+# La regla que define este proyecto es que ningún cliente ve los datos de otro,
+# y que ese candado vive en la BASE, no en el frontend. Una regla que sólo está
+# escrita en un documento se rompe en tres meses. Ésta se revisa sola.
+#
+# Cinco comprobaciones, todas contra la base real:
+#
+#   1. Tablas de dominio sin RLS activo                      → FALLA
+#   2. Vistas sin security_invoker = true                    → FALLA
+#   3. Políticas UPDATE sin WITH CHECK                       → FALLA
+#   4. Tablas de dominio sin columna org_id                  → AVISA
+#   5. Tablas con RLS activo pero sin ninguna política       → AVISA
+#
+# Las tres primeras son fugas. Las dos últimas casi siempre son un descuido,
+# pero tienen excepciones legítimas, así que avisan sin tumbar el job.
+#
+# Secretos:
+#   SUPABASE_DB_URL   el mismo Session Pooler que usa backup.yml
+#
+# El equivalente manual y más completo —crear dos usuarios de organizaciones
+# distintas y comprobar que ninguno ve al otro— es scripts/verificar_aislamiento.mjs
+# (Fase 00). Este workflow no lo reemplaza: revisa la forma, no el comportamiento.
+# ============================================================================
+
+name: Auditoría de aislamiento (RLS)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/**'
+      - '.github/workflows/rls-check.yml'
+  pull_request:
+    paths:
+      - 'supabase/**'
+  schedule:
+    - cron: '0 13 * * 1'     # lunes 13:00 UTC ≈ 07:00 CDMX
+  workflow_dispatch:
+
+jobs:
+  aislamiento:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar psql
+        run: |
+          sudo apt-get update -o Acquire::Retries=3 -o Acquire::http::Timeout=20
+          sudo apt-get install -y postgresql-client
+
+      - name: Revisar
+        env:
+          PGURL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          set -euo pipefail
+          if [ -z "${PGURL:-}" ]; then
+            echo "::error::Falta el secreto SUPABASE_DB_URL. Ver guias/01_GITHUB.md §5."
+            exit 1
+          fi
+
+          # Catálogos globales y tablas de la firma: no llevan org_id a propósito.
+          # ⚠️ Mantener en sync con docs/04_MODELO_DE_DATOS.md. Agregar una tabla
+          #    a esta lista es una decisión de diseño, no un atajo para pasar CI.
+          EXENTAS="'organizaciones','usuarios','config_firma','normas','norma_clausulas','noms','nom_requisitos'"
+
+          FALLO=0
+
+          echo "──────────────────────────────────────────────────────────"
+          echo "1. Tablas sin RLS activo"
+          SIN_RLS="$(psql "$PGURL" -tAX -c "
+            SELECT string_agg(c.relname, ', ' ORDER BY c.relname)
+            FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+            WHERE n.nspname = 'public' AND c.relkind = 'r'
+              AND NOT c.relrowsecurity;")"
+          if [ -n "$SIN_RLS" ]; then
+            echo "::error::Tablas SIN RLS en public: $SIN_RLS"
+            echo "   Cualquiera con la anon key lee esas tablas completas."
+            FALLO=1
+          else
+            echo "   OK — todas las tablas de public tienen RLS activo."
+          fi
+
+          echo "──────────────────────────────────────────────────────────"
+          echo "2. Vistas sin security_invoker"
+          # Una vista sin security_invoker corre con los permisos de quien la
+          # creó (postgres), no de quien consulta: salta el RLS por completo.
+          VISTAS="$(psql "$PGURL" -tAX -c "
+            SELECT string_agg(c.relname, ', ' ORDER BY c.relname)
+            FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+            WHERE n.nspname = 'public' AND c.relkind = 'v'
+              AND NOT COALESCE('security_invoker=true' = ANY(c.reloptions)
+                             OR 'security_invoker=on'  = ANY(c.reloptions), false);")"
+          if [ -n "$VISTAS" ]; then
+            echo "::error::Vistas sin security_invoker: $VISTAS"
+            echo "   Corren como su dueño y devuelven filas de TODAS las organizaciones."
+            FALLO=1
+          else
+            echo "   OK — ninguna vista salta el RLS."
+          fi
+
+          echo "──────────────────────────────────────────────────────────"
+          echo "3. Políticas UPDATE sin WITH CHECK"
+          # Con USING pero sin WITH CHECK, un consultor puede tomar una fila que
+          # sí le toca y reasignarla a otra organización. La lee legalmente y la
+          # escribe fuera de su alcance. docs/08_SEGURIDAD_Y_RLS.md §2.
+          SIN_CHECK="$(psql "$PGURL" -tAX -c "
+            SELECT string_agg(tablename || '.' || policyname, ', ' ORDER BY tablename)
+            FROM pg_policies
+            WHERE schemaname = 'public' AND cmd = 'UPDATE' AND with_check IS NULL;")"
+          if [ -n "$SIN_CHECK" ]; then
+            echo "::error::Políticas UPDATE sin WITH CHECK: $SIN_CHECK"
+            echo "   Permiten mover una fila a otra organización al editarla."
+            FALLO=1
+          else
+            echo "   OK — toda política UPDATE tiene WITH CHECK."
+          fi
+
+          echo "──────────────────────────────────────────────────────────"
+          echo "4. Tablas de dominio sin columna org_id"
+          SIN_ORG="$(psql "$PGURL" -tAX -c "
+            SELECT string_agg(c.relname, ', ' ORDER BY c.relname)
+            FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+            WHERE n.nspname = 'public' AND c.relkind = 'r'
+              AND c.relname NOT IN ($EXENTAS)
+              AND NOT EXISTS (
+                SELECT 1 FROM pg_attribute a
+                WHERE a.attrelid = c.oid AND a.attname = 'org_id' AND a.attnum > 0
+              );")"
+          if [ -n "$SIN_ORG" ]; then
+            echo "::warning::Tablas sin org_id: $SIN_ORG"
+            echo "   O les falta la columna, o son catálogo global y van en EXENTAS."
+          else
+            echo "   OK — toda tabla de dominio lleva org_id."
+          fi
+
+          echo "──────────────────────────────────────────────────────────"
+          echo "5. Tablas con RLS pero sin políticas"
+          MUDAS="$(psql "$PGURL" -tAX -c "
+            SELECT string_agg(c.relname, ', ' ORDER BY c.relname)
+            FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+            WHERE n.nspname = 'public' AND c.relkind = 'r' AND c.relrowsecurity
+              AND NOT EXISTS (
+                SELECT 1 FROM pg_policies p
+                WHERE p.schemaname = 'public' AND p.tablename = c.relname
+              );")"
+          if [ -n "$MUDAS" ]; then
+            echo "::warning::Tablas con RLS y cero políticas: $MUDAS"
+            echo "   Nadie puede leerlas salvo service_role. A veces es intencional"
+            echo "   (audit_logs); casi siempre es una migración a medias."
+          else
+            echo "   OK."
+          fi
+
+          echo "──────────────────────────────────────────────────────────"
+          echo "Resumen de políticas por tabla:"
+          psql "$PGURL" -X -c "
+            SELECT tablename AS tabla,
+                   count(*) FILTER (WHERE cmd = 'SELECT') AS sel,
+                   count(*) FILTER (WHERE cmd = 'INSERT') AS ins,
+                   count(*) FILTER (WHERE cmd = 'UPDATE') AS upd,
+                   count(*) FILTER (WHERE cmd = 'DELETE') AS del
+            FROM pg_policies WHERE schemaname = 'public'
+            GROUP BY tablename ORDER BY tablename;"
+
+          exit $FALLO

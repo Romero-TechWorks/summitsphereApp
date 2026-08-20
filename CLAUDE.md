@@ -21,12 +21,27 @@ de dominio cuelga de una `org_id`. Ver §Reglas críticas, regla 1.
 
 ## Estado actual — lee esto antes de pedir nada
 
-- **No existe código todavía.** El repositorio está en **Fase 00, bloque 0**: sólo
-  documentación y guías de infraestructura.
-- **Nada de Supabase está creado.** Cero migraciones, cero tablas, cero buckets.
-- **Lo primero que se ejecuta es `guias/00_INDICE_INFRAESTRUCTURA.md`**, en orden.
-  No escribas código de aplicación antes de que exista el proyecto de Supabase:
-  los tipos de `src/types/database.ts` salen del esquema, no al revés.
+- **Fase 00, bloques 1 y 2 hechos.** Existe el andamio: `package.json`,
+  `next.config.mjs` con PWA y Sentry, el armazón fijo, los tokens de Summit, la
+  biblioteca `ui/`, `src/proxy.ts` y `/login`. `npm run build` y `npm run lint`
+  pasan limpios.
+- **La aplicación gatea sesión pero todavía no conoce roles.** El guard manda a
+  `/login` a quien no tenga sesión; **falta exigir `aal2` a `socio` y
+  `administracion`**, porque depende de la tabla `usuarios` (F00·B5). Va en el
+  mismo bloque que la tabla.
+- **GitHub y Supabase están montados.** El proyecto de Supabase existe y está
+  vinculado, pero **el esquema está vacío**: cero tablas de dominio, cero
+  políticas, cero buckets con contenido. `src/types/database.ts` no existe todavía
+  porque sale del esquema, no al revés.
+- **Lo que sigue es F00·B3 + B5 juntos**: la primera migración
+  (`organizaciones`, `usuarios`, `usuarios_organizaciones`, `config_firma`,
+  `audit_logs`, `notificaciones`) con su RLS, y encima el MFA y los roles. Van
+  juntos porque el guard de MFA necesita leer el rol de una tabla que sólo existe
+  después de la migración.
+- **Todavía NO hay capa offline.** No hay React Query, ni IndexedDB, ni `outbox`.
+  Eso es F00·B4. Hasta entonces, **no escribas consultas a Supabase en
+  componentes**: las claves de caché y `offlineWrite` tienen que existir antes o
+  habrá que reescribirlas todas.
 - **El plan manda sobre el orden.** `docs/02_PLAN_DE_FASES.md` decide qué se hace
   y cuándo. Si algo parece faltar, casi siempre está aplazado con motivo — búscalo
   ahí antes de "arreglarlo".
@@ -135,8 +150,8 @@ Decisiones intencionales. Cambiarlas rompe algo más.
     problema legal, no una comodidad. §8.6.
 
 13. **Un hallazgo no se borra.** Se cierra, se reclasifica o se anula **con
-    motivo y firma**, y la versión anterior queda. `findings` es aditiva:
-    `estado` + `findings_history`. Un `DELETE` sobre un hallazgo destruye la
+    motivo y firma**, y la versión anterior queda. `hallazgos` es aditiva:
+    `estado` + `hallazgos_historial`. Un `DELETE` sobre un hallazgo destruye la
     trazabilidad de la auditoría — que es exactamente lo que un auditor externo
     va a venir a revisar. §8.7.
 

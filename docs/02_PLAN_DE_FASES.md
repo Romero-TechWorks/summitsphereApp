@@ -88,7 +88,7 @@ Supabase con su contraseña guardada, proyecto de Vercel enlazado que despliega 
 cada push, dominio `app.summit-sphere.com` apuntando a Vercel, y Turnstile con sus
 llaves.
 
-## F00·B1 — Andamio de la aplicación
+## F00·B1 — Andamio de la aplicación  ✅
 
 - `create-next-app` con TypeScript, App Router, Tailwind 4, sin `src/` por
   defecto → luego se mueve a `src/`.
@@ -102,7 +102,7 @@ llaves.
 - Sentry, con el túnel `/monitoring`. **Sin el wizard** — a mano.
 - Manifest, iconos y splash de la PWA con la esfera de Summit.
 
-## F00·B2 — Armazón fijo
+## F00·B2 — Armazón fijo  ✅
 
 - `src/app/(dashboard)/layout.tsx`: el `div` raíz mide la ventana y recorta; el
   único scroll es el que marca `src/lib/utils/appScroll.ts`.
@@ -114,11 +114,18 @@ llaves.
 - Reglas globales de accesibilidad: anillo de foco `:focus-visible`, mínimo táctil
   44×44 en `pointer: coarse`, `prefers-reduced-motion`.
 
-## F00·B3 — Autenticación y roles
+## F00·B3 — Autenticación y roles  🔸 *a medias*
+
+⚠️ **Este bloque se ejecuta junto con B5, no antes.** El guard de MFA tiene que
+leer el rol del usuario, y ese rol vive en una tabla que sólo existe después de la
+primera migración. Separarlos obliga a escribir el proxy dos veces.
+
+Lo que ya está: `src/proxy.ts` gatea la sesión y `/login` entra con correo y
+contraseña. Falta Turnstile, `/mfa`, y la rama de `aal2`.
 
 - `src/proxy.ts` (**no** `middleware.ts`) con el matcher que excluye PWA,
-  `/monitoring`, `api/cron` y `portal`.
-- `/login` con Turnstile. `/mfa` con enrolamiento y reto TOTP.
+  `/monitoring`, `api/cron` y `portal`. ✅
+- `/login` ✅ (sin Turnstile todavía). `/mfa` con enrolamiento y reto TOTP.
 - **MFA obligatorio para `socio` y `administracion`.** Son quienes ven la cartera
   completa y los datos fiscales.
 - Tabla `usuarios` con los cinco roles: `socio`, `consultor`, `auditor`,

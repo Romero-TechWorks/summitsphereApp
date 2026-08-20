@@ -223,17 +223,17 @@ que una rama de prueba borre los hallazgos de un cliente.
 
 ## §9 · Verificar
 
-- [ ] Proyecto `summit-app-prod` corriendo en East US
-- [ ] **Contraseña de la base en el gestor** (`A02`)
-- [ ] Las tres llaves copiadas y en su lugar correcto
-- [ ] *Allow new users to sign up* **apagado**
-- [ ] MFA (TOTP) habilitado
-- [ ] Site URL y las tres Redirect URLs configuradas
-- [ ] Contraseña mínima 12 + protección de contraseñas filtradas
-- [ ] Los cinco buckets creados y **los cinco privados**
-- [ ] `npx supabase link` funciona
+- [x] Proyecto `summit-app-prod` corriendo en East US
+- [x] **Contraseña de la base en el gestor** (`A02`)
+- [x] Las tres llaves copiadas y en su lugar correcto
+- [x] *Allow new users to sign up* **apagado**
+- [x] MFA (TOTP) habilitado
+- [x] Site URL y las tres Redirect URLs configuradas
+- [x] Contraseña mínima 12 + protección de contraseñas filtradas
+- [x] Los cinco buckets creados y **los cinco privados**
+- [x] `npx supabase link` funciona
 - [ ] *Advisors* → *Security* **sin alertas**
-- [ ] 2FA activo en la cuenta
+- [x] 2FA activo en la cuenta
 
 ⚠️ **El linter de Advisors se revisa en cada despliegue**, no una vez. Detecta
 justo lo que este proyecto no puede permitirse: tablas sin RLS, vistas sin

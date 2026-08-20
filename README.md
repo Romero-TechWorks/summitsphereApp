@@ -55,6 +55,40 @@ juzga la evidencia y redacta el procedimiento.
 | [`04_CLOUDFLARE.md`](guias/04_CLOUDFLARE.md) | DNS, Turnstile, R2 para respaldos, correo, WAF |
 | [`05_VARIABLES_DE_ENTORNO.md`](guias/05_VARIABLES_DE_ENTORNO.md) | Tabla maestra: cada secreto, de dónde sale y dónde vive |
 
+### `.github/workflows/` — lo que se revisa solo
+
+| Archivo | Qué hace |
+|---|---|
+| [`README.md`](.github/workflows/README.md) | Qué necesita cada workflow y cómo se lee un fallo |
+| `ci.yml` | Busca credenciales en el código, compila, revisa migraciones |
+| `supabase-drift.yml` | Detecta cambios hechos a mano en la base |
+| `rls-check.yml` | ⚠️ Comprueba que el aislamiento entre clientes sigue en pie |
+| `backup.yml` | Volcado cifrado diario a R2 |
+| `restore-test.yml` | Restaura el último respaldo en una base desechable |
+
+---
+
+## Estado
+
+**Fase 00, bloques 1 y 2 hechos.** La aplicación compila, se despliega y se puede
+entrar a ella.
+
+| | |
+|---|---|
+| Andamio Next.js 16 + PWA + Sentry | ✅ |
+| Armazón fijo, tokens de Summit, biblioteca `ui/` | ✅ |
+| `src/proxy.ts` con guard de sesión y `/login` | ✅ |
+| GitHub y Supabase montados | ✅ |
+| Esquema de la base, roles y MFA | ⏳ F00·B3 + B5 |
+| Capa offline (React Query + IndexedDB + `outbox`) | ⏳ F00·B4 |
+| Tablero con widgets por rol | ⏳ F00·B6 |
+
+Los siete dominios ya están en el menú y llevan a una pantalla que dice en qué
+fase llegan — no a un 404.
+
+⚠️ **Sin las variables de Supabase, la app responde 503 con la lista de lo que
+falta.** Es a propósito: falla cerrada y dice qué le pasa.
+
 ---
 
 ## Arranque rápido (cuando exista código)

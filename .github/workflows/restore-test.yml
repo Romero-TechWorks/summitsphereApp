@@ -1,0 +1,169 @@
+# ============================================================================
+# Prueba de restauración          →  guias/01_GITHUB.md §6
+#
+# Baja el último respaldo de R2, lo descifra y lo restaura en una base
+# DESECHABLE para comprobar que el respaldo sirve de verdad.
+#
+# «Un respaldo que nunca se restauró no es un respaldo: es una suposición.»
+#
+# Sólo manual y sólo con confirmación escrita. Nunca programado.
+#
+# Secretos:
+#   RESTORE_TEST_DB_URL   Session Pooler de un proyecto Supabase DE PRUEBAS.
+#                         ⚠️ NUNCA el de producción: el volcado trae
+#                         DROP ... IF EXISTS y borraría a todos los clientes.
+#   BACKUP_GPG_PASSPHRASE / BACKUP_S3_DEST / BACKUP_S3_ENDPOINT /
+#   AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY / AWS_DEFAULT_REGION
+#                         Los mismos que usa backup.yml.
+#
+# Se corre el día 1 de cada mes (tarea permanente del dueño, docs/09).
+# ============================================================================
+
+name: Prueba de restauración
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmacion:
+        description: 'Escribe RESTAURAR-EN-PRUEBAS para confirmar'
+        required: true
+        default: ''
+
+jobs:
+  prueba:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      # Tres candados. Este workflow destruye el contenido de la base destino,
+      # así que tiene que ser imposible dispararlo por accidente.
+      - name: Comprobaciones de seguridad
+        env:
+          CONFIRMACION:        ${{ inputs.confirmacion }}
+          RESTORE_TEST_DB_URL: ${{ secrets.RESTORE_TEST_DB_URL }}
+          SUPABASE_DB_URL:     ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          if [ "$CONFIRMACION" != "RESTAURAR-EN-PRUEBAS" ]; then
+            echo "::error::Confirmación incorrecta. Hay que escribir exactamente RESTAURAR-EN-PRUEBAS."
+            exit 1
+          fi
+          if [ -z "$RESTORE_TEST_DB_URL" ]; then
+            echo "::error::Falta el secreto RESTORE_TEST_DB_URL (un proyecto Supabase desechable)."
+            exit 1
+          fi
+          if [ "$RESTORE_TEST_DB_URL" = "$SUPABASE_DB_URL" ]; then
+            echo "::error::RESTORE_TEST_DB_URL apunta a PRODUCCIÓN. Abortado."
+            exit 1
+          fi
+          echo "OK — el destino es distinto de producción."
+
+      - name: Instalar cliente de PostgreSQL 17
+        run: |
+          sudo sh -c 'echo "deb https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+          curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/pgdg.gpg
+          sudo apt-get update \
+            -o Acquire::Retries=3 \
+            -o Acquire::http::Timeout=20 \
+            -o Acquire::https::Timeout=20
+          sudo apt-get install -y postgresql-client-17
+          echo "/usr/lib/postgresql/17/bin" >> "$GITHUB_PATH"
+          /usr/lib/postgresql/17/bin/psql --version
+          aws --version
+
+      - name: Descargar y descifrar el respaldo más reciente
+        env:
+          BACKUP_GPG_PASSPHRASE: ${{ secrets.BACKUP_GPG_PASSPHRASE }}
+          BACKUP_S3_DEST:        ${{ secrets.BACKUP_S3_DEST }}
+          BACKUP_S3_ENDPOINT:    ${{ secrets.BACKUP_S3_ENDPOINT }}
+          AWS_ACCESS_KEY_ID:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION:    ${{ secrets.AWS_DEFAULT_REGION }}
+        run: |
+          set -euo pipefail
+          AWS_ARGS=()
+          if [ -n "${BACKUP_S3_ENDPOINT:-}" ]; then
+            AWS_ARGS+=(--endpoint-url "$BACKUP_S3_ENDPOINT")
+          fi
+
+          ULTIMO="$(aws "${AWS_ARGS[@]}" s3 ls "${BACKUP_S3_DEST%/}/" \
+            | awk '{print $4}' | grep '\.sql\.gpg$' | sort | tail -1)"
+
+          if [ -z "$ULTIMO" ]; then
+            echo "::error::No hay ningún respaldo en ${BACKUP_S3_DEST}."
+            exit 1
+          fi
+          echo "Respaldo elegido: $ULTIMO"
+
+          aws "${AWS_ARGS[@]}" s3 cp "${BACKUP_S3_DEST%/}/${ULTIMO}" ./respaldo.sql.gpg
+          gpg --batch --yes --decrypt --passphrase "$BACKUP_GPG_PASSPHRASE" \
+              -o restore.sql respaldo.sql.gpg
+
+          echo "--- Cifrado:    $(du -h respaldo.sql.gpg | cut -f1)"
+          echo "--- Descifrado: $(du -h restore.sql | cut -f1)"
+          head -5 restore.sql
+
+      - name: Restaurar en la base de pruebas
+        env:
+          RESTORE_TEST_DB_URL: ${{ secrets.RESTORE_TEST_DB_URL }}
+        run: |
+          # ON_ERROR_STOP=0 a propósito. Un volcado de Supabase restaurado en
+          # otro proyecto Supabase SIEMPRE produce errores esperables:
+          # extensiones y roles que ya existen en el destino. Lo que decide si
+          # la prueba pasó es el conteo de filas del paso siguiente, no un log
+          # impoluto.
+          psql "$RESTORE_TEST_DB_URL" -v ON_ERROR_STOP=0 -f restore.sql \
+            > restore.log 2>&1 || true
+          echo "=== Errores agrupados (los repetidos se cuentan juntos) ==="
+          grep -i "^ERROR" restore.log | sed 's/".*"/"..."/' \
+            | sort | uniq -c | sort -rn | head -40 || echo "Ninguno."
+
+      - name: Verificar qué quedó restaurado
+        env:
+          RESTORE_TEST_DB_URL: ${{ secrets.RESTORE_TEST_DB_URL }}
+        run: |
+          psql "$RESTORE_TEST_DB_URL" -c "ANALYZE;" >/dev/null
+          echo "=== Filas por tabla en el schema public ==="
+          psql "$RESTORE_TEST_DB_URL" -c "
+            SELECT relname AS tabla, n_live_tup AS filas
+            FROM pg_stat_user_tables
+            WHERE schemaname = 'public'
+            ORDER BY n_live_tup DESC, relname
+            LIMIT 40;"
+          echo "=== Usuarios en auth.users (0 = el volcado no trae los usuarios) ==="
+          psql "$RESTORE_TEST_DB_URL" -tAc \
+            "SELECT count(*) FROM auth.users;" || echo "auth.users no existe en el volcado"
+
+      # ⚠️ Lo que de verdad se está probando en SummitApp no es que los datos
+      # regresen: es que regresen CON SUS CANDADOS. Una base restaurada sin
+      # políticas RLS tiene todos los datos de todos los clientes abiertos a
+      # cualquiera que tenga la anon key. Ver CLAUDE.md regla 1.
+      - name: Verificar que el RLS también se restauró
+        env:
+          RESTORE_TEST_DB_URL: ${{ secrets.RESTORE_TEST_DB_URL }}
+        run: |
+          echo "=== Tablas de dominio SIN RLS activo tras restaurar ==="
+          SIN_RLS="$(psql "$RESTORE_TEST_DB_URL" -tAc "
+            SELECT string_agg(c.relname, ', ' ORDER BY c.relname)
+            FROM pg_class c
+            JOIN pg_namespace n ON n.oid = c.relnamespace
+            WHERE n.nspname = 'public'
+              AND c.relkind = 'r'
+              AND NOT c.relrowsecurity;")"
+          if [ -n "$SIN_RLS" ]; then
+            echo "::error::El respaldo restauró tablas SIN RLS: $SIN_RLS"
+            exit 1
+          fi
+          echo "Todas las tablas restauradas conservan RLS activo."
+          psql "$RESTORE_TEST_DB_URL" -c "
+            SELECT tablename AS tabla, count(*) AS politicas
+            FROM pg_policies WHERE schemaname = 'public'
+            GROUP BY tablename ORDER BY tablename;"
+
+      - name: Guardar el log completo
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: restore-log
+          path: restore.log
+          retention-days: 7
