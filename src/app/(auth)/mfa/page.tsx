@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Logo from '@/components/ui/Logo'
@@ -31,7 +31,6 @@ type Modo = 'cargando' | 'enrolar' | 'reto' | 'listo' | 'roto'
 
 export default function PaginaMfa() {
   const router = useRouter()
-  const supabase = useMemo(() => createClient(), [])
 
   const [modo, setModo] = useState<Modo>('cargando')
   const [factorId, setFactorId] = useState<string | null>(null)
@@ -42,6 +41,14 @@ export default function PaginaMfa() {
   const [verificando, setVerificando] = useState(false)
 
   const preparar = useCallback(async () => {
+    // ⚠️ El cliente se crea DENTRO de la función, no en el cuerpo del
+    // componente. `useMemo` corre también al prerenderizar en el servidor, y
+    // ahí no hay variables de entorno: `next build` reventaba en `/mfa` con
+    // "Falta configurar Supabase" en cualquier máquina sin `.env.local`,
+    // incluido el runner de CI —que compila sin credenciales a propósito—.
+    // Dentro de un manejador o de un efecto, sólo corre en el navegador.
+    const supabase = createClient()
+
     try {
       const { data: niveles } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
       if (niveles?.currentLevel === 'aal2') {
@@ -90,7 +97,7 @@ export default function PaginaMfa() {
       )
       setModo('roto')
     }
-  }, [supabase])
+  }, [])
 
   useEffect(() => {
     // El compilador de React marca cualquier `setState` que salga de un efecto,
@@ -109,6 +116,7 @@ export default function PaginaMfa() {
     setError(null)
     setVerificando(true)
 
+    const supabase = createClient()
     const { error: fallo } = await supabase.auth.mfa.challengeAndVerify({
       factorId,
       code: codigo.replace(/\s/g, ''),
@@ -131,7 +139,7 @@ export default function PaginaMfa() {
   }
 
   async function salir() {
-    await supabase.auth.signOut()
+    await createClient().auth.signOut()
     router.refresh()
     router.replace('/login')
   }
