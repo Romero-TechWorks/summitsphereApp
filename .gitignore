@@ -1,0 +1,58 @@
+# dependencias
+/node_modules
+/.pnp
+.pnp.*
+
+# build
+/.next/
+/out/
+/build
+*.tsbuildinfo
+next-env.d.ts
+
+# entorno — NUNCA a Git
+.env
+.env.local
+.env*.local
+.env.production
+
+# PWA generados (los regenera el build; ver CLAUDE.md regla 2)
+/public/sw.js
+/public/sw.js.map
+/public/workbox-*.js
+/public/workbox-*.js.map
+/public/worker-*.js
+/public/swe-worker-*.js
+/public/fallback-*.js
+
+# credenciales fiscales y certificados — jamás al repositorio
+*.key
+*.cer
+*.pem
+*.pfx
+/certificados/
+
+# normas bajo licencia — el texto íntegro NO vive en Git (CLAUDE.md regla 12)
+/normas_licenciadas/
+
+# respaldos y volcados
+*.dump
+*.sql.gpg
+/backups/
+
+# sistema
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# editores
+.vscode/
+.idea/
+*.swp
+
+# supabase local
+/supabase/.temp
+/supabase/.branches
