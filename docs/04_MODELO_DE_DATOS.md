@@ -109,10 +109,28 @@ Más `push_suscripciones` (endpoint, llaves, dispositivo) y
 ### Funciones — Fase 00
 
 ```sql
-mis_organizaciones()  -- setof uuid, STABLE, SECURITY DEFINER
-es_socio()            -- boolean, STABLE
-registrar_bitacora()  -- trigger genérico
+mis_organizaciones()      -- setof uuid, STABLE, SECURITY DEFINER
+es_socio()                -- boolean, STABLE
+registrar_bitacora()      -- trigger genérico de bitácora
+tocar_actualizado_en()    -- trigger, mantiene `actualizado_en`
+impedir_cambios_bitacora()-- trigger, rechaza UPDATE y DELETE en audit_logs
+proteger_rol_usuario()    -- trigger, sólo un socio cambia `rol` y `activo`
+crear_perfil_usuario()    -- trigger en auth.users → public.usuarios
+registrar_inicio_sesion() -- RPC, la llama /login
 ```
+
+⚠️ **`impedir_cambios_bitacora()` no es redundante con el RLS.** Las políticas no
+alcanzan al `service_role`, que se las salta todas; el trigger corre para todos.
+Sin él, la frase *"no se puede borrar ni con el service role desde la app"* del
+criterio de cierre de la Fase 00 sería falsa.
+
+⚠️ **`proteger_rol_usuario()` tampoco.** RLS no sabe de columnas: la política de
+UPDATE deja a cada quien editar **su** fila, y sin este trigger "su fila" incluye
+`rol`. Cualquiera con sesión se pondría `socio`.
+
+⚠️ **`crear_perfil_usuario()` nunca lee el rol de `raw_user_meta_data`.** Esa
+columna la escribe el propio usuario: tomar el rol de ahí sería regalar `socio` a
+quien lo pida. Toda cuenta nace `cliente` y la asciende un socio.
 
 ---
 

@@ -21,23 +21,31 @@ de dominio cuelga de una `org_id`. Ver §Reglas críticas, regla 1.
 
 ## Estado actual — lee esto antes de pedir nada
 
-- **Fase 00, bloques 1 y 2 hechos.** Existe el andamio: `package.json`,
+- **Fase 00, bloques 1, 2, 3 y 5 hechos.** Existe el andamio (`package.json`,
   `next.config.mjs` con PWA y Sentry, el armazón fijo, los tokens de Summit, la
-  biblioteca `ui/`, `src/proxy.ts` y `/login`. `npm run build` y `npm run lint`
-  pasan limpios.
-- **La aplicación gatea sesión pero todavía no conoce roles.** El guard manda a
-  `/login` a quien no tenga sesión; **falta exigir `aal2` a `socio` y
-  `administracion`**, porque depende de la tabla `usuarios` (F00·B5). Va en el
-  mismo bloque que la tabla.
-- **GitHub y Supabase están montados.** El proyecto de Supabase existe y está
-  vinculado, pero **el esquema está vacío**: cero tablas de dominio, cero
-  políticas, cero buckets con contenido. `src/types/database.ts` no existe todavía
-  porque sale del esquema, no al revés.
-- **Lo que sigue es F00·B3 + B5 juntos**: la primera migración
-  (`organizaciones`, `usuarios`, `usuarios_organizaciones`, `config_firma`,
-  `audit_logs`, `notificaciones`) con su RLS, y encima el MFA y los roles. Van
-  juntos porque el guard de MFA necesita leer el rol de una tabla que sólo existe
-  después de la migración.
+  biblioteca `ui/`), y encima el esquema base con su RLS, el MFA y los roles.
+  `npm run build` y `npm run lint` pasan limpios.
+- **La primera migración está aplicada.**
+  `supabase/migrations/20260820160600_esquema_base_y_bitacora.sql` creó
+  `usuarios`, `organizaciones`, `usuarios_organizaciones`, `config_firma`,
+  `audit_logs` y `notificaciones`, con `mis_organizaciones()`, `es_socio()`, el
+  trigger genérico `registrar_bitacora()` y las políticas de todas ellas.
+  `src/types/database.ts` sale de ahí — se regenera con
+  `npx supabase gen types typescript --linked` **en el mismo commit** que toque
+  el esquema.
+- **El guard ya conoce los roles.** `src/proxy.ts` manda a `/login` sin sesión y
+  a `/mfa` a quien tenga un factor sin verificar o un rol que lo exija (`socio`,
+  `administracion`). La consulta a `usuarios` sólo se paga cuando la cuenta no
+  tiene ningún factor: ver `faltaSegundoFactor()`.
+- **Falta Turnstile en `/login`** (F00·B3): necesita las llaves de Cloudflare
+  (`guias/04_CLOUDFLARE.md`). Es lo único del bloque que quedó abierto.
+- ⚠️ **Todavía no hay ningún `socio`, ni ninguna cuenta.** `auth.users` estaba
+  vacía cuando corrió la migración, así que su arranque automático del primer
+  socio no ascendió a nadie y **ya no volverá a correr**. Toda cuenta nueva nace
+  `cliente` —el rol de menos privilegio, y nunca leído de
+  `raw_user_meta_data`—, así que **el dueño tiene que ascender la suya a mano**
+  una vez: `docs/09_TAREAS_DEL_DUENO.md` · A04. Hasta que eso pase, quien entre
+  no ve nada, que es el comportamiento correcto y no un error.
 - **Todavía NO hay capa offline.** No hay React Query, ni IndexedDB, ni `outbox`.
   Eso es F00·B4. Hasta entonces, **no escribas consultas a Supabase en
   componentes**: las claves de caché y `offlineWrite` tienen que existir antes o

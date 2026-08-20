@@ -50,16 +50,56 @@ mientras tanto los respaldos dejan de correr en silencio.
 
 ### `A03` — Enrolar tu segundo factor en la app · **Bloquea: tu propio acceso**
 
-La primera vez que entres como `socio`, la app te va a llevar a una pantalla con
-un código QR. Escanéalo con Google Authenticator, Microsoft Authenticator o
+Antes, una casilla en Supabase: *Authentication* → *Multi-Factor Authentication* →
+habilitar **TOTP**. Sin eso la pantalla del segundo factor no puede enrolar a
+nadie y te lo va a decir con esas palabras.
+
+La primera vez que entres como `socio`, la app te lleva sola a una pantalla con un
+código QR. Escanéalo con Google Authenticator, Microsoft Authenticator o
 1Password.
 
-⚠️ **Guarda los códigos de recuperación.** Sin el teléfono y sin los códigos, no
-entras — y como eres el socio, nadie puede devolverte el acceso desde adentro.
+⚠️ **Guarda la clave que aparece bajo *"No puedo escanear el código"*, en tu
+gestor de contraseñas.** Supabase no emite códigos de recuperación: esa clave es
+lo único que te devuelve el acceso si pierdes el teléfono. Sin ella y sin el
+teléfono no entras, y como eres el socio nadie puede devolverte el acceso desde
+adentro — hay que borrar el factor desde el panel de Supabase.
 
 ### `A04` — Dar de alta al equipo · **Bloquea: que alguien más use la app**
 
-Desde `/admin?tab=usuarios`. Para cada persona: nombre, correo, y **su rol**:
+⚠️ **Hasta la Fase 06 no existe `/admin?tab=usuarios`.** Mientras tanto: la cuenta
+se crea en el panel de Supabase (*Authentication* → *Users* → *Add user*), y el
+rol se pone desde el *SQL Editor*, porque **toda cuenta nueva nace `cliente`** —el
+rol de menos privilegio— a propósito:
+
+```sql
+update usuarios set rol = 'consultor' where correo = 'quien@summit-sphere.com';
+```
+
+### ⚠️ Tu cuenta de socio: el único paso que no se puede automatizar
+
+**Hazlo antes que nada, y con tu cuenta.** Cuando se aplicó la primera migración
+la base no tenía ninguna cuenta, así que no había a quién ascender — y ese
+arranque automático ya no vuelve a correr. Nadie es `socio` todavía.
+
+1. *Authentication* → *Users* → *Add user* → tu correo de la firma, con
+   *Auto Confirm User* marcado.
+2. *SQL Editor*, y córrelo tal cual con tu correo:
+
+```sql
+update usuarios set rol = 'socio' where correo = 'manuel.garcia@summit-sphere.com';
+select correo, rol, activo from usuarios order by creado_en;
+```
+
+⚠️ **No se automatiza a propósito.** Cualquier regla del tipo *"el primero que
+entre es el socio"* le regala la cartera completa a quien se registre primero si
+alguna vez queda abierta el alta pública. Un `update` de una línea, hecho por ti,
+no tiene esa ventana.
+
+3. Entra a la app. Como `socio`, te va a mandar sola a la pantalla del segundo
+   factor (`A03`).
+
+Desde la Fase 06, todo esto es `/admin?tab=usuarios`. Para cada persona: nombre,
+correo, y **su rol**:
 
 | Rol | Dáselo a | Ve |
 |---|---|---|

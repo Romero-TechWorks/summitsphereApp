@@ -114,24 +114,27 @@ llaves.
 - Reglas globales de accesibilidad: anillo de foco `:focus-visible`, mínimo táctil
   44×44 en `pointer: coarse`, `prefers-reduced-motion`.
 
-## F00·B3 — Autenticación y roles  🔸 *a medias*
+## F00·B3 — Autenticación y roles  🔸 *falta Turnstile*
 
-⚠️ **Este bloque se ejecuta junto con B5, no antes.** El guard de MFA tiene que
-leer el rol del usuario, y ese rol vive en una tabla que sólo existe después de la
-primera migración. Separarlos obliga a escribir el proxy dos veces.
-
-Lo que ya está: `src/proxy.ts` gatea la sesión y `/login` entra con correo y
-contraseña. Falta Turnstile, `/mfa`, y la rama de `aal2`.
+⚠️ **Este bloque se ejecutó junto con B5.** El guard de MFA tiene que leer el rol
+del usuario, y ese rol vive en una tabla que sólo existe después de la primera
+migración. Separarlos obliga a escribir el proxy dos veces.
 
 - `src/proxy.ts` (**no** `middleware.ts`) con el matcher que excluye PWA,
   `/monitoring`, `api/cron` y `portal`. ✅
-- `/login` ✅ (sin Turnstile todavía). `/mfa` con enrolamiento y reto TOTP.
-- **MFA obligatorio para `socio` y `administracion`.** Son quienes ven la cartera
-  completa y los datos fiscales.
+- `/login` ✅. **Turnstile ⛔ pendiente**: necesita las llaves de Cloudflare
+  (`../guias/04_CLOUDFLARE.md`). Es lo único abierto de la Fase 00 aparte de B4 y
+  B6.
+- `/mfa` con enrolamiento (QR + clave manual) y reto TOTP. ✅
+- **MFA obligatorio para `socio` y `administracion`** ✅, impuesto en el guard y
+  no en la interfaz. `src/lib/auth/roles.ts` traduce a TypeScript el CHECK de
+  `usuarios.rol`: si cambia uno, cambia el otro en el mismo commit.
 - Tabla `usuarios` con los cinco roles: `socio`, `consultor`, `auditor`,
-  `administracion`, `cliente`.
-- Tabla `usuarios_organizaciones`: **qué consultor ve qué cliente.** Es la tabla
-  de la que cuelga todo el RLS del proyecto.
+  `administracion`, `cliente`. ✅ Toda cuenta nueva nace `cliente` —el rol NUNCA
+  se lee de `raw_user_meta_data`, que la escribe el propio usuario— y la asciende
+  un socio.
+- Tabla `usuarios_organizaciones`: **qué consultor ve qué cliente.** ✅ Es la
+  tabla de la que cuelga todo el RLS del proyecto.
 
 ## F00·B4 — Capa offline
 
@@ -141,13 +144,20 @@ contraseña. Falta Turnstile, `/mfa`, y la rama de `aal2`.
 - `src/lib/utils/uuid.ts` con el fallback a `crypto.getRandomValues` — ⚠️ ver
   CLAUDE.md, trampas heredadas.
 
-## F00·B5 — Esquema base y bitácora
+## F00·B5 — Esquema base y bitácora  ✅
 
-**Migración 1.** `organizaciones`, `usuarios`, `usuarios_organizaciones`,
-`config_firma`, `audit_logs`, `notificaciones`.
+**Migración 1** (`20260820160600_esquema_base_y_bitacora.sql`).
+`usuarios`, `organizaciones`, `usuarios_organizaciones`, `config_firma`,
+`audit_logs`, `notificaciones` — cada una con su RLS, sus políticas y sus índices
+en el mismo archivo.
 
 `audit_logs` sin políticas de UPDATE ni DELETE, con trigger genérico
 `registrar_bitacora()` que se engancha a cada tabla nueva a medida que aparece.
+
+⚠️ Y con `impedir_cambios_bitacora()`, un trigger que rechaza todo UPDATE y todo
+DELETE **incluido el del `service_role`** — las políticas solas no bastan, porque
+el `service_role` se las salta. Es lo que hace verdadera la frase del criterio de
+cierre.
 
 ## F00·B6 — Tablero vacío
 

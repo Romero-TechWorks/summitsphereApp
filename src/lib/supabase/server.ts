@@ -8,12 +8,13 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { exigirConfigSupabase } from './entorno'
+import type { Database } from '@/types/database'
 
 export async function createClient() {
   const cookieStore = await cookies()
   const { url, anonKey } = exigirConfigSupabase()
 
-  return createServerClient(url, anonKey, {
+  return createServerClient<Database>(url, anonKey, {
     cookies: {
       getAll() {
         return cookieStore.getAll()

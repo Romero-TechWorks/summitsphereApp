@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { registrarInicioSesion } from '@/lib/queries/sesion'
 import Logo from '@/components/ui/Logo'
 import Button from '@/components/ui/Button'
 
@@ -14,14 +15,19 @@ import Button from '@/components/ui/Button'
  *
  *  - **Turnstile** [F00·B3]. Supabase limita intentos por su cuenta, pero eso
  *    protege al servidor, no a una cuenta concreta contra un ataque de
- *    diccionario. Va antes de que la app tenga datos de clientes reales.
- *  - **Segundo factor** [F00·B3+B5]. Los roles `socio` y `administracion` deben
- *    exigir `aal2`: son quienes ven la cartera completa y los datos fiscales.
- *    Depende de la tabla `usuarios`, que llega en F00·B5.
+ *    diccionario. Falta la llave del sitio en Cloudflare
+ *    (guias/04_CLOUDFLARE.md); va antes de que la app tenga datos de clientes
+ *    reales.
  *
- * Mientras tanto, los usuarios se crean a mano desde el panel de Supabase
- * (Authentication → Users). El alta pública está apagada a propósito: nadie se
- * registra solo en la aplicación de una firma de auditoría.
+ * El **segundo factor** ya está: esta pantalla no lo pide: quien entra con un
+ * rol que lo exige acaba en `/mfa` porque lo manda `src/proxy.ts`. Imponerlo en
+ * el guard y no aquí es lo que hace que no se pueda esquivar navegando directo
+ * a una ruta.
+ *
+ * Los usuarios se crean a mano desde el panel de Supabase (Authentication →
+ * Users) hasta que exista `/admin?tab=usuarios` [Fase 06]. El alta pública está
+ * apagada a propósito: nadie se registra solo en la aplicación de una firma de
+ * auditoría.
  */
 export default function PaginaLogin() {
   const router = useRouter()
@@ -54,6 +60,17 @@ export default function PaginaLogin() {
         )
         setEntrando(false)
         return
+      }
+
+      // La bitácora del inicio de sesión (criterio de cierre de la Fase 00).
+      //
+      // No bloquea la entrada —quien ya se autenticó tiene derecho a pasar—,
+      // pero tampoco se calla: un fallo aquí significa que la bitácora no está
+      // registrando, y eso hay que verlo, no descubrirlo en una auditoría.
+      try {
+        await registrarInicioSesion(supabase)
+      } catch (falloBitacora) {
+        console.warn('No se pudo registrar el inicio de sesión en la bitácora.', falloBitacora)
       }
 
       // ⚠️ El parámetro se lee de `window.location`, no con

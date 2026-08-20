@@ -17,6 +17,7 @@
 import 'server-only'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { exigirConfigSupabase } from './entorno'
+import type { Database } from '@/types/database'
 
 export function createAdminClient() {
   const { url } = exigirConfigSupabase()
@@ -29,7 +30,7 @@ export function createAdminClient() {
     )
   }
 
-  return createSupabaseClient(url, serviceKey, {
+  return createSupabaseClient<Database>(url, serviceKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   })
 }

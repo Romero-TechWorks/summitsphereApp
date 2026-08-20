@@ -5,20 +5,30 @@
  * `middleware.ts` está deprecado: si renombras este archivo, deja de correr y
  * la app queda ABIERTA sin que nada falle ni avise.
  *
- * Hace dos cosas hoy:
+ * Hace tres cosas (docs/03_ARQUITECTURA.md §7.1):
  *   1. Refresca la sesión de Supabase en cada petición.
  *   2. Redirige a `/login` a quien no tenga sesión.
+ *   3. Exige `aal2` —segundo factor— a los roles `socio` y `administracion`.
  *
- * Falta la tercera —exigir `aal2` a los roles `socio` y `administracion`—
- * porque depende de la tabla `usuarios`, que llega en F00·B5. Se agrega en el
- * mismo bloque que la tabla, no después.
+ * ⚠️ El MFA se impone AQUÍ, no en la interfaz. Una pantalla que se esconde no
+ * protege nada: los datos siguen a un `fetch` de distancia. Sin `aal2` en el
+ * token, un socio no llega a ninguna ruta que no sea `/mfa`.
  */
 
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { exigeMfa } from '@/lib/auth/roles'
+import type { Database } from '@/types/database'
 
 /** Rutas que existen sin sesión. Si agregas una, va también en el matcher. */
 const RUTAS_PUBLICAS = ['/login']
+
+/**
+ * La pantalla del segundo factor: pide sesión, pero está exenta de exigir
+ * `aal2` — es donde se consigue. Sin esta excepción, quien tenga que enrolarse
+ * queda en un bucle de redirecciones contra sí mismo.
+ */
+const RUTA_MFA = '/mfa'
 
 export async function proxy(request: NextRequest) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -49,7 +59,7 @@ export async function proxy(request: NextRequest) {
 
   let respuesta = NextResponse.next({ request })
 
-  const supabase = createServerClient(url, anonKey, {
+  const supabase = createServerClient<Database>(url, anonKey, {
     cookies: {
       getAll() {
         return request.cookies.getAll()
@@ -88,7 +98,56 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(destino)
   }
 
+  if (user && ruta !== RUTA_MFA && await faltaSegundoFactor(supabase, user.id)) {
+    const destino = request.nextUrl.clone()
+    destino.pathname = RUTA_MFA
+    destino.search = ''
+    return NextResponse.redirect(destino)
+  }
+
   return respuesta
+}
+
+/**
+ * Si esta petición tiene que pasar antes por `/mfa`.
+ *
+ * Los dos niveles de Supabase dicen todo lo que hace falta saber, y sin tocar
+ * la red: `currentLevel` es lo que trae el token de ESTA sesión, `nextLevel` es
+ * hasta dónde podría llegar este usuario con los factores que ya tiene.
+ *
+ *   aal2 / aal2 → ya verificó en esta sesión. Pasa.
+ *   aal1 / aal2 → tiene un factor y no lo ha usado todavía. A `/mfa`, sea cual
+ *                 sea su rol: si te enrolaste, se te exige — también al
+ *                 consultor que lo activó por su cuenta.
+ *   aal1 / aal1 → no tiene ningún factor. Sólo aquí hace falta saber el rol.
+ *
+ * ⚠️ El orden importa por costo: la consulta a `usuarios` es lo último y sólo la
+ * pagan las cuentas sin segundo factor. Ponerla arriba sería una consulta a la
+ * base **en cada navegación de cada usuario**, y el proxy corre antes de pintar
+ * un solo píxel.
+ */
+async function faltaSegundoFactor(
+  supabase: ReturnType<typeof createServerClient<Database>>,
+  usuarioId: string,
+): Promise<boolean> {
+  const { data: niveles } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+
+  if (niveles?.currentLevel === 'aal2') return false
+  if (niveles?.nextLevel === 'aal2') return true
+
+  const { data: perfil, error } = await supabase
+    .from('usuarios')
+    .select('rol')
+    .eq('id', usuarioId)
+    .maybeSingle()
+
+  // Sin perfil todavía —o sin poder leerlo— no se inventa un rol. La cuenta
+  // pasa, pero no ve nada: el RLS no le da ninguna organización mientras nadie
+  // se la asigne. Cerrarle el paso aquí, en cambio, dejaría a un usuario recién
+  // creado atrapado en `/mfa` sin nada que enrolar que le sirviera.
+  if (error || !perfil) return false
+
+  return exigeMfa(perfil.rol)
 }
 
 /**

@@ -12,8 +12,12 @@
 
 import { createBrowserClient } from '@supabase/ssr'
 import { exigirConfigSupabase } from './entorno'
+import type { Database } from '@/types/database'
 
 export function createClient() {
   const { url, anonKey } = exigirConfigSupabase()
-  return createBrowserClient(url, anonKey)
+  // El genérico `<Database>` es lo que hace que `.from('hallazgos')` conozca
+  // sus columnas. Sin él, todo lo que salga de Supabase llega como `any` y la
+  // regla de cero `any` del proyecto se pierde en el primer `select`.
+  return createBrowserClient<Database>(url, anonKey)
 }
