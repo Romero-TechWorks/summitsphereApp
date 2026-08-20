@@ -136,13 +136,23 @@ migración. Separarlos obliga a escribir el proxy dos veces.
 - Tabla `usuarios_organizaciones`: **qué consultor ve qué cliente.** ✅ Es la
   tabla de la que cuelga todo el RLS del proyecto.
 
-## F00·B4 — Capa offline
+## F00·B4 — Capa offline  ✅
 
-- React Query con persistencia en IndexedDB (`src/lib/offline/`).
-- `outbox` + `offlineWrite` + `sync` + `ConnectionStatus`, portados de JDM Built.
-- `src/lib/query/keys.ts` como única fuente de claves de caché.
-- `src/lib/utils/uuid.ts` con el fallback a `crypto.getRandomValues` — ⚠️ ver
+- React Query con persistencia en IndexedDB (`src/lib/offline/`). ✅ El
+  persistidor es **propio** (`persistencia.ts`, con `dehydrate`/`hydrate`), no
+  `@tanstack/react-query-persist-client`: son cuarenta líneas y así el disparador,
+  el tamaño y la caducidad se ajustan aquí, que es lo que hay que tocar el día
+  que una auditoría entera tenga que caber en un teléfono.
+- `cola.ts` (el *outbox*) + `offlineWrite` + `sync.ts` + `EstadoConexion` —el
+  `ConnectionStatus` de JDM Built, con el nombre en español del proyecto. ✅
+- `src/lib/query/keys.ts` como única fuente de claves de caché. ✅
+- `src/lib/utils/uuid.ts` con el fallback a `crypto.getRandomValues` ✅ — ⚠️ ver
   CLAUDE.md, trampas heredadas.
+
+⚠️ Dos ajustes que no se tocan sin entender qué rompen, los dos en
+`src/lib/query/cliente.ts`: `networkMode: 'offlineFirst'` —con el valor por
+defecto React Query **no entrega la caché** sin conexión y la pantalla se queda
+cargando para siempre— y `gcTime` mayor que el `MAX_EDAD` de la persistencia.
 
 ## F00·B5 — Esquema base y bitácora  ✅
 
@@ -159,11 +169,24 @@ DELETE **incluido el del `service_role`** — las políticas solas no bastan, po
 el `service_role` se las salta. Es lo que hace verdadera la frase del criterio de
 cierre.
 
-## F00·B6 — Tablero vacío
+## F00·B6 — Tablero vacío  ✅
 
 Un dashboard con widgets que dicen "sin datos todavía", pero con la rejilla
 reordenable (`@dnd-kit`) y las preferencias por usuario ya guardándose. Sirve para
 probar que el armazón, la caché y el RLS funcionan de punta a punta.
+
+- Catálogo en `src/lib/tablero/widgets.ts`, con los widgets de cada rol de
+  [`06_MODULOS_FUNCIONALES.md`](06_MODULOS_FUNCIONALES.md). Un id guardado que ya
+  no exista se ignora y uno nuevo se agrega al final: una versión nueva de la app
+  no le vacía el tablero a nadie.
+- Tabla `preferencias_tablero` (migración 2), **sin `org_id` a propósito**: la
+  fila es de una persona, no de una organización, y su política
+  (`usuario_id = auth.uid()`) es más estricta que filtrar por cartera.
+- El widget **«Esperando señal»** es el único con datos reales en la Fase 00:
+  enseña la cola de salida. Es la ventana del auditor a lo que lleva sin subir.
+- ⚠️ El `TouchSensor` lleva `activationConstraint` con retardo. Sin él, en el
+  teléfono cualquier gesto de scroll que empiece sobre una tarjeta arranca un
+  arrastre y el tablero deja de poder scrollearse.
 
 ### Criterio de cierre — Fase 00
 

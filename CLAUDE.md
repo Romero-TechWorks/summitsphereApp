@@ -21,10 +21,9 @@ de dominio cuelga de una `org_id`. Ver §Reglas críticas, regla 1.
 
 ## Estado actual — lee esto antes de pedir nada
 
-- **Fase 00, bloques 1, 2, 3 y 5 hechos.** Existe el andamio (`package.json`,
-  `next.config.mjs` con PWA y Sentry, el armazón fijo, los tokens de Summit, la
-  biblioteca `ui/`), y encima el esquema base con su RLS, el MFA y los roles.
-  `npm run build` y `npm run lint` pasan limpios.
+- **Fase 00 completa, salvo Turnstile.** Andamio, armazón fijo, esquema base con
+  RLS, MFA y roles, capa offline y tablero. `npm run build` y `npm run lint`
+  pasan limpios. Lo siguiente es la **Fase 01 · Cartera**.
 - **La primera migración está aplicada.**
   `supabase/migrations/20260820160600_esquema_base_y_bitacora.sql` creó
   `usuarios`, `organizaciones`, `usuarios_organizaciones`, `config_firma`,
@@ -46,10 +45,17 @@ de dominio cuelga de una `org_id`. Ver §Reglas críticas, regla 1.
   `raw_user_meta_data`—, así que **el dueño tiene que ascender la suya a mano**
   una vez: `docs/09_TAREAS_DEL_DUENO.md` · A04. Hasta que eso pase, quien entre
   no ve nada, que es el comportamiento correcto y no un error.
-- **Todavía NO hay capa offline.** No hay React Query, ni IndexedDB, ni `outbox`.
-  Eso es F00·B4. Hasta entonces, **no escribas consultas a Supabase en
-  componentes**: las claves de caché y `offlineWrite` tienen que existir antes o
-  habrá que reescribirlas todas.
+- **La capa offline ya existe y es obligatoria.** `src/lib/offline/` tiene el
+  almacén de IndexedDB, la cola (`cola.ts`), `offlineWrite` (`mutate.ts`), el
+  vaciado (`sync.ts`) y la persistencia de la caché (`persistencia.ts`); las
+  claves viven en `src/lib/query/keys.ts` y el proveedor es
+  `src/components/ProveedorConsultas.tsx`. **Toda lectura por `useQuery` con una
+  clave de `keys.ts`; toda escritura por `offlineWrite`.** Una consulta suelta
+  dentro de un componente ya no es "todavía no", es saltarse la capa.
+- **El indicador de conexión sólo aparece cuando tiene algo que decir**
+  (`EstadoConexion` en la Navbar): sin conexión, con cola pendiente o con algo
+  rechazado. En verde y vacío no se pinta — un indicador permanente deja de
+  mirarse.
 - **El plan manda sobre el orden.** `docs/02_PLAN_DE_FASES.md` decide qué se hace
   y cuándo. Si algo parece faltar, casi siempre está aplazado con motivo — búscalo
   ahí antes de "arreglarlo".

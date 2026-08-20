@@ -348,9 +348,33 @@ lib/queries/*  ──── online ────▶ Supabase
    └─ sin señal ─▶ outbox (IndexedDB) ─▶ sync al volver la red
 ```
 
-`offlineWrite` recibe `table`, `op`, `payload`, `match`, una etiqueta legible en
-español, el camino `online` y la fila optimista `offline`. Devuelve la fila y
-además dice si viajó o si se encoló.
+`offlineWrite` recibe `tabla`, `operacion`, `valores`, `filtro`, una etiqueta
+legible en español, el camino `online` y la fila optimista `offline`. Devuelve la
+fila y además dice si viajó o si se encoló.
+
+Los archivos, y qué hace cada uno:
+
+| Archivo | Qué es |
+|---|---|
+| `offline/idb.ts` | IndexedDB a mano, dos almacenes: `cache` y `cola` |
+| `offline/cola.ts` | El *outbox*, con su espejo en memoria para la interfaz |
+| `offline/mutate.ts` | `offlineWrite` y la reproducción de una operación |
+| `offline/sync.ts` | El vaciado: al volver la red, al volver la app al frente, y cada 30 s |
+| `offline/persistencia.ts` | La caché de React Query en IndexedDB (`dehydrate`/`hydrate`) |
+| `offline/estado.ts` | Los hooks del indicador, con `useSyncExternalStore` |
+| `query/cliente.ts` | El `QueryClient` y sus ajustes de offline |
+| `components/ProveedorConsultas.tsx` | Lo monta todo; `EsperaCache` retrasa **sólo** el contenido |
+
+⚠️ **Tres cosas que parecen detalle y no lo son:**
+
+1. `networkMode: 'offlineFirst'`. Con el valor por defecto, React Query deja la
+   consulta en `paused` sin conexión y **no entrega la caché**: la pantalla se
+   queda cargando para siempre con los datos ahí al lado.
+2. `gcTime` **mayor** que el `MAX_EDAD` de la persistencia, o la caché restaurada
+   se recoge sola y el offline dura lo que dure la pestaña.
+3. `offlineWrite` encola **aunque haya señal** si la cola no está vacía. Mandar
+   por la vía directa mientras algo espera rompe el orden: el UPDATE llegaría
+   antes que el INSERT de la misma fila.
 
 ### §8.10 · Claves de caché
 

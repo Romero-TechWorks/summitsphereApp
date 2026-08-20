@@ -41,6 +41,14 @@ Widgets reordenables, con preferencias por usuario. Cada rol abre viendo lo suyo
 | **Auditor** | Sus auditorías programadas · hallazgos que levantó y siguen abiertos · lo que está esperando señal para subir |
 | **Administración** | Facturas por emitir · cobranza vencida · contratos por renovar |
 
+⚠️ Los widgets de facturación y cobranza **no están en el catálogo todavía**:
+pertenecen al módulo `facturacion`, que viene apagado de fábrica y se enciende en
+`/admin?tab=config` [Fase 06]. Hasta entonces, administración abre con
+*Contratos por renovar* y *Esperando señal*.
+
+**«Esperando señal»** es el widget que sí tiene datos desde la Fase 00: enseña lo
+que se guardó sin conexión y todavía no ha subido. Lo ven los cinco roles.
+
 ---
 
 ## Cartera `[Fase 01]`

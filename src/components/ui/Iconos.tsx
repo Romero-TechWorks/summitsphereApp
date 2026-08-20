@@ -144,3 +144,12 @@ export function IconoSalir(p: PropsIcono) {
     </Svg>
   )
 }
+
+/** Asa de arrastre de los widgets del tablero. Dos columnas de tres puntos. */
+export function IconoArrastrar(p: PropsIcono) {
+  return (
+    <Svg {...p} strokeWidth={p.strokeWidth ?? 2}>
+      <path d="M9 6h.01M9 12h.01M9 18h.01M15 6h.01M15 12h.01M15 18h.01" />
+    </Svg>
+  )
+}

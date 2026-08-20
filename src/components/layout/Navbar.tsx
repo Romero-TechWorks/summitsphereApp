@@ -4,16 +4,20 @@ import { useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { DESTINOS, estaActivo } from '@/lib/navegacion'
+import EstadoConexion from '@/components/layout/EstadoConexion'
 import Logo from '@/components/ui/Logo'
 import { IconoSalir } from '@/components/ui/Iconos'
 
 /**
  * La barra superior.
  *
- * ⚠️ Aquí van a vivir el buscador global [Fase 06], el 🤖 del asistente
- * [Fase 07] y el indicador de conexión [F00·B4]. Todavía no están, y no se
- * dejan puestos apagados: un botón que no hace nada se toca dos veces, se da
- * por roto, y enseña al usuario a desconfiar del resto de la interfaz.
+ * ⚠️ Aquí van a vivir el buscador global [Fase 06] y el 🤖 del asistente
+ * [Fase 07]. Todavía no están, y no se dejan puestos apagados: un botón que no
+ * hace nada se toca dos veces, se da por roto, y enseña al usuario a
+ * desconfiar del resto de la interfaz.
+ *
+ * El indicador de conexión [F00·B4] sí está, y sigue la misma regla al revés:
+ * sólo aparece cuando tiene algo que decir.
  */
 export default function Navbar({ isMobile }: { isMobile: boolean }) {
   const ruta = usePathname()
@@ -76,6 +80,9 @@ export default function Navbar({ isMobile }: { isMobile: boolean }) {
         )}
       </div>
 
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      <EstadoConexion compacto={isMobile} />
+
       <button
         type="button"
         onClick={salir}
@@ -98,6 +105,7 @@ export default function Navbar({ isMobile }: { isMobile: boolean }) {
         <IconoSalir size={17} />
         {!isMobile && <span>Salir</span>}
       </button>
+      </div>
     </header>
   )
 }

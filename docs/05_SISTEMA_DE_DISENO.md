@@ -75,6 +75,8 @@ contraste que ya tiene la marca.
   --nav-texto:      #e8eef5;
   --nav-texto-dim:  rgba(232, 238, 245, 0.62);
   --nav-activo:     #5ed46e;   /* verde claro: 8.1:1 sobre navy      */
+  --nav-alerta:     #f0b429;   /* ámbar:       8.9:1 sobre navy      */
+  --nav-error:      #ff8b7d;   /* coral:       7.3:1 sobre navy      */
 
   /* ── Estado (como TEXTO sobre fondo claro; todos pasan AA) ───────── */
   --exito:       #1e6b28;   /* 6.10:1 */

@@ -5,6 +5,7 @@ import Sidebar, { ANCHO_SIDEBAR } from '@/components/layout/Sidebar'
 import Navbar from '@/components/layout/Navbar'
 import BottomNav from '@/components/layout/BottomNav'
 import ScrollReset from '@/components/layout/ScrollReset'
+import ProveedorConsultas, { EsperaCache } from '@/components/ProveedorConsultas'
 import { APP_SCROLL_ID } from '@/lib/utils/appScroll'
 
 /**
@@ -50,6 +51,11 @@ export default function DashboardLayout({
   }, [])
 
   return (
+    // ⚠️ El proveedor envuelve TODO el armazón, no sólo el contenido: el
+    // indicador de conexión del header también consulta la caché. Lo que espera
+    // a que la caché vuelva del disco es `EsperaCache`, más abajo, y sólo
+    // alcanza al contenido de la página.
+    <ProveedorConsultas>
     <div style={{ display: 'flex', height: 'var(--vh-full)', overflow: 'hidden' }}>
 
       {!isMobile && (
@@ -98,11 +104,12 @@ export default function DashboardLayout({
           <Suspense fallback={null}>
             <ScrollReset />
           </Suspense>
-          {children}
+          <EsperaCache>{children}</EsperaCache>
         </div>
       </main>
 
       {isMobile && <BottomNav />}
     </div>
+    </ProveedorConsultas>
   )
 }

@@ -106,6 +106,21 @@ Trigger genérico `registrar_bitacora()`, enganchado a cada tabla de dominio.
 Más `push_suscripciones` (endpoint, llaves, dispositivo) y
 `preferencias_notificacion` (por usuario y categoría).
 
+## `preferencias_tablero`
+El orden en que cada persona acomodó sus widgets [F00·B6].
+
+| Columna | Tipo | Nota |
+|---|---|---|
+| `usuario_id` | uuid PK FK | |
+| `orden` | text[] | Ids del catálogo de `src/lib/tablero/widgets.ts` |
+| `actualizado_en` | timestamptz | |
+
+⚠️ **Sin `org_id`, y no es un olvido.** La fila pertenece a una persona, no a una
+organización cliente — igual que `usuarios`. Su política es
+`usuario_id = auth.uid()`, más estricta que el filtro por cartera. Tampoco lleva
+trigger de bitácora: arrastrar un widget no es un acto auditable, y engancharlo
+llenaría `audit_logs` de ruido en la tabla que más se escribe.
+
 ### Funciones — Fase 00
 
 ```sql
