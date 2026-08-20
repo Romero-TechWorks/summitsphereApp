@@ -210,6 +210,32 @@ export type Database = {
           },
         ]
       }
+      preferencias_tablero: {
+        Row: {
+          actualizado_en: string
+          orden: string[]
+          usuario_id: string
+        }
+        Insert: {
+          actualizado_en?: string
+          orden?: string[]
+          usuario_id: string
+        }
+        Update: {
+          actualizado_en?: string
+          orden?: string[]
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "preferencias_tablero_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: true
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       usuarios: {
         Row: {
           activo: boolean
