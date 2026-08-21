@@ -5,6 +5,29 @@
 import type { PostgrestError } from '@supabase/supabase-js'
 
 /**
+ * El texto de un error, venga como venga.
+ *
+ * ⚠️ **`String(error)` NO sirve aquí, y es la trampa que costó el primer bug de
+ * campo de esta app.** Cuando un `fetch` no sale del teléfono, postgrest-js no
+ * lanza un `Error`: devuelve un **objeto plano**
+ * `{ message: 'TypeError: Failed to fetch', details, hint, code: '' }`.
+ * Un `error instanceof Error ? error.message : String(error)` sobre eso
+ * devuelve la cadena `"[object Object]"`, y a partir de ahí cualquier cosa que
+ * mire el mensaje —como `esFalloDeRed`— decide mal.
+ */
+export function mensajeDeError(error: unknown): string {
+  if (error instanceof Error) return error.message
+  if (typeof error === 'string') return error
+
+  const posible = error as { message?: unknown }
+  if (typeof posible?.message === 'string' && posible.message.length > 0) {
+    return posible.message
+  }
+
+  return 'Error desconocido'
+}
+
+/**
  * Si un error es «no llegué al servidor» y no «el servidor dijo que no».
  *
  * La diferencia decide el destino de una escritura: un fallo de red se encola y
@@ -13,19 +36,33 @@ import type { PostgrestError } from '@supabase/supabase-js'
  *
  * PostgREST siempre responde con un `code` (`42501` de RLS, `23505` de único,
  * `PGRST116` de fila no encontrada…). Un `fetch` que no salió del teléfono no
- * tiene ninguno: llega como `TypeError: Failed to fetch`, y en Safari como
- * `Load failed`, que es el mismo error con otro nombre.
+ * tiene ninguno: llega con `code: ''` y el mensaje `TypeError: Failed to fetch`,
+ * que en Safari es `Load failed` y en el vaciado de la cola puede ser
+ * `FetchError: …`. Son el mismo error con tres nombres.
+ *
+ * ⚠️ **Dónde muerde esto de verdad: al vaciar la cola.** `offlineWrite` está
+ * protegido porque sin señal `navigator.onLine` ya es `false` y ni siquiera
+ * llega aquí. `sync.ts` no: sólo reproduce la cola cuando el navegador dice que
+ * hay red, así que si esta función se equivoca ahí, un corte a media subida
+ * —justo lo que pasa al recuperar señal en el estacionamiento— marca la
+ * operación como RECHAZADA en vez de dejarla esperando. El auditor ve treinta
+ * hallazgos en rojo diciendo «no se pudo guardar» cuando lo único que pasó es
+ * que el semáforo cambió. Por eso el mensaje se lee con `mensajeDeError` y no
+ * con `String()`.
  */
 export function esFalloDeRed(error: unknown): boolean {
   if (typeof navigator !== 'undefined' && navigator.onLine === false) return true
 
   if (error instanceof TypeError) return true
 
+  // Un código de PostgREST es un veredicto del servidor: llegó, miró y dijo que
+  // no. Eso nunca es un fallo de red, y reintentarlo no lo va a arreglar.
   const codigo = (error as Partial<PostgrestError>)?.code
   if (typeof codigo === 'string' && codigo.length > 0) return false
 
-  const mensaje = error instanceof Error ? error.message : String(error ?? '')
-  return /failed to fetch|networkerror|load failed|network request failed|timeout/i.test(mensaje)
+  return /failed to fetch|networkerror|network error|load failed|network request failed|fetcherror|timeout|abort/i.test(
+    mensajeDeError(error),
+  )
 }
 
 /**

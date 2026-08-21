@@ -7,7 +7,8 @@
  */
 
 import type { QueryClient } from '@tanstack/react-query'
-import { esFalloDeRed } from '@/lib/supabase/errores'
+import { createClient } from '@/lib/supabase/client'
+import { esFalloDeRed, mensajeDeError } from '@/lib/supabase/errores'
 import { marcarFallo, pendientes, quitarDeCola, refrescarCola } from './cola'
 import { ejecutarOperacion } from './mutate'
 
@@ -27,6 +28,17 @@ export async function sincronizar(cliente: QueryClient): Promise<ResultadoSincro
   let fallidas = 0
 
   try {
+    // ⚠️ Sin sesión NO se reproduce nada, y no es una optimización.
+    //
+    // Esta función corre al montar la app, y las políticas de la base son todas
+    // `TO authenticated`. Si el token todavía no está listo —o caducó mientras
+    // el teléfono estaba sin señal—, cada operación saldría como anónima, el
+    // RLS la rechazaría con un 42501 legítimo y `marcarFallo` la daría por
+    // perdida para siempre. No es que el servidor la haya rechazado: es que no
+    // llegó a presentarse. Se queda en la cola y se intenta al siguiente aviso.
+    const { data: { session } } = await createClient().auth.getSession()
+    if (!session) return vacio
+
     // ⚠️ En serie y en orden. Ver `cola.ts`: el paralelo rompe la secuencia.
     for (const operacion of pendientes()) {
       try {
@@ -80,10 +92,4 @@ export function iniciarSincronizacion(cliente: QueryClient): () => void {
     document.removeEventListener('visibilitychange', alVolverAlFrente)
     window.clearInterval(temporizador)
   }
-}
-
-function mensajeDeError(error: unknown): string {
-  if (error instanceof Error) return error.message
-  const posible = error as { message?: unknown }
-  return typeof posible?.message === 'string' ? posible.message : 'Error desconocido'
 }

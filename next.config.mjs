@@ -28,6 +28,22 @@ const withPWA = withPWAInit({
   // treinta hallazgos levantados y ninguna pantalla que abrir.
   extendDefaultRuntimeCaching: true,
 
+  // La pantalla que se sirve cuando una navegación no está ni en la red ni en
+  // la caché: `src/app/~offline/page.tsx`. El plugin la precachea al instalar
+  // el worker.
+  //
+  // ⚠️ Sin esto, esa navegación cae en la pantalla de error del navegador. La
+  // caché de arriba sólo tiene lo que el usuario ya visitó o lo que Next
+  // precargó al ver un link; la primera vez que alguien toca un destino nuevo
+  // sin señal, no hay nada que servir. Lo que ve entonces no dice el nombre de
+  // la app ni menciona que su trabajo sigue guardado, y en campo eso se lee
+  // como que la app lo perdió.
+  //
+  // ⚠️ `/~offline` está excluida del matcher de `src/proxy.ts`. Los dos cambios
+  // van juntos SIEMPRE: si el guard la redirigiera a `/login`, el worker
+  // precachearía la redirección en vez de la pantalla.
+  fallbacks: { document: '/~offline' },
+
   // Worker propio: el plugin compila `worker/index.js` aparte y lo importa desde
   // el `sw.js` generado. Es la única forma de añadir los oyentes `push` y
   // `notificationclick` sin editar código de Workbox, que se sobreescribe en

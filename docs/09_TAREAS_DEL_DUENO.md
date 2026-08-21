@@ -113,6 +113,58 @@ correo, y **su rol**:
 
 ---
 
+### `A08` — Encender Turnstile en Supabase · **Bloquea: la protección del login**
+
+⚠️ **Turnstile son dos mitades y hay que encender las dos.** La app ya pinta el
+widget en `/login` y le pasa el token a Supabase; lo que falta es que Supabase lo
+valide. Con una mitad sola pasa algo peor que no tenerlo:
+
+| Widget en la app | Protección en Supabase | Qué pasa |
+|---|---|---|
+| sí | sí | ✅ correcto |
+| sí | no | El token se ignora. No protege nada |
+| no | sí | **Nadie entra**, ni tú |
+
+En Supabase → **Authentication → Attack Protection → Enable Captcha protection**:
+
+1. Provider: **Turnstile by Cloudflare**.
+2. Pega el **Secret Key** del widget (Cloudflare → Turnstile → tu widget →
+   *Settings*). Es la que empieza por `0x4…`, no la del sitio.
+3. Guarda.
+
+La otra llave —la del **sitio**— va como `NEXT_PUBLIC_TURNSTILE_SITE_KEY` en
+Vercel y en `.env.local`. Esa sí es pública: viaja al navegador por diseño.
+
+⚠️ Después de guardar, **entra desde una ventana privada antes de cerrar el
+panel**. Si algo quedó mal, el login deja de funcionar para todos y la forma de
+arreglarlo es volver aquí y apagarlo — que es difícil si no puedes entrar.
+
+⚠️ Y si algún día quitas la variable de Vercel sin apagar esto, la app deja de
+mandar token y **nadie entra**. Se apagan juntas, en este orden: primero aquí,
+después la variable.
+
+---
+
+### `A09` — Redesplegar Vercel después de tocar las variables · **Bloquea: que la app funcione**
+
+⚠️ **Cargar una variable de entorno en Vercel no la aplica al despliegue que ya
+está en línea.** Las `NEXT_PUBLIC_*` se incrustan en el código **durante el
+build**, y el guard de sesión (`src/proxy.ts`) corre en el Edge, donde no hay
+proceso que las lea en caliente. El despliegue que ya existía sigue viendo lo que
+había cuando se compiló.
+
+Síntoma exacto: la app responde **503** con el texto *«SummitApp no está
+configurada todavía»* y la lista de las variables que faltan — aunque estén
+cargadas y bien escritas en el panel.
+
+Arreglo: Vercel → **Deployments** → el último → menú `⋯` → **Redeploy**. O
+cualquier `git push`, que compila de nuevo.
+
+Vale para las tres: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` y
+`NEXT_PUBLIC_TURNSTILE_SITE_KEY`.
+
+---
+
 # FASE 01 · Cartera
 
 ### `B01` — Cargar tu cartera real · **Bloquea: usar la app de verdad**

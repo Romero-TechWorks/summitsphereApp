@@ -114,17 +114,24 @@ llaves.
 - Reglas globales de accesibilidad: anillo de foco `:focus-visible`, mínimo táctil
   44×44 en `pointer: coarse`, `prefers-reduced-motion`.
 
-## F00·B3 — Autenticación y roles  🔸 *falta Turnstile*
+## F00·B3 — Autenticación y roles  ✅
 
 ⚠️ **Este bloque se ejecutó junto con B5.** El guard de MFA tiene que leer el rol
 del usuario, y ese rol vive en una tabla que sólo existe después de la primera
 migración. Separarlos obliga a escribir el proxy dos veces.
 
 - `src/proxy.ts` (**no** `middleware.ts`) con el matcher que excluye PWA,
-  `/monitoring`, `api/cron` y `portal`. ✅
-- `/login` ✅. **Turnstile ⛔ pendiente**: necesita las llaves de Cloudflare
-  (`../guias/04_CLOUDFLARE.md`). Es lo único abierto de la Fase 00 aparte de B4 y
-  B6.
+  `/monitoring`, `api/cron`, `portal` y `~offline`. ✅
+- `/login` con **Turnstile** ✅ — `src/components/auth/Turnstile.tsx`.
+  ⚠️ **Quien valida el token es Supabase**, no la app: viaja en
+  `options.captchaToken` de `signInWithPassword` y Supabase lo comprueba contra
+  Cloudflare con la llave secreta antes de mirar la contraseña. Verificarlo en el
+  navegador, o en una ruta propia, sería decorativo: el endpoint de
+  autenticación es público y quien quiera probar diez mil contraseñas no abre
+  esta pantalla.
+  ⚠️ **La otra mitad es del dueño** (`../docs/09_TAREAS_DEL_DUENO.md` · A08):
+  Authentication → Attack Protection, con la llave secreta del widget. Con el
+  widget solo el token se ignora; con la protección sola **no entra nadie**.
 - `/mfa` con enrolamiento (QR + clave manual) y reto TOTP. ✅
 - **MFA obligatorio para `socio` y `administracion`** ✅, impuesto en el guard y
   no en la interfaz. `src/lib/auth/roles.ts` traduce a TypeScript el CHECK de
@@ -196,12 +203,21 @@ probar que el armazón, la caché y el RLS funcionan de punta a punta.
 > deja de latir. En Supabase, `audit_logs` tiene su registro de inicio de sesión y
 > **no se puede borrar ni con el service role desde la app**.
 
+⚠️ **Esta prueba sólo vale contra HTTPS: la URL de Vercel.** Contra el servidor de
+desarrollo no se puede hacer, y no por una limitación de la app: un service worker
+**no se registra fuera de contexto seguro**, y desde el teléfono se entra por
+`http://192.168.x.x:3000`. Sin service worker no hay caché de pantallas, así que
+el modo avión da la pantalla de error del navegador **aunque la capa offline esté
+perfecta**. Intentarlo ahí quema una tarde persiguiendo un bug que no existe.
+Ver CLAUDE.md · reglas del offline, 6.
+
 ### Tareas del dueño — Fase 00
 
 `A01` Crear las cuentas (GitHub, Supabase, Vercel, Cloudflare) con el correo de la
 firma, no personal. `A02` Guardar la contraseña de la base de datos en el gestor
 de contraseñas. `A03` Enrolar su segundo factor. `A04` Dar de alta a los primeros
-usuarios del equipo.
+usuarios del equipo. `A08` Encender Turnstile en Supabase. `A09` Redesplegar
+Vercel después de tocar las variables de entorno.
 
 ---
 

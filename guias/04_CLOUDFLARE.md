@@ -204,10 +204,15 @@ Vale la pena decirlo para que nadie lo intente:
 - [ ] `summit-sphere.com` en Cloudflare, nameservers propagados
 - [ ] ⚠️ **El correo de la firma sigue llegando** (manda uno de prueba)
 - [ ] SSL/TLS en **Full (strict)** + Always Use HTTPS
-- [ ] `app.summit-sphere.com` → CNAME a Vercel, **nube gris**
-- [ ] `https://app.summit-sphere.com` abre con candado
-- [ ] Turnstile creado, con los tres dominios y las dos llaves guardadas
-- [ ] Bucket R2 `summit-respaldos` creado y **privado**
-- [ ] Token de R2 limitado a ese bucket, con sus tres valores en GitHub
-- [ ] Regla de ciclo de vida a 90 días
+- [ ] `app.summit-sphere.com` → CNAME a Vercel, **nube gris** — aplazado a
+      propósito hasta cerrar la fase de pruebas (ver `03_VERCEL.md` §8)
+- [ ] `https://app.summit-sphere.com` abre con candado — aplazado con el anterior
+- [x] Turnstile creado, con los tres dominios y las dos llaves guardadas
+- [ ] ⚠️ **La llave SECRETA pegada en Supabase** → Authentication → Attack
+      Protection → Enable Captcha protection, provider *Turnstile*. Sin este paso
+      el widget se pinta y el token **no lo valida nadie**: no protege nada.
+      `../docs/09_TAREAS_DEL_DUENO.md` · A08
+- [x] Bucket R2 `summit-respaldos` creado y **privado**
+- [x] Token de R2 limitado a ese bucket, con sus tres valores en GitHub
+- [x] Regla de ciclo de vida a 90 días
 - [ ] 2FA activo en la cuenta

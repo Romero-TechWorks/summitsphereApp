@@ -6,6 +6,7 @@
  */
 
 import * as Sentry from '@sentry/nextjs'
+import { mensajeDeError } from '@/lib/supabase/errores'
 
 const dsn = process.env.NEXT_PUBLIC_SENTRY_DSN
 
@@ -32,7 +33,11 @@ Sentry.init({
    */
   beforeSend(event, hint) {
     const error = hint.originalException
-    const mensaje = error instanceof Error ? error.message : String(error ?? '')
+    // ⚠️ `mensajeDeError` y no `String(error)`: un fallo de red de Supabase
+    // llega como objeto plano, y `String()` sobre él devuelve "[object
+    // Object]" — con lo que este filtro dejaría pasar exactamente el ruido que
+    // existe para cortar. Ver `lib/supabase/errores.ts`.
+    const mensaje = mensajeDeError(error)
 
     // Fallos de red: la capa offline los maneja encolando la escritura. Que no
     // haya señal en una nave industrial no es un error del software — es el

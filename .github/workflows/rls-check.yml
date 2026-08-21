@@ -64,7 +64,12 @@ jobs:
           # Catálogos globales y tablas de la firma: no llevan org_id a propósito.
           # ⚠️ Mantener en sync con docs/04_MODELO_DE_DATOS.md. Agregar una tabla
           #    a esta lista es una decisión de diseño, no un atajo para pasar CI.
-          EXENTAS="'organizaciones','usuarios','config_firma','normas','norma_clausulas','noms','nom_requisitos'"
+          #
+          # `preferencias_tablero` está aquí por lo mismo que `usuarios`: la fila
+          # pertenece a una PERSONA de la firma, no a una organización cliente, y
+          # su política (`usuario_id = auth.uid()`) es más estricta que filtrar
+          # por organización — no la ve nadie más, ni el socio.
+          EXENTAS="'organizaciones','usuarios','config_firma','preferencias_tablero','normas','norma_clausulas','noms','nom_requisitos'"
 
           FALLO=0
 

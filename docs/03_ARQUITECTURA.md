@@ -362,10 +362,12 @@ Los archivos, y qué hace cada uno:
 | `offline/sync.ts` | El vaciado: al volver la red, al volver la app al frente, y cada 30 s |
 | `offline/persistencia.ts` | La caché de React Query en IndexedDB (`dehydrate`/`hydrate`) |
 | `offline/estado.ts` | Los hooks del indicador, con `useSyncExternalStore` |
+| `supabase/errores.ts` | `mensajeDeError`, `esFalloDeRed` y `exigirFilas` — quién decide si algo se reintenta |
+| `app/~offline/page.tsx` | La pantalla de respaldo que sirve el service worker |
 | `query/cliente.ts` | El `QueryClient` y sus ajustes de offline |
 | `components/ProveedorConsultas.tsx` | Lo monta todo; `EsperaCache` retrasa **sólo** el contenido |
 
-⚠️ **Tres cosas que parecen detalle y no lo son:**
+⚠️ **Cinco cosas que parecen detalle y no lo son:**
 
 1. `networkMode: 'offlineFirst'`. Con el valor por defecto, React Query deja la
    consulta en `paused` sin conexión y **no entrega la caché**: la pantalla se
@@ -375,6 +377,17 @@ Los archivos, y qué hace cada uno:
 3. `offlineWrite` encola **aunque haya señal** si la cola no está vacía. Mandar
    por la vía directa mientras algo espera rompe el orden: el UPDATE llegaría
    antes que el INSERT de la misma fila.
+4. **`esFalloDeRed()` es quien decide si algo se reintenta o se da por perdido**,
+   y se equivoca en silencio. Un fallo de `fetch` llega desde postgrest-js como
+   **objeto plano** —no como `Error`— con `code: ''` y el mensaje dentro; leerlo
+   con `String(error)` da `"[object Object]"` y el corte de red pasa por rechazo
+   del servidor. Dónde muerde: en `sync.ts`, que sólo corre con el navegador en
+   línea, así que un tropiezo al reconectar marcaría la cola entera como
+   RECHAZADA. **Siempre `mensajeDeError()`.** CLAUDE.md · trampas heredadas.
+5. **Sin sesión, `sync.ts` no reproduce nada.** Las políticas son todas
+   `TO authenticated`: reproducir la cola antes de que el token esté listo haría
+   que el RLS rechazara cada operación con un 42501 legítimo, y `marcarFallo` las
+   daría por perdidas. Eso no es un rechazo, es no haberse presentado.
 
 ### §8.10 · Claves de caché
 
@@ -391,7 +404,26 @@ llega a planta con una pantalla vacía y la Fase 03 no sirve.
 
 ### §8.12 · Reglas del offline
 
-Las seis de CLAUDE.md. La que más se rompe: **copiar `data` a un `useState`**.
+Las siete de CLAUDE.md. La que más se rompe: **copiar `data` a un `useState`**.
+
+**La pantalla de respaldo.** `src/app/~offline/page.tsx`, declarada en
+`next.config.mjs` como `fallbacks.document`. El worker la precachea al instalarse
+y la sirve cuando una navegación no está ni en la red ni en la caché — que es lo
+normal la primera vez que alguien toca un destino que nunca visitó, porque la
+caché de páginas sólo tiene lo que ya se abrió o lo que Next precargó al ver un
+link. Sin ella, ahí aparece la pantalla de error del navegador, que no nombra la
+app ni dice que lo guardado sigue a salvo.
+
+⚠️ Va **fuera de `(dashboard)`** (se pinta sin red: no puede depender de validar
+una sesión) y **excluida del matcher** junto con el `fallback-*.js` que genera el
+build — que lo carga el propio `sw.js` con `importScripts`, así que si el guard lo
+redirigiera fallaría la instalación entera del service worker.
+
+⚠️ **Y nada de esto existe fuera de contexto seguro.** Un service worker sólo se
+registra en `https://` o `localhost`. Desde el teléfono, contra
+`http://192.168.x.x:3000`, no hay worker: ni caché de pantallas, ni pantalla de
+respaldo, ni push. El modo avión ahí da la pantalla de error del navegador con la
+capa offline perfectamente sana. Se prueba en la URL de Vercel.
 
 ### §8.13 · Notificaciones push
 

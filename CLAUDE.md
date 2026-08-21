@@ -21,9 +21,11 @@ de dominio cuelga de una `org_id`. Ver §Reglas críticas, regla 1.
 
 ## Estado actual — lee esto antes de pedir nada
 
-- **Fase 00 completa, salvo Turnstile.** Andamio, armazón fijo, esquema base con
-  RLS, MFA y roles, capa offline y tablero. `npm run build` y `npm run lint`
-  pasan limpios. Lo siguiente es la **Fase 01 · Cartera**.
+- **Fase 00 completa por el lado del código.** Andamio, armazón fijo, esquema
+  base con RLS, MFA y roles, capa offline, tablero y Turnstile. `npm run build` y
+  `npm run lint` pasan limpios. Lo que queda de la fase son tareas del dueño en
+  paneles (`docs/09_TAREAS_DEL_DUENO.md` · A08, A09) y la prueba de campo en un
+  teléfono. Lo siguiente es la **Fase 01 · Cartera**.
 - **La primera migración está aplicada.**
   `supabase/migrations/20260820160600_esquema_base_y_bitacora.sql` creó
   `usuarios`, `organizaciones`, `usuarios_organizaciones`, `config_firma`,
@@ -36,15 +38,25 @@ de dominio cuelga de una `org_id`. Ver §Reglas críticas, regla 1.
   a `/mfa` a quien tenga un factor sin verificar o un rol que lo exija (`socio`,
   `administracion`). La consulta a `usuarios` sólo se paga cuando la cuenta no
   tiene ningún factor: ver `faltaSegundoFactor()`.
-- **Falta Turnstile en `/login`** (F00·B3): necesita las llaves de Cloudflare
-  (`guias/04_CLOUDFLARE.md`). Es lo único del bloque que quedó abierto.
-- ⚠️ **Todavía no hay ningún `socio`, ni ninguna cuenta.** `auth.users` estaba
-  vacía cuando corrió la migración, así que su arranque automático del primer
-  socio no ascendió a nadie y **ya no volverá a correr**. Toda cuenta nueva nace
-  `cliente` —el rol de menos privilegio, y nunca leído de
-  `raw_user_meta_data`—, así que **el dueño tiene que ascender la suya a mano**
-  una vez: `docs/09_TAREAS_DEL_DUENO.md` · A04. Hasta que eso pase, quien entre
-  no ve nada, que es el comportamiento correcto y no un error.
+- **Turnstile ya está en `/login`** (F00·B3), pero **quien lo valida es
+  Supabase**, no la app: el token viaja en `options.captchaToken` de
+  `signInWithPassword`. Comprobarlo en el navegador —o en un `/api/turnstile`
+  propio— sería decorativo, porque el endpoint de autenticación de Supabase es
+  público y quien quiera probar contraseñas no pasa por la pantalla.
+  ⚠️ Son **dos mitades**: el widget (aquí) y la protección en el panel de
+  Supabase (`A08`). Con el widget solo, el token se ignora; con la protección
+  sola, **no entra nadie**.
+- **Ya hay un `socio`:** `herrliebert@live.com`, ascendido a mano y con su TOTP
+  enrolado. La cuenta se creó *después* de la migración, así que el arranque
+  automático del primer socio no ascendió a nadie y **ya no volverá a correr**:
+  toda cuenta nueva nace `cliente` —el rol de menos privilegio, y nunca leído de
+  `raw_user_meta_data`—, y hay que ascenderla a mano
+  (`docs/09_TAREAS_DEL_DUENO.md` · A04).
+- ⚠️ **Cargar variables en Vercel no basta: hay que redesplegar.** Las
+  `NEXT_PUBLIC_*` se incrustan durante el build y el guard corre en el Edge, así
+  que el despliegue que ya está en línea sigue viendo lo que había al compilar.
+  Síntoma: **503 «SummitApp no está configurada todavía»** con las variables bien
+  puestas en el panel. `docs/09_TAREAS_DEL_DUENO.md` · A09.
 - **La capa offline ya existe y es obligatoria.** `src/lib/offline/` tiene el
   almacén de IndexedDB, la cola (`cola.ts`), `offlineWrite` (`mutate.ts`), el
   vaciado (`sync.ts`) y la persistencia de la caché (`persistencia.ts`); las
@@ -52,6 +64,15 @@ de dominio cuelga de una `org_id`. Ver §Reglas críticas, regla 1.
   `src/components/ProveedorConsultas.tsx`. **Toda lectura por `useQuery` con una
   clave de `keys.ts`; toda escritura por `offlineWrite`.** Una consulta suelta
   dentro de un componente ya no es "todavía no", es saltarse la capa.
+- **Hay una pantalla de respaldo sin conexión:** `src/app/~offline/page.tsx`. El
+  service worker la precachea y la sirve cuando una navegación no está ni en la
+  red ni en la caché. Sin ella, esa navegación caía en la pantalla de error del
+  navegador — que no dice el nombre de la app ni menciona que lo guardado sigue a
+  salvo, y en campo se lee como que la app perdió el trabajo. Va fuera de
+  `(dashboard)` y **excluida del matcher**, igual que `fallback-*.js`.
+- **El tablero no lleva tarjetas.** Cada widget es texto flotando sobre el fondo,
+  con su icono y delimitado por debajo con el verde de Summit; el marco sólo
+  aparece mientras se arrastra. §5 · docs/05_SISTEMA_DE_DISENO.md §4.3.
 - **El indicador de conexión sólo aparece cuando tiene algo que decir**
   (`EstadoConexion` en la Navbar): sin conexión, con cola pendiente o con algo
   rechazado. En verde y vacío no se pinta — un indicador permanente deja de
@@ -188,8 +209,19 @@ tenía WiFi malo; aquí el auditor está en un sótano de una planta industrial.
 4. Toda escritura pasa por `offlineWrite` (`src/lib/offline/mutate.ts`) con
    etiqueta en español legible, nunca un UUID.
 5. `getSession()` (local), nunca `getUser()` (pega a la red y sin señal cuelga).
-6. **El SW está apagado en dev:** el offline sólo se prueba con
-   `npm run build && npm run start`.
+6. **El offline NO se puede probar en el teléfono contra `npm run dev`.** Dos
+   cosas lo impiden a la vez, y ninguna avisa: `next.config.mjs` apaga el
+   service worker en desarrollo (`disable: NODE_ENV === 'development'`), y
+   además **un service worker sólo se registra en contexto seguro** — `https://`
+   o `localhost`. Desde el teléfono se entra por `http://192.168.x.x:3000`, que
+   no es ninguno de los dos, así que ahí **no hay service worker ni con el build
+   de producción**.
+   Síntoma: modo avión y la pantalla de error del navegador en cualquier
+   navegación. No es un fallo de la capa offline; es que no existe.
+   Dónde sí se prueba: en la laptop con `npm run build && npm run start` y
+   `localhost`, o **en el teléfono contra la URL de Vercel**, que es HTTPS. Esa
+   segunda es la única prueba que vale para el criterio de cierre, porque es la
+   única que se hace con el dedo.
 7. **Una auditoría se descarga entera antes de entrar a planta.** El plan, sus
    cláusulas, la lista de verificación y los hallazgos previos se precargan en la
    caché al abrir la auditoría con señal. Si esto no pasa, el auditor llega al
@@ -222,7 +254,28 @@ hermano y que **este código puede volver a cometer idéntico**.
   texto, no una garantía.
 
 - **Un `catch` vacío convierte un bug en "error".** Si un guardado puede fallar,
-  el motivo se pinta.
+  el motivo se pinta. Y **pintar «no se pudo guardar» a secas es un `catch` vacío
+  con mejor letra**: quien lo lee no sabe si perdió el dato, si fue un permiso o
+  si basta con reintentar. Si la cola guardó un `motivo`, el motivo va en
+  pantalla.
+
+- **`String(error)` sobre un error de Supabase devuelve `"[object Object]"`.**
+  Ésta no viene de JDM Built: se pagó aquí, y es la peor de la lista. Cuando un
+  `fetch` no sale del teléfono, postgrest-js **no lanza un `Error`**: devuelve un
+  objeto plano `{ message: 'TypeError: Failed to fetch', details, hint, code: '' }`.
+  Un `error instanceof Error ? error.message : String(error)` sobre eso da la
+  cadena `"[object Object]"`, y cualquier cosa que mire el mensaje decide mal en
+  silencio.
+  Lo que rompió: `esFalloDeRed()` clasificaba un corte de red **como rechazo del
+  servidor** al vaciar la cola. Un tropiezo de señal al reconectar —justo lo que
+  pasa al salir de la planta— marcaba las operaciones como RECHAZADAS en vez de
+  dejarlas esperando, y no se volvían a intentar solas. Con treinta hallazgos en
+  la cola, eso son treinta en rojo diciendo «no se pudo guardar» cuando lo único
+  que pasó fue que el semáforo cambió.
+  Receta: **`mensajeDeError()` de `src/lib/supabase/errores.ts`, nunca
+  `String(error)`**. Aplica también a los filtros de Sentry
+  (`instrumentation-client.ts`), que sin ella dejan pasar exactamente el ruido de
+  red que existen para cortar.
 
 - **Un DELETE o UPDATE bloqueado por RLS no es un error.** Un INSERT rechazado
   devuelve 42501 y se ve; un DELETE/UPDATE sobre filas que la política no deja

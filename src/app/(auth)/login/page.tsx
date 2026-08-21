@@ -6,18 +6,18 @@ import { createClient } from '@/lib/supabase/client'
 import { registrarInicioSesion } from '@/lib/queries/sesion'
 import Logo from '@/components/ui/Logo'
 import Button from '@/components/ui/Button'
+import Turnstile from '@/components/auth/Turnstile'
+import { mensajeDeError } from '@/lib/supabase/errores'
 
 /**
  * Entrada a la aplicación.
  *
- * Lo que TODAVÍA NO tiene, y por qué está anotado aquí en vez de dejarlo a la
- * memoria de alguien:
- *
- *  - **Turnstile** [F00·B3]. Supabase limita intentos por su cuenta, pero eso
- *    protege al servidor, no a una cuenta concreta contra un ataque de
- *    diccionario. Falta la llave del sitio en Cloudflare
- *    (guias/04_CLOUDFLARE.md); va antes de que la app tenga datos de clientes
- *    reales.
+ * **Turnstile** [F00·B3] va aquí, pero quien lo comprueba es Supabase: el token
+ * viaja en `options.captchaToken` y se valida contra Cloudflare **antes** de que
+ * la contraseña se mire siquiera. Comprobarlo en el navegador o en una ruta
+ * propia de la app sería decoración — el endpoint de autenticación de Supabase
+ * es público y quien quiera probar contraseñas no va a pasar por esta pantalla.
+ * Ver `src/components/auth/Turnstile.tsx`.
  *
  * El **segundo factor** ya está: esta pantalla no lo pide: quien entra con un
  * rol que lo exige acaba en `/mfa` porque lo manda `src/proxy.ts`. Imponerlo en
@@ -36,6 +36,9 @@ export default function PaginaLogin() {
   const [contrasena, setContrasena] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [entrando, setEntrando] = useState(false)
+  const [token, setToken] = useState<string | null>(null)
+  // Un token de Turnstile es de un solo uso: cada intento fallido pide otro.
+  const [reinicio, setReinicio] = useState(0)
 
   async function entrar(evento: React.FormEvent) {
     evento.preventDefault()
@@ -47,16 +50,30 @@ export default function PaginaLogin() {
       const { error: fallo } = await supabase.auth.signInWithPassword({
         email: correo.trim(),
         password: contrasena,
+        // Sin widget configurado va `undefined` y Supabase ni lo mira. Con la
+        // protección encendida en el panel, sin token no se entra.
+        options: token ? { captchaToken: token } : undefined,
       })
 
       if (fallo) {
-        // ⚠️ El mensaje NO distingue entre "ese correo no existe" y "la
-        // contraseña está mal". Distinguirlos convierte el login en una forma
-        // de averiguar quién trabaja en la firma.
+        setReinicio((n) => n + 1)
+        setToken(null)
+        // Que el captcha esté encendido en Supabase y apagado aquí —o al revés—
+        // da un error que no se parece en nada a su causa, y es el estado en el
+        // que queda la app entre las dos mitades de la tarea A08. Se dice.
+        const esCaptcha = /captcha/i.test(fallo.message)
+
         setError(
-          fallo.message === 'Invalid login credentials'
-            ? 'Correo o contraseña incorrectos.'
-            : 'No se pudo entrar. Inténtalo de nuevo en un momento.',
+          esCaptcha
+            ? 'La comprobación de seguridad no se pudo validar. Si acaba de ' +
+              'activarse, recarga la página; si sigue, avisa a la administración ' +
+              '(guias/04_CLOUDFLARE.md).'
+            : fallo.message === 'Invalid login credentials'
+              // ⚠️ El mensaje NO distingue entre "ese correo no existe" y "la
+              // contraseña está mal": distinguirlos convierte el login en una
+              // forma de averiguar quién trabaja en la firma.
+              ? 'Correo o contraseña incorrectos.'
+              : 'No se pudo entrar. Inténtalo de nuevo en un momento.',
         )
         setEntrando(false)
         return
@@ -96,10 +113,11 @@ export default function PaginaLogin() {
     } catch (fallo) {
       // Falta de red, o Supabase sin configurar. El mensaje del error de
       // configuración es útil y se enseña; el resto se resume.
+      const mensaje = mensajeDeError(fallo)
+      setReinicio((n) => n + 1)
+      setToken(null)
       setError(
-        fallo instanceof Error && fallo.message.startsWith('Falta configurar')
-          ? fallo.message
-          : 'No hay conexión con el servidor.',
+        mensaje.startsWith('Falta configurar') ? mensaje : 'No hay conexión con el servidor.',
       )
       setEntrando(false)
     }
@@ -172,6 +190,8 @@ export default function PaginaLogin() {
               {error}
             </p>
           )}
+
+          <Turnstile alCambiarToken={setToken} reinicio={reinicio} />
 
           <Button
             type="submit"

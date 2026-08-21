@@ -153,3 +153,59 @@ export function IconoArrastrar(p: PropsIcono) {
     </Svg>
   )
 }
+
+/* ── Iconos del tablero ────────────────────────────────────────────────────
+   Uno por widget. No es adorno: el tablero es una rejilla de bloques de texto
+   sin marco, y el icono es lo que deja reconocer cada uno de un vistazo sin
+   llegar a leer el título. docs/05_SISTEMA_DE_DISENO.md §4.5. */
+
+/** Lo guardado en el teléfono que todavía no ha subido. Nube con flecha. */
+export function IconoSenal(p: PropsIcono) {
+  return (
+    <Svg {...p}>
+      <path d="M7 18a4 4 0 0 1-.4-8A5.5 5.5 0 0 1 17.3 9.4 3.8 3.8 0 0 1 17 18" />
+      <path d="M12 21v-8M9 16l3-3 3 3" />
+    </Svg>
+  )
+}
+
+/** El embudo de proyectos por etapa. */
+export function IconoEmbudo(p: PropsIcono) {
+  return (
+    <Svg {...p}>
+      <path d="M3 4h18l-7 8v8l-4-2v-6Z" />
+    </Svg>
+  )
+}
+
+/** Carga del equipo: las personas de la firma. */
+export function IconoEquipo(p: PropsIcono) {
+  return (
+    <Svg {...p}>
+      <circle cx="9" cy="8" r="3.2" />
+      <path d="M3 20a6 6 0 0 1 12 0" />
+      <path d="M16.5 5.6a3.2 3.2 0 0 1 0 4.9M18 14.4A6 6 0 0 1 21 20" />
+    </Svg>
+  )
+}
+
+/** Fechas: contratos por renovar, próxima visita. */
+export function IconoCalendario(p: PropsIcono) {
+  return (
+    <Svg {...p}>
+      <rect x="3" y="5" width="18" height="16" rx="2" />
+      <path d="M3 10h18M8 3v4M16 3v4" />
+      <path d="M8 14h.01M12 14h.01M16 14h.01M8 17.5h.01M12 17.5h.01" />
+    </Svg>
+  )
+}
+
+/** Lo que hay que mirar antes de que sea tarde: hallazgos abiertos. */
+export function IconoAlerta(p: PropsIcono) {
+  return (
+    <Svg {...p}>
+      <path d="M10.3 3.9 2.5 17.4A2 2 0 0 0 4.2 20.5h15.6a2 2 0 0 0 1.7-3.1L13.7 3.9a2 2 0 0 0-3.4 0Z" />
+      <path d="M12 9v4.5M12 17h.01" />
+    </Svg>
+  )
+}

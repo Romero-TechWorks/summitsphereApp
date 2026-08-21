@@ -15,6 +15,28 @@
 
 import type { Rol } from '@/lib/auth/roles'
 
+/**
+ * Qué icono lo encabeza.
+ *
+ * ⚠️ Es una **unión de literales**, no un `string`. El tablero no tiene marcos:
+ * cada widget es un bloque de texto flotante, y el icono es lo único que lo
+ * hace reconocible antes de leerlo. Con `string`, un nombre mal escrito daría
+ * `undefined` al indexar el mapa de iconos y —como los widgets se pintan en
+ * bucle— se llevaría el tablero entero por delante, que es exactamente la
+ * trampa heredada de CLAUDE.md. Con la unión, eso no compila.
+ */
+export type NombreIcono =
+  | 'senal'
+  | 'embudo'
+  | 'cartera'
+  | 'equipo'
+  | 'calendario'
+  | 'documento'
+  | 'auditoria'
+  | 'alerta'
+  | 'accion'
+  | 'cumplimiento'
+
 export type Widget = {
   id: string
   titulo: string
@@ -24,6 +46,7 @@ export type Widget = {
   fase: number
   /** Quién lo ve. Un widget sin rol no lo pinta nadie. */
   roles: readonly Rol[]
+  icono: NombreIcono
 }
 
 const TODOS: readonly Rol[] = ['socio', 'consultor', 'auditor', 'administracion', 'cliente']
@@ -35,6 +58,7 @@ export const WIDGETS: readonly Widget[] = [
     descripcion: 'Lo que levantaste sin conexión y todavía no ha subido.',
     fase: 0,
     roles: TODOS,
+    icono: 'senal',
   },
   {
     id: 'embudo_proyectos',
@@ -42,6 +66,7 @@ export const WIDGETS: readonly Widget[] = [
     descripcion: 'Cuántos proyectos hay en cada una de las seis etapas de la metodología.',
     fase: 1,
     roles: ['socio'],
+    icono: 'embudo',
   },
   {
     id: 'mis_proyectos',
@@ -49,6 +74,7 @@ export const WIDGETS: readonly Widget[] = [
     descripcion: 'Los clientes que llevas, con su etapa y su próxima entrega.',
     fase: 1,
     roles: ['consultor', 'auditor'],
+    icono: 'cartera',
   },
   {
     id: 'carga_equipo',
@@ -56,6 +82,7 @@ export const WIDGETS: readonly Widget[] = [
     descripcion: 'Cuántos proyectos abiertos lleva cada consultor de la firma.',
     fase: 1,
     roles: ['socio'],
+    icono: 'equipo',
   },
   {
     id: 'contratos_por_renovar',
@@ -63,6 +90,7 @@ export const WIDGETS: readonly Widget[] = [
     descripcion: 'Proyectos cuyo contrato termina en los próximos 60 días.',
     fase: 1,
     roles: ['socio', 'administracion'],
+    icono: 'calendario',
   },
   {
     id: 'documentos_por_aprobar',
@@ -70,6 +98,7 @@ export const WIDGETS: readonly Widget[] = [
     descripcion: 'Lo que está esperando tu firma en el control documental.',
     fase: 2,
     roles: ['consultor', 'socio'],
+    icono: 'documento',
   },
   {
     id: 'mis_auditorias',
@@ -77,6 +106,7 @@ export const WIDGETS: readonly Widget[] = [
     descripcion: 'Las que tienes programadas, y cuáles ya puedes trabajar sin señal.',
     fase: 3,
     roles: ['auditor', 'socio'],
+    icono: 'auditoria',
   },
   {
     id: 'hallazgos_abiertos',
@@ -84,6 +114,7 @@ export const WIDGETS: readonly Widget[] = [
     descripcion: 'Lo que levantaste y sigue sin cerrarse, por antigüedad.',
     fase: 3,
     roles: ['auditor', 'consultor', 'socio'],
+    icono: 'alerta',
   },
   {
     id: 'proxima_visita',
@@ -91,6 +122,7 @@ export const WIDGETS: readonly Widget[] = [
     descripcion: 'A dónde vas, cuándo, y qué tienes que llevar preparado.',
     fase: 3,
     roles: ['consultor', 'auditor'],
+    icono: 'calendario',
   },
   {
     id: 'acciones_semana',
@@ -98,6 +130,7 @@ export const WIDGETS: readonly Widget[] = [
     descripcion: 'Las acciones correctivas que vencen en los próximos siete días.',
     fase: 4,
     roles: ['consultor', 'socio'],
+    icono: 'accion',
   },
   {
     id: 'vencimientos_criticos',
@@ -105,6 +138,7 @@ export const WIDGETS: readonly Widget[] = [
     descripcion: 'Obligaciones normativas de la cartera que vencen este mes.',
     fase: 5,
     roles: ['socio', 'consultor'],
+    icono: 'cumplimiento',
   },
 ]
 

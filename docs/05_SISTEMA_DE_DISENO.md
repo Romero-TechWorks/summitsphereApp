@@ -216,6 +216,24 @@ hallazgo, una acción, una obligación.
   de ítems que se recorre con el pulgar. Cada tarjeta cuesta 24px de aire que en
   un teléfono son dos ítems menos por pantalla. Van filas separadas por línea, con
   el veredicto a la derecha.
+- **El tablero** (`/`). Nueve recuadros blancos sobre el fondo claro compiten
+  entre sí y no gana ninguno: la portada de la firma se lee como una cuadrícula
+  de cajas vacías. Cada widget es **texto flotando sobre el fondo**, encabezado
+  por su icono y **delimitado por debajo con el verde de Summit** — una hairline
+  de `rgba(61,186,78,.16)` de lado a lado y encima un tramo en degradado de
+  `--verde-hondo` a `--verde` que crece al pasar por encima. El marco (fondo,
+  sombra, radio) aparece **sólo mientras se arrastra**, que es el único momento
+  en que hace falta ver el bloque como un objeto que se toma con la mano.
+  `src/components/tablero/RejillaTablero.tsx`.
+
+  ⚠️ Sin marcos, **el aire es la separación**: el `gap` de la rejilla es lo único
+  que dice dónde termina un widget y empieza el siguiente. Bajarlo a los 12px de
+  una rejilla de tarjetas devuelve el amontonamiento que este diseño evita.
+
+  ⚠️ Y el icono deja de ser adorno: es lo que hace reconocible cada bloque antes
+  de leer el título. Por eso el catálogo lo exige (`NombreIcono` es una unión de
+  literales, no un `string`) y por eso el mapa de iconos no puede devolver
+  `undefined` — los widgets se pintan en bucle y uno roto se lleva los nueve.
 
 ### §4.4 · Eliminar, dos formas
 

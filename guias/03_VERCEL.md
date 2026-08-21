@@ -256,11 +256,26 @@ mes contra una hora de consultor.
 
 ---
 
+⚠️ **Cargar una variable NO la aplica al despliegue que ya está en línea.** Las
+`NEXT_PUBLIC_*` se incrustan en el código durante el build, y `src/proxy.ts` corre
+en el Edge, donde no hay proceso que las lea en caliente. Después de cargarlas o
+cambiarlas hay que **redesplegar**: Deployments → el último → `⋯` → *Redeploy*, o
+cualquier `git push`.
+
+Síntoma exacto de olvidarlo: la app responde **503** con el texto *«SummitApp no
+está configurada todavía»* y la lista de las variables que faltan, **aunque estén
+cargadas y bien escritas en el panel**. Es el mismo mensaje que si no existieran,
+porque para ese build no existen.
+
 ## §8 · Verificar
 
-- [ ] Proyecto `summit-app` conectado al repositorio
-- [ ] Variables cargadas en **Production, Preview y Development**
-- [ ] `app.summit-sphere.com` asignado y con certificado (candado)
+- [x] Proyecto `summit-app` conectado al repositorio
+- [x] Variables cargadas en **Production, Preview y Development**
+- [ ] `app.summit-sphere.com` asignado y con certificado (candado) — **aplazado
+      a propósito**: mientras dure la fase de pruebas se trabaja contra
+      `summit-sphere.vercel.app`, que ya es HTTPS y sirve para todo, incluido
+      probar la PWA y el offline en el teléfono. El dominio se conecta al final
+      (ver la nota de §5)
 - [ ] En Cloudflare, el CNAME `app` con la **nube gris**
 - [ ] `vercel.json` con los dos crons, en la raíz
 - [ ] Un push a `main` despliega solo

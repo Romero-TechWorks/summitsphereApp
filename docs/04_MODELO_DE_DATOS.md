@@ -121,6 +121,12 @@ organización cliente — igual que `usuarios`. Su política es
 trigger de bitácora: arrastrar un widget no es un acto auditable, y engancharlo
 llenaría `audit_logs` de ruido en la tabla que más se escribe.
 
+Por eso está declarada en la lista `EXENTAS` de `.github/workflows/rls-check.yml`,
+junto a `usuarios` y los catálogos globales. **Esa lista y esta tabla se cambian
+juntas**: si no, la auditoría de aislamiento avisa de una tabla sin `org_id` en
+cada corrida y el aviso se vuelve ruido que todos aprenden a ignorar — que es
+justo lo que no puede pasar con la comprobación que vigila la regla 1.
+
 ### Funciones — Fase 00
 
 ```sql

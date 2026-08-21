@@ -6,6 +6,7 @@ import { esRol } from '@/lib/auth/roles'
 import { queryKeys } from '@/lib/query/keys'
 import { guardarOrdenTablero, obtenerOrdenTablero } from '@/lib/queries/tablero'
 import { obtenerUsuarioActual } from '@/lib/queries/usuarios'
+import { mensajeDeError } from '@/lib/supabase/errores'
 import { widgetsOrdenados } from '@/lib/tablero/widgets'
 import RejillaTablero from '@/components/tablero/RejillaTablero'
 import Badge from '@/components/ui/Badge'
@@ -72,7 +73,10 @@ export default function Tablero() {
       // cambio y se dice por qué: un tablero que se reacomoda solo al refrescar,
       // sin explicación, es peor que uno que no se deja mover.
       cliente.setQueryData(clave, anterior)
-      setError(fallo instanceof Error ? fallo.message : 'No se pudo guardar el orden del tablero.')
+      // ⚠️ `mensajeDeError` y no `fallo instanceof Error`: un rechazo de
+      // PostgREST llega como objeto plano, y el `instanceof` lo dejaría caer en
+      // el mensaje genérico — que no dice nada y manda a adivinar.
+      setError(mensajeDeError(fallo))
     }
   }
 
@@ -109,12 +113,12 @@ export default function Tablero() {
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
-            gap: 12,
+            gridTemplateColumns: 'repeat(auto-fill, minmax(272px, 1fr))',
+            gap: '26px 32px',
           }}
         >
           {[0, 1, 2, 3].map((i) => (
-            <Skeleton key={i} alto={132} radio={6} />
+            <Skeleton key={i} alto={104} radio={4} />
           ))}
         </div>
       ) : falloPerfil ? (
@@ -122,9 +126,7 @@ export default function Tablero() {
           <EstadoVacio
             titulo="No se pudo leer tu perfil"
             descripcion={
-              falloPerfil instanceof Error
-                ? falloPerfil.message
-                : 'Intenta de nuevo cuando vuelva la conexión.'
+              mensajeDeError(falloPerfil)
             }
           />
         </Recuadro>

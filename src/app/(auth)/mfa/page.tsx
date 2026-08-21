@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Logo from '@/components/ui/Logo'
 import Button from '@/components/ui/Button'
+import { mensajeDeError } from '@/lib/supabase/errores'
 
 /**
  * El segundo factor (F00·B3 · docs/08_SEGURIDAD_Y_RLS.md §1).
@@ -88,12 +89,12 @@ export default function PaginaMfa() {
       // ⚠️ Nada de `catch` vacío: si esto falla, la persona no entra a la app y
       // tiene que poder decir por qué. El caso frecuente tiene nombre propio y
       // no es un error del código, es una casilla sin marcar en Supabase.
-      const mensaje = fallo instanceof Error ? fallo.message : ''
+      const mensaje = mensajeDeError(fallo)
       setError(
         /disabled|not enabled|unsupported/i.test(mensaje)
           ? 'El segundo factor no está habilitado en Supabase todavía: ' +
             'Authentication → Multi-Factor Authentication → TOTP (guias/02_SUPABASE.md §3).'
-          : mensaje || 'No se pudo preparar el segundo factor.',
+          : mensaje,
       )
       setModo('roto')
     }

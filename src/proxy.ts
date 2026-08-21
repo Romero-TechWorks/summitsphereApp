@@ -170,12 +170,24 @@ async function faltaSegundoFactor(
  * `worker-*` y `swe-worker-*` van por separado a propósito: los dos patrones se
  * anclan al inicio de la ruta, así que `worker-.*` no cubre a `swe-worker-*`.
  *
+ * `fallback-*` es el módulo que el plugin genera para la pantalla de respaldo
+ * sin conexión, y lo carga el propio `sw.js` con `importScripts`. Si el guard lo
+ * redirigiera, **la instalación entera del service worker fallaría** — no sólo
+ * la pantalla de respaldo: la app se quedaría sin capa offline y sin ningún
+ * error que apunte a esta lista.
+ *
  * `monitoring` es el túnel de Sentry: va sin sesión a propósito (ver
  * `next.config.mjs`). Los dos cambios se hacen juntos SIEMPRE.
  *
  * `api/cron` queda fuera porque lo dispara Vercel, no un navegador: llega sin
  * sesión y el guard lo mandaría a `/login`, así que la tarea nunca correría. Se
  * autentica sola con `CRON_SECRET`. El resto de `/api` sí pasa por aquí.
+ *
+ * `~offline` es la pantalla de respaldo del service worker (ver
+ * `next.config.mjs`): se pinta **cuando no hay red**, así que no puede depender
+ * de una sesión que en ese momento no se puede validar. Y el worker la precachea
+ * pidiéndola por HTTP al instalarse: si el guard respondiera con la redirección
+ * a `/login`, lo que quedaría guardado como pantalla de respaldo sería el login.
  *
  * `portal` es el portal del cliente [Fase 06]: es **público por definición** —lo
  * abre el responsable de calidad del cliente desde una liga que le llegó por
@@ -188,6 +200,6 @@ async function faltaSegundoFactor(
  */
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|manifest.json|monitoring|api/cron|portal|sw\\.js|workbox-.*\\.js|worker-.*\\.js|swe-worker-.*\\.js|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|js\\.map)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|manifest.json|monitoring|api/cron|portal|~offline|sw\\.js|workbox-.*\\.js|worker-.*\\.js|swe-worker-.*\\.js|fallback-.*\\.js|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|js\\.map)$).*)',
   ],
 }
