@@ -384,8 +384,24 @@ componentes similares del mismo módulo antes de crear uno nuevo; (5) si el camb
 afecta comportamiento documentado, actualiza el documento en el mismo commit.
 
 **Después:** (1) `npm run lint`; (2) `npm run build` (usa `--webpack`, no lo
-cambies); (3) commit `feat|fix|chore: descripción corta`; (4) `git push` — Vercel
-despliega solo.
+cambies); (3) deja el árbol de trabajo listo y **avisa de qué cambió**.
+
+⚠️ **EL COMMIT Y EL PUSH LOS HACE EL DUEÑO. SIEMPRE. Un agente no los ejecuta.**
+
+No es una preferencia de estilo. Cada `push` a `main` **despliega a producción**
+en Vercel sin que nadie más lo revise, y este repositorio contiene el sistema con
+el que una firma de auditoría lleva los expedientes de sus clientes. Quien firma
+lo que sale a producción tiene que ser una persona, y tiene que haberlo mirado.
+
+Qué hacer en su lugar: dejar los archivos escritos, `lint` y `build` en verde, y
+**decir en un párrafo qué se cambió y qué falta por verificar**. Si un cambio
+necesita ir acompañado de otra cosa —una migración por aplicar, una variable de
+entorno, un paso en un panel—, se dice ahí mismo, porque el dueño va a decidir el
+orden.
+
+Vale igual para todo lo que empuja hacia fuera: `git push`, `supabase db push`,
+aplicar una migración a la base remota, `vercel deploy`. Se preparan y se
+explican; los dispara él.
 
 **Idioma:** el producto, la interfaz, los nombres de columna, los comentarios y
 los commits van **en español**. Es el idioma de la firma y de sus clientes. Sin
