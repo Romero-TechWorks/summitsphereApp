@@ -240,14 +240,55 @@ Línea de tiempo: visitas, entregas, cambios de etapa, acuerdos.
 ⚠️ Sin `DELETE` y sin trigger de bitácora: **ya es una bitácora**. Una entrada
 equivocada se corrige con otra entrada, y sólo su autor —o un socio— la edita.
 
+## `tareas_etapa`
+El checklist de la metodología dentro de un proyecto [F01·B5].
+
+| Columna | Tipo | Nota |
+|---|---|---|
+| `proyecto_id` | uuid FK | |
+| `etapa` | text CHECK | Las **mismas seis** de `proyectos.etapa` |
+| `titulo` | text NOT NULL | |
+| `detalle` | text | |
+| `orden` | int | El orden dentro de su etapa |
+| `estado` | text CHECK | `pendiente` · `en_curso` · `hecha` · `no_aplica` |
+| `responsable_id` | uuid FK usuarios | |
+| `fecha_compromiso` | date | |
+| `hecha_en` | timestamptz · `hecha_por` uuid FK | Quién la cerró y cuándo. **Los escribe el trigger `sellar_tarea_hecha()`**, no el cliente |
+
+⚠️ **`exige_evidencia` llega en F02·B2b**, con los adjuntos: una casilla que no
+puede impedir nada todavía es un interruptor muerto (regla 11).
+
+⚠️ **No es la tabla `tareas` de la Fase 04.** Aquélla son los pasos de una acción
+correctiva: nace de un hallazgo, lleva verificación de eficacia y la audita un
+tercero. Ésta es trabajo interno de la firma. Unirlas dejaría media fila vacía en
+cada caso y obligaría a explicarle a un auditor por qué su acción correctiva vive
+en la misma tabla que «mandar la propuesta por correo».
+
+⚠️ **`etapa` repite el CHECK de `proyectos.etapa`, y los dos se mueven juntos** —
+igual que `src/lib/cartera/catalogos.ts`. Una tarea colgada de una etapa que ya no
+existe no se pinta en ningún sitio y nadie la vuelve a ver.
+
+⚠️ La **plantilla** por tipo de proyecto no es una tabla: vive en
+`config_firma.plantillas` (jsonb), que ya existe, y se instancia al abrir el
+proyecto. Después se edita libremente — ningún cliente es igual a la plantilla.
+
 ### Funciones y triggers — Fase 01
 
 ```sql
 puedo_editar_org(uuid)        -- boolean, STABLE, SECURITY DEFINER. Excluye al papel `lectura`
+puedo_borrar_org(uuid)        -- boolean. Fase 01: sólo socio. ⚠️ AMPLIAR en F02/F03
+puedo_borrar_proyecto(uuid)   -- boolean. Fase 01: sólo socio. ⚠️ AMPLIAR en F03
 heredar_org_del_proyecto()    -- trigger BEFORE: la org de lo que cuelga de un proyecto
 validar_sitio_del_proyecto()  -- trigger BEFORE: el sitio del alcance es de ese cliente
 registrar_cambio_etapa()      -- trigger AFTER: mover de etapa escribe en la bitácora
+sellar_tarea_hecha()          -- trigger BEFORE: quién cerró una tarea y cuándo
 ```
+
+⚠️ **`puedo_borrar_*()` existe para tener UN sitio que ampliar.** Hoy sólo
+comprueba que quien borra sea socio, porque lo único que cuelga de una
+organización es su propia cartera. El día que existan `documentos`,
+`auditorias` y `hallazgos`, borrar una organización que los tenga sería destruir
+evidencia — y la condición se agrega ahí dentro, no en cinco políticas.
 
 ⚠️ **`registrar_cambio_etapa()` lo hace la BASE y no la app.** Sin señal, el
 `UPDATE` del proyecto y el `INSERT` de la bitácora saldrían como dos operaciones
@@ -311,6 +352,7 @@ El control documental. El corazón de un SGC.
 | `titulo` | text | |
 | `tipo` | text CHECK | `manual` · `procedimiento` · `instructivo` · `formato` · `registro` · `politica` · `plan` · `externo` |
 | `proceso_id` | uuid FK | Proceso dueño |
+| `proyecto_id` | uuid FK NULL | Qué contrato lo produjo. La biblioteca se puede mirar entera o por proyecto |
 | `version_vigente_id` | uuid FK | |
 | `estado` | text CHECK | `vigente` · `obsoleto` · `en_elaboracion` |
 
@@ -321,13 +363,38 @@ El control documental. El corazón de un SGC.
 | `documento_id` | uuid FK | |
 | `version` | text | `1.0`, `2.0` |
 | `estado` | text CHECK | `borrador` · `en_revision` · `aprobado` · `obsoleto` |
-| `archivo_url` | text | Bucket privado `documentos` |
+| `archivo_url` | text | El original, en el bucket privado `documentos`. **Nunca se tira** |
+| `markdown` | text | La misma versión convertida a Markdown: lo que se lee y se edita en la app, y lo que leerá el asistente [Fase 07] |
+| `origen_markdown` | text CHECK | `docx` · `pdf` · `escrito` — de dónde salió, y por tanto cuánto fiarse |
+| `avisos_conversion` | text[] | Qué no sobrevivió: tablas, imágenes, numeración automática |
 | `elaboro_id`, `reviso_id`, `aprobo_id` | uuid FK | |
 | `fecha_elaboracion`, `fecha_aprobacion`, `fecha_vigencia` | date | |
 | `control_cambios` | text | Qué cambió respecto a la versión anterior |
 
 ⚠️ **Nunca se sobrescribe una versión aprobada.** Aprobar una nueva marca la
 anterior `obsoleto` y la conserva. Un auditor externo pide exactamente eso.
+Editar el Markdown de una versión aprobada **crea la siguiente**, no la modifica.
+
+⚠️ **El Markdown es una representación, no el documento.** Lo que firmó el
+cliente es el archivo original; el `.md` sirve para leerlo en el teléfono,
+editarlo sin Word y dárselo al asistente sin volver a procesarlo. Si los dos
+discrepan, manda el original.
+
+## `adjuntos`
+Cola propia, bucket privado [F02·B2b, adelantado desde la Fase 04].
+
+| Columna | Tipo | Nota |
+|---|---|---|
+| `tarea_etapa_id`, `tarea_id`, `accion_id`, `hallazgo_id`, `documento_id`, `obligacion_id` | uuid FK NULL | ⚠️ Se filtra con `campoDominante()`, **nunca con un OR** (§8.8) |
+| `ruta` | text | Ruta en Storage |
+| `nombre`, `tipo_mime`, `tamano` | | |
+| `titulo` | text | Lo que el usuario escribe |
+| `subido_desde` | text CHECK | `app` · `portal` · `correo` — el portal deja rastro distinto |
+
+⚠️ **La cadena del campo dominante crece por delante, no por detrás**: la tarea de
+etapa es más específica que la acción, y la acción más que el hallazgo. Si un
+adjunto llegara con dos, gana el primero de la lista — y por eso el orden se
+escribe una sola vez, en `campoDominante()`.
 
 ## `documento_clausulas`
 Qué cláusula cubre qué documento. Alimenta la matriz de requisitos.
@@ -484,16 +551,9 @@ del navegador. Es el error más común en los SGC reales.
 ## `tareas`
 Los pasos de una acción: descripción, responsable, fecha, estado, orden.
 
-## `adjuntos`
-Cola propia, bucket privado.
-
-| Columna | Tipo | Nota |
-|---|---|---|
-| `tarea_id`, `accion_id`, `hallazgo_id`, `documento_id`, `obligacion_id` | uuid FK NULL | ⚠️ Se filtra con `campoDominante()`, **nunca con un OR** (§8.8) |
-| `ruta` | text | Ruta en Storage |
-| `nombre`, `tipo_mime`, `tamano` | | |
-| `titulo` | text | Lo que el usuario escribe |
-| `subido_desde` | text CHECK | `app` · `portal` · `correo` — el portal deja rastro distinto |
+⚠️ **`adjuntos` ya no se crea aquí: se adelantó a la Fase 02** (F02·B2b). Lo que
+esta fase agrega es su uso desde las acciones — la evidencia que cierra una
+acción correctiva y la que respalda su verificación de eficacia.
 
 ---
 

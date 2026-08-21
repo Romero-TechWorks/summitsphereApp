@@ -16,6 +16,7 @@ import {
   type ProyectoConLider,
 } from '@/lib/queries/proyectos'
 import {
+  ESTADOS_ARCHIVADOS_PROYECTO,
   ESTADOS_PROYECTO,
   ETAPAS_PROYECTO,
   TIPOS_PROYECTO,
@@ -26,6 +27,7 @@ import {
 import Aviso from '@/components/ui/Aviso'
 import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
+import Checkbox from '@/components/ui/Checkbox'
 import EstadoVacio from '@/components/ui/EstadoVacio'
 import Lista, { Fila } from '@/components/ui/Lista'
 import Modal from '@/components/ui/Modal'
@@ -48,11 +50,13 @@ export default function PanelProyectos({
   sitios,
   equipo,
   puedoEditar,
+  esSocio,
 }: {
   orgId: string
   sitios: Sitio[]
   equipo: MiembroEquipo[]
   puedoEditar: boolean
+  esSocio: boolean
 }) {
   const cliente = useQueryClient()
   const ruta = usePathname()
@@ -60,6 +64,7 @@ export default function PanelProyectos({
   const abierto = params.get('proyecto')
 
   const [modal, setModal] = useState(false)
+  const [verCerrados, setVerCerrados] = useState(false)
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -115,6 +120,7 @@ export default function PanelProyectos({
         sitios={sitios}
         equipo={equipo}
         puedoEditar={puedoEditar}
+        esSocio={esSocio}
         volverHref={volverHref}
       />
     )
@@ -124,11 +130,25 @@ export default function PanelProyectos({
     <>
       {/* La acción vive dentro del panel, no en el encabezado de la página:
           el modal y su estado son de aquí, igual que en `PanelEquipo`. */}
-      {puedoEditar && proyectos.length > 0 && (
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
-          <Button variante="primario" onClick={() => { setError(null); setModal(true) }}>
-            Nuevo proyecto
-          </Button>
+      {proyectos.length > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', marginBottom: 12 }}>
+          {/* Cerrados y cancelados escondidos por defecto: un cliente de tres
+              años acumula proyectos que ya no se tocan (F01·B6). */}
+          {proyectos.some((p) => ESTADOS_ARCHIVADOS_PROYECTO.includes(p.estado)) ? (
+            <Checkbox
+              etiqueta="Ver cerrados y cancelados"
+              checked={verCerrados}
+              onChange={(e) => setVerCerrados(e.target.checked)}
+            />
+          ) : (
+            <span />
+          )}
+
+          {puedoEditar && (
+            <Button variante="primario" onClick={() => { setError(null); setModal(true) }}>
+              Nuevo proyecto
+            </Button>
+          )}
         </div>
       )}
 
@@ -148,7 +168,9 @@ export default function PanelProyectos({
         />
       ) : (
         <Lista etiqueta="Proyectos del cliente">
-          {proyectos.map((proyecto) => (
+          {proyectos
+            .filter((p) => verCerrados || !ESTADOS_ARCHIVADOS_PROYECTO.includes(p.estado))
+            .map((proyecto) => (
             <Fila
               key={proyecto.id}
               href={`${ruta}?tab=proyectos&proyecto=${proyecto.id}`}
@@ -173,8 +195,8 @@ export default function PanelProyectos({
                   {etiquetaDe(ESTADOS_PROYECTO, proyecto.estado)}
                 </Badge>
               }
-            />
-          ))}
+              />
+            ))}
         </Lista>
       )}
 

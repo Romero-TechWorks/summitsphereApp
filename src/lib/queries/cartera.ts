@@ -533,3 +533,52 @@ export async function quitarDelEquipo(
     offline: filtro,
   })
 }
+
+/**
+ * Borrar una organización. **De verdad, y con todo lo que cuelga.**
+ *
+ * ⚠️ Esto no afloja la regla 13, la delimita. Un hallazgo, una versión aprobada
+ * y la bitácora no se borran nunca; **un cliente capturado por error, sí** — la
+ * alternativa real es una cartera llena de datos de prueba que nadie puede
+ * quitar, y una app que se ensucia sola se deja de usar.
+ *
+ * Tres candados, y sólo uno está en esta pantalla:
+ *
+ * 1. **Sólo el socio**, impuesto por la política `organizaciones_delete` a
+ *    través de `puedo_borrar_org()`.
+ * 2. La interfaz **exige escribir la razón social** antes de habilitar el botón.
+ * 3. **Queda en `audit_logs`**, que es inmutable, con la fila entera en `antes`.
+ *    Lo borrado se puede reconstruir; lo que se pierde es el expediente vivo.
+ *
+ * ⚠️ **Se lleva por delante sitios, contactos, proyectos, alcance, tareas y
+ * bitácora**, por el `ON DELETE CASCADE` de sus claves foráneas. Quien llame a
+ * esto tiene que haberlo dicho en pantalla, con nombres y cantidades.
+ *
+ * ⚠️ Y en la Fase 02 y la 03 hay que **ampliar `puedo_borrar_org()`**: una
+ * organización con documentos, auditorías o hallazgos deja de poder borrarse.
+ */
+export async function eliminarOrganizacion(
+  organizacion: Organizacion,
+): Promise<ResultadoEscritura<{ id: string }>> {
+  const filtro = { id: organizacion.id }
+
+  return offlineWrite<{ id: string }>({
+    tabla: 'organizaciones',
+    operacion: 'delete',
+    etiqueta: `Eliminar la organización ${organizacion.razon_social}`,
+    filtro,
+    online: async () => {
+      const supabase = createClient()
+      const { data, error } = await supabase
+        .from('organizaciones')
+        .delete()
+        .eq('id', organizacion.id)
+        .select('id')
+      if (error) throw error
+      // ⚠️ Cero filas es el RLS diciendo que no: sin ser socio, el DELETE
+      // devuelve 200 y una lista vacía, y la pantalla diría que se borró.
+      return exigirFilas(data, 'Eliminar la organización')[0]
+    },
+    offline: filtro,
+  })
+}

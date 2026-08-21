@@ -5,7 +5,7 @@ La estructura completa y sus razones están en
 
 ⚠️ Antes de tocar nada, lee [`../CLAUDE.md`](../CLAUDE.md).
 
-## Lo que ya existe — Fase 00 completa y F01·B0, B1, B2 y B2b
+## Lo que ya existe — Fase 00 y Fase 01 completas (B0 → B6)
 
 ```
 src/
@@ -33,22 +33,25 @@ src/
     cartera/                  PantallaCartera · ExpedienteOrganizacion ·
                               DirectorioContactos · PanelEquipo ·
                               PanelProyectos · DetalleProyecto · PanelAlcance ·
+                              PanelTareas · PanelBitacora ·
                               ListaProyectosCartera · formularios
     ui/                       Button · Badge · Skeleton · EstadoVacio · Logo ·
                               Iconos · EncabezadoPagina · Aviso · Lista ·
                               Campo · Input · Select · Textarea · Checkbox ·
-                              Modal · Pestanas
+                              Modal · Pestanas · ConfirmarBorrado
     ProveedorConsultas.tsx    React Query + caché persistida
   lib/
     navegacion.ts             los destinos, en un solo sitio
     auth/roles.ts             los cinco roles, espejo del CHECK de la base
     supabase/                 entorno · client · server · admin · errores
     query/                    keys.ts (⚠️ TODAS las claves) · cliente · cache
-    queries/                  sesion · usuarios · tablero · cartera · proyectos · normas
+    queries/                  sesion · usuarios · tablero · cartera · proyectos ·
+                              normas · tareas · bitacora
     normas/importador.ts      analizador del catálogo (.md → normas)
     cartera/catalogos.ts      los CHECK de la base, en TypeScript
     offline/                  idb · cola · mutate · sync · persistencia · estado
-    tablero/widgets.ts        el catálogo de widgets por rol
+    tablero/                  widgets.ts (catálogo por rol) · calculos.ts
+                              (⚠️ los widgets se calculan en memoria, sin vistas)
     utils/                    appScroll · uuid · a11y · dates · texto · useEsMovil
   types/database.ts           generado con `npx supabase gen types`
 ```
@@ -62,7 +65,8 @@ controles, no contenedores. [`../docs/05_SISTEMA_DE_DISENO.md`](../docs/05_SISTE
 
 | Carpeta | Bloque | Qué va |
 |---|---|---|
-| bitácora del proyecto | F01·B4 | Línea de tiempo por proyecto |
+| `lib/documentos/` | F02 | Control documental y Markdown (`.docx`/PDF ↔ `.md`) |
+| `lib/offline/adjuntos.ts` | F02·B2b | Cola de adjuntos, adelantada desde F04 |
 | `lib/normas/` (NOMs) | F05 | Catálogo de obligaciones normativas |
 | `lib/plantillas/` | F03 | Entregables imprimibles |
 | `app/api/` | F04 en adelante | users · push · cron · fiscal · asistente · graph |

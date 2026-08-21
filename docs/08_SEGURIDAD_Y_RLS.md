@@ -24,6 +24,23 @@ adentro. **Aquí eso sería una fuga.**
 no vea los hallazgos de un cliente no es desconfianza: es reducir la superficie.
 Un hallazgo filtrado de una planta es un problema para el cliente y para la firma.
 
+⚠️ **PENDIENTE DE DECIDIR, y se nota en cuanto exista la primera cuenta de
+administración.** Esta tabla dice que `administracion` ve *los datos comerciales
+de toda la cartera*, pero **las políticas no lo contemplan**: filtran por
+`mis_organizaciones()` o `es_socio()`, así que una cuenta de administración sin
+asignaciones no ve **nada** — y su widget «contratos por renovar» sale vacío sin
+explicar por qué. Dos salidas, y hay que elegir una antes de la Fase 06
+(facturación):
+
+1. **Una función `es_administracion()`** en la rama de SELECT de las tablas
+   comerciales (`organizaciones`, `proyectos`) y en ninguna otra. Cumple lo que
+   dice la tabla y deja fuera los expedientes técnicos.
+2. **Asignar a esa cuenta las organizaciones que le tocan**, como a cualquiera.
+   Más simple y más estricto; a cambio, alguien tiene que mantener la lista.
+
+Hasta que se decida, una cuenta de administración se comporta como un consultor
+sin clientes asignados.
+
 El MFA se **impone en `src/proxy.ts`**, no en la interfaz: sin `aal2` en el JWT,
 un `socio` no llega a ninguna ruta que no sea `/mfa`.
 

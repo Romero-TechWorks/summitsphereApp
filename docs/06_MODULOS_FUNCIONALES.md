@@ -83,10 +83,27 @@ su alcance —normas × sitios— en dos grupos de casillas que guardan al momen
 `/cartera?tab=proyectos` enseña los de toda la cartera, con filtros por estado y
 por etapa.
 
+### Tareas por etapa `[Fase 01]`
+Dentro de un proyecto, **una lista desplegable por cada una de las seis etapas**
+con lo que la metodología de Summit manda hacer ahí. Se marcan conforme se
+cumplen, cada etapa enseña su avance (`4/7`) y se pinta en verde cuando lo
+obligatorio está hecho.
+
+Las tareas salen de una **plantilla por tipo de proyecto** —la metodología no se
+re-teclea en cada cliente— y después se editan libremente. Las que exigen
+evidencia no se pueden dar por hechas sin un adjunto.
+
+⚠️ **Cerrar las tareas de una etapa no mueve el proyecto de etapa.** La app lo
+propone; avanzar lo decide el consultor y queda en la bitácora con su nombre.
+
 ### Bitácora del proyecto
 La línea de tiempo: visitas, entregas, cambios de etapa, acuerdos, incidencias. Es
 lo primero que se abre antes de una reunión con el cliente, y hoy vive en la
 memoria del consultor y en un hilo de correo.
+
+Se anota en la visita —también sin señal— y **los cambios de etapa se escriben
+solos**. Una entrada se corrige, nunca se borra: la corrige quien la escribió, o
+un socio.
 
 ---
 
@@ -103,6 +120,8 @@ normas cargadas no se puede decir qué cubre un contrato.
 
 ### Documentos — control documental
 Lo que un cliente cree que está comprando cuando contrata una implementación.
+Es **la biblioteca del cliente**, y se puede mirar entera o filtrada por el
+proyecto que la produjo.
 
 - Un documento tiene **código, tipo, proceso dueño y cláusulas que cubre**.
 - Cada revisión es una **versión** con su ciclo
@@ -111,6 +130,12 @@ Lo que un cliente cree que está comprando cuando contrata una implementación.
 - ⚠️ **Aprobar una versión nueva no borra la anterior: la marca obsoleta y la
   conserva.** Un auditor externo pide justamente el histórico.
 - La **lista maestra de documentos** sale sola y es un entregable en sí mismo.
+- **Se sube en Word o en PDF y se lee en la app.** Cada versión guarda su
+  Markdown además del archivo original: se lee con formato en el teléfono, se
+  edita sin abrir Word —editar crea la versión siguiente— y sale de vuelta a
+  `.docx` con la plantilla de Summit [Fase 07]. ⚠️ La conversión avisa de lo que
+  no sobrevive (tablas complejas, imágenes) y **un PDF escaneado no se puede
+  convertir**: eso necesita el módulo multimodal.
 
 ### Requisitos — la matriz
 La pantalla que contesta *"¿cuánto nos falta para certificarnos?"*.

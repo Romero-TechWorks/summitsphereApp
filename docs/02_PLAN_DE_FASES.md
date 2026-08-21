@@ -32,13 +32,14 @@ FASE 00 · CIMIENTOS ───────────────────�
    infraestructura · andamio · auth · offline · bitácora
         │
         ▼
-FASE 01 · CARTERA ───────────────────────────────── 2 sem
+FASE 01 · CARTERA ───────────────────────────────── 3 sem
    organizaciones · sitios · contactos · proyectos · etapas
+   tareas por etapa · depuración de datos
         │
         ▼
-FASE 02 · SISTEMAS DE GESTIÓN ───────────────────── 3 sem
+FASE 02 · SISTEMAS DE GESTIÓN ───────────────────── 4 sem
    normas y cláusulas · control documental · matriz de requisitos
-   procesos · riesgos · indicadores
+   adjuntos y Markdown · procesos · riesgos · indicadores
         │
         ▼
 FASE 03 · AUDITORÍAS ◀── el núcleo ──────────────── 3 sem
@@ -67,7 +68,7 @@ FASE 08 · AUTOMATIZACIÓN EXTERNA ───────────────
    MS Graph · buzón de evidencia · gamificación · despachador
 ```
 
-**Total: ~28 semanas** (≈ 7 meses) para el alcance completo.
+**Total: ~30 semanas** (≈ 7 meses) para el alcance completo.
 **Primera versión útil en producción: fin de Fase 04** (~12 semanas). A partir de
 ahí la firma ya trabaja en la app mientras se construye el resto.
 
@@ -343,30 +344,130 @@ repositorio, se sube** (decisión del dueño, 21 ago 2026).
   un archivo que sólo existe en esa pantalla y escribe cientos de filas en lote.
   Sin conexión la pantalla lo dice y no deja empezar.
 
-## F01·B3 — Tablero de la cartera
+## F01·B3 — Tablero de la cartera  ✅
 
-- Embudo por etapa: cuántos proyectos hay en cada una de las seis.
-- Carga por consultor.
-- Proyectos con la próxima fecha comprometida encima.
-- Buscador de organizaciones.
+Los cuatro widgets de la fase dejan de decir «sin datos»: **embudo por etapa**
+(las seis, incluidas las que están en cero — el hueco es la información),
+**carga por consultor** (con los proyectos sin líder agrupados al final, que es
+lo que un socio necesita ver), **contratos por cerrar** en 60 días con los
+vencidos primero, y **mis proyectos**, los que uno lidera arriba.
 
-## F01·B4 — Bitácora del proyecto
+- ⚠️ **Sin vistas de la base: se calcula en memoria** sobre la lista de
+  proyectos que ya está en la caché (`src/lib/tablero/calculos.ts`). Una vista
+  por widget sería otra consulta, otra clave y otra cosa que puede faltar en la
+  caché — y el tablero es lo primero que se abre por la mañana, a veces con
+  media barra de señal. Los cuatro comparten **una sola** petición con
+  `/cartera?tab=proyectos`: abrir cualquiera de las dos deja lista la otra.
+- El día que una firma tenga cinco mil proyectos, esto se mueve a una vista con
+  `security_invoker`. Ese día se paga, no hoy.
+- Barras nativas y números absolutos, **sin librería de gráficas**.
+- El buscador de organizaciones se entregó antes, en B1.
+
+## F01·B4 — Bitácora del proyecto  ✅
 
 Una línea de tiempo por proyecto: visitas, entregas, cambios de etapa, acuerdos.
 Es lo primero que se consulta antes de una reunión con el cliente y hoy vive en
 la memoria del consultor.
+
+- Se captura en la visita, así que pasa por `offlineWrite` como todo lo demás.
+- **Los cambios de etapa se anotan solos** (trigger `registrar_cambio_etapa()`),
+  y esas entradas no se editan: son el reflejo de un hecho, no la nota de nadie.
+  Por eso `cambio_etapa` no aparece en el desplegable de tipos.
+- ⚠️ **No hay borrar, y sí corregir** — sólo su autor o un socio, impuesto por la
+  política. Una entrada equivocada se aclara con otra: si una bitácora se
+  pudiera vaciar, no serviría para lo único que existe.
+- Vive en el detalle del proyecto, junto a Tareas y Alcance, en secciones
+  desplegables: en un teléfono, tres secciones abiertas dejan lo de todos los
+  días media pantalla más abajo.
+
+## F01·B5 — Tareas por etapa  ✅
+
+**Propuesto por el dueño el 21 ago 2026, después de usar la app.** No estaba en
+el plan: las `tareas` de la Fase 04 son los pasos de una *acción correctiva*, y
+esto es otra cosa — **el checklist de la metodología de Summit dentro de un
+proyecto**.
+
+- `tareas_etapa`: por proyecto y por **etapa** de las seis. Título, responsable,
+  fecha compromiso, estado (`pendiente` · `en_curso` · `hecha` · `no_aplica`),
+  si exige evidencia, y quién y cuándo la cerró.
+- En el detalle del proyecto, **una sección desplegable por etapa** con su avance
+  (`4/7`). Una etapa cuyas tareas obligatorias están todas hechas se pinta en
+  verde en la barra de etapas que ya existe.
+- **Plantilla por tipo de proyecto**: la metodología no se re-teclea en cada
+  cliente. Vive en `config_firma.plantillas` (la columna ya existía) y **se
+  define con el ejemplo**: el consultor arma bien las tareas de un cliente y un
+  socio pulsa *Guardar como plantilla*; en el siguiente proyecto del mismo tipo
+  aparece *Usar la plantilla*. Así se trabaja de verdad —«hazlo como el de
+  Aceros»— y no hace falta esperar a la pantalla de configuración de la Fase 06.
+- ⚠️ **`exige_evidencia` todavía no existe.** La casilla que impide dar por hecha
+  una tarea sin adjunto llega con los adjuntos, en F02·B2b: hasta entonces sería
+  un interruptor que no puede impedir nada (regla 11).
+- ⚠️ **Quién cerró la tarea y cuándo lo escribe la BASE**, no el navegador
+  (`sellar_tarea_hecha()`). Una fecha de cierre que viaja desde el cliente es una
+  fecha que se puede escribir a mano — y quién dio por cumplida una etapa de la
+  metodología es exactamente lo que se pregunta después. Reabrir una tarea borra
+  esa firma.
+- ⚠️ **`no_aplica` no cuenta ni a favor ni en contra** del avance de la etapa. En
+  un cliente que no fabrica, media etapa sobra; contarla como pendiente dejaría
+  la etapa eternamente incompleta, y como hecha regalaría un avance que nadie
+  hizo.
+- ⚠️ **Terminar las tareas de una etapa NO mueve el proyecto de etapa.** Avanzar
+  es una decisión del consultor —y queda en la bitácora con su nombre—; que la
+  app lo hiciera sola convertiría el embudo de la firma en algo que nadie
+  decidió. Lo que sí hace es proponerlo.
+- ⚠️ **Nada de una tabla de tareas para todo.** Los pasos de una acción
+  correctiva [F04] responden a un hallazgo, tienen verificación de eficacia y los
+  audita un tercero; una tarea de etapa es trabajo interno de la firma.
+  Juntarlas obligaría a que la mitad de las columnas de cada fila estuvieran
+  vacías y a explicarle a un auditor por qué su acción correctiva vive en la
+  misma tabla que "mandar la propuesta por correo".
+
+## F01·B6 — Depuración: dar de baja y borrar  ✅
+
+**También propuesto sobre la marcha, y por un motivo concreto: se cargaron datos
+de prueba y no había forma de quitarlos.**
+
+- Los listados **esconden por defecto** lo cerrado y lo cancelado, con un
+  interruptor para verlo. Un expediente cerrado hace ruido cada día en la lista
+  de quien trabaja con los vivos.
+- **Borrado de verdad, y sólo del socio**, para organizaciones y proyectos: pide
+  **escribir el nombre exacto**, enumera qué se lleva por delante con sus
+  cantidades (sitios, contactos, proyectos, tareas, alcance y bitácora cuelgan
+  con `ON DELETE CASCADE`) y **queda registrado en `audit_logs`**, que es
+  inmutable y guarda la fila entera en `antes`.
+- ⚠️ La condición vive en `puedo_borrar_org()` y `puedo_borrar_proyecto()`, **no
+  en la política**, para que ampliarla sea tocar un sitio. **En la Fase 02 y en
+  la 03 hay que ampliarlas**: una organización con documentos, auditorías o
+  hallazgos deja de poder borrarse. Está escrito en la migración y en el
+  `comment on function`.
+- ⚠️ **Y aquí está la línea, que no es la misma que la de la regla 13.** Se puede
+  borrar lo que **no es evidencia de auditoría**: un cliente capturado por error,
+  un proyecto de prueba. **No** se puede borrar en cuanto cuelga de ello un
+  hallazgo, una auditoría o un documento aprobado — a partir de ahí sólo se
+  cierra o se anula, con motivo. La comprobación es de la base, no de la
+  pantalla: la política de DELETE exige que no existan esas filas.
+- Requiere una migración: hoy `organizaciones` y `proyectos` **no tienen política
+  de DELETE**, así que un borrado devuelve *cero filas* — el rechazo silencioso
+  de siempre.
 
 ### Criterio de cierre — Fase 01
 
 > El socio da de alta una organización real con dos plantas, le abre un proyecto
 > de implementación de ISO 9001 + 45001 con alcance en una sola planta, lo asigna
 > a un consultor, y ese consultor —**y sólo ese**— lo ve al entrar. Un consultor
-> no asignado busca la organización y **no aparece**.
+> no asignado busca la organización y **no aparece**. En el proyecto ve las
+> tareas de la etapa 1, marca cuatro de siete y la barra de avance lo refleja.
+> Y el cliente de prueba que abrió para probar **lo borra él mismo**, escribiendo
+> su nombre para confirmarlo.
 
 ### Tareas del dueño — Fase 01
 
-`B01` Cargar la cartera real de clientes (o exportarla de donde esté hoy). `B02`
-Decidir quién ve qué: asignar consultores a organizaciones.
+`B00` Aplicar la migración de la cartera ✅. `B00b` Aplicar la de tareas y
+depuración. `B01` Cargar la cartera real de
+clientes (o exportarla de donde esté hoy). `B02` Decidir quién ve qué: asignar
+consultores a organizaciones. `B03` Escribir y subir el catálogo de normas.
+`B04` Definir la **plantilla de tareas por etapa**: armar bien las tareas de un
+proyecto y guardarlas como plantilla de su tipo.
 
 ---
 
@@ -407,6 +508,55 @@ El corazón de un SGC y la razón por la que un cliente contrata una consultorí
   anterior `obsoleta` y la conserva. Un auditor externo pide justo eso.
 - Lista maestra de documentos, que es un entregable en sí mismo.
 - Archivos en el bucket privado `documentos`, con URL firmada.
+- **Biblioteca por cliente y por proyecto.** `documentos` cuelga de la
+  organización y lleva un `proyecto_id` opcional: el mismo expediente se puede
+  mirar entero o filtrado por el contrato que lo produjo.
+
+### Markdown como formato de trabajo  ← *propuesto por el dueño, 21 ago 2026*
+
+**Cada versión de documento guarda su `markdown`, además del archivo original.**
+No es una comodidad: es la forma en que el contenido de la firma se vuelve
+legible para una persona **y** para el asistente de la Fase 07 sin volver a
+procesar nada.
+
+- **Entrada `.docx` → Markdown.** Transpilador propio, el inverso del de F07·T7:
+  descomprimir el `.docx` y leer `word/document.xml` con RegEx, sin `pandoc` ni
+  `docx.js` (docs/07 §Módulo B). ⚠️ Sale limpio en procedimientos, políticas y
+  formatos de texto; **las tablas complejas, las imágenes y la numeración
+  automática no sobreviven**, y eso se avisa al subir en vez de dejar que el
+  consultor lo descubra en el entregable.
+- **Entrada PDF → Markdown.** Extracción de texto con `pdfjs-dist`, que ya es
+  dependencia del proyecto. ⚠️ **Un PDF escaneado no tiene texto que extraer**:
+  eso es OCR y vive en el Módulo C multimodal [F07·T6]. Se detecta —un PDF que
+  devuelve tres caracteres por página lo es— y se dice, no se guarda un
+  documento vacío.
+- **Salida Markdown → `.docx`** con la plantilla de Summit: ya está planeada en
+  **F07·T7** y no se duplica aquí. La ida y la vuelta usan el mismo diccionario.
+- **Visor y editor de Markdown dentro de la app**, sin dependencias de editor
+  enriquecido: el `.md` se lee con formato y se edita como texto. Editar crea una
+  **versión nueva**; nunca se sobrescribe una aprobada.
+- ⚠️ **El original nunca se tira.** El `.md` es una representación; el archivo
+  que firmó el cliente es el `.docx` o el PDF, y es el que un auditor pide.
+
+## F02·B2b — Adjuntos  ← *adelantado desde F04·B2*
+
+La infraestructura de archivos estaba planeada para la Fase 04, **y llega tarde
+para cómo se usa la app**: las evidencias son el pan de cada día desde que hay
+tareas y documentos. Se adelanta entera, y la Fase 03 la encuentra hecha en vez
+de inventarla para las fotos de campo.
+
+- Bucket privado, **cola propia** en IndexedDB (`src/lib/offline/adjuntos.ts`),
+  subida en dos fases. No es el `outbox`: una subida pesa megabytes y se vacía
+  **después** de los datos.
+- Filtrado por **campo dominante**
+  (tarea de etapa → tarea de acción → acción → hallazgo → documento →
+  organización), **nunca con un OR**.
+- ⚠️ `subirAdjunto()` sólo encola; subir es `sincronizarAdjuntos()` y **hay que
+  esperarlo** — refrescar sin esperar es el «hay que subirla dos veces» de JDM
+  Built.
+- ⚠️ El bucket es privado y se lee con URL firmada: **lo ya subido no se ve sin
+  señal**. Tomar la foto y adjuntarla, sí. Es una limitación real que la interfaz
+  tiene que decir, no esconder.
 
 ## F02·B3 — Matriz de requisitos
 
@@ -434,9 +584,11 @@ La tabla que contesta *"¿cuánto nos falta para certificarnos?"*.
 
 ### Criterio de cierre — Fase 02
 
-> Un consultor sube el Manual de Calidad de un cliente como versión 1, lo pasa a
-> revisión, lo aprueba, y luego sube la versión 2: la 1 queda **obsoleta y
-> consultable**, con su control de cambios. En la matriz de requisitos marca la
+> Un consultor sube el Manual de Calidad de un cliente **en Word** como versión
+> 1: la app lo convierte a Markdown, lo enseña con formato y avisa de lo que no
+> sobrevivió la conversión. Lo pasa a revisión, lo aprueba, y luego sube la
+> versión 2: la 1 queda **obsoleta y consultable**, con su control de cambios y
+> con su archivo original intacto. En la matriz de requisitos marca la
 > cláusula 4.1 como `documentado` apuntando a ese manual, y el porcentaje de
 > avance de ISO 9001 sube solo.
 
@@ -540,13 +692,13 @@ Validar la clasificación de hallazgos y sus criterios (qué hace mayor a una NC
 - **Verificación de eficacia**: fecha, quién verificó, evidencia y veredicto.
   Una acción no se cierra sin esto. Es el error más común en los SGC reales.
 
-## F04·B2 — Adjuntos
+## F04·B2 — Adjuntos  → **movido a F02·B2b** (21 ago 2026)
 
-- Bucket privado, cola propia (IndexedDB), subida en dos fases.
-- Filtrado por **campo dominante** (tarea → acción → hallazgo → documento →
-  organización), **nunca con un OR**.
-- ⚠️ `subirAdjunto()` sólo encola; subir es `sincronizarAdjuntos()` y **hay que
-  esperarlo**.
+La capa de archivos se adelantó a la Fase 02: las evidencias hacen falta en
+cuanto hay documentos y tareas, y la Fase 03 necesita la cola de adjuntos para
+las fotos de campo antes de que llegue esta fase. Lo que queda aquí es
+**conectarla a las acciones**: la evidencia que cierra una acción correctiva y la
+que respalda su verificación de eficacia.
 
 ## F04·B3 — Notificaciones push
 

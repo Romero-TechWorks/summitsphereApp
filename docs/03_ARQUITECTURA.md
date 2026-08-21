@@ -332,7 +332,7 @@ del folio de la auditoría, que ya existe en la caché, más un consecutivo loca
 Un hallazgo no se borra: se anula con motivo o se reclasifica, y queda su
 historial.
 
-### §8.8 · Adjuntos — cuatro reglas
+### §8.8 · Adjuntos — cuatro reglas  [F02·B2b]
 
 1. El bucket es **privado** (guarda evidencia de auditoría). Se lee con URL
    firmada, así que **las fotos ya subidas no se ven sin señal**; tomarlas sí.
@@ -340,9 +340,39 @@ historial.
    subida no es una escritura de tabla, va en dos fases y pesa megabytes. Se vacía
    **después** de los datos.
 3. La lista local y la del servidor filtran con `campoDominante()`
-   (tarea → acción → hallazgo → documento → organización), **nunca con un OR**.
+   (tarea de etapa → tarea de acción → acción → hallazgo → documento →
+   organización), **nunca con un OR**.
 4. **`subirAdjunto()` sólo encola; subir es `sincronizarAdjuntos()` y hay que
    esperarlo** — refrescar sin esperar es el "hay que subirla dos veces".
+
+⚠️ **Esta capa se adelantó de la Fase 04 a la Fase 02** (21 ago 2026): las
+evidencias hacen falta en cuanto existen tareas y documentos, y la Fase 03 la
+necesita para las fotos de campo. La Fase 04 sólo la conecta a las acciones.
+
+### §8.8.1 · Documentos y Markdown
+
+Cada versión de documento guarda **el archivo original y su Markdown**. El
+original es lo que firmó el cliente y lo que pide un auditor; el `.md` es lo que
+se lee en el teléfono, se edita sin Word y alimenta al asistente [Fase 07] sin
+volver a procesar nada.
+
+| Dirección | Cómo | Dónde |
+|---|---|---|
+| `.docx` → Markdown | descomprimir + `word/document.xml` con RegEx | F02·B2 |
+| PDF → Markdown | extracción de texto con `pdfjs-dist` (ya es dependencia) | F02·B2 |
+| Markdown → `.docx` | el transpilador a OpenXML de la plantilla de Summit | F07·T7 |
+
+⚠️ **Sin `pandoc` ni `docx.js`** — es la misma decisión que ya estaba tomada para
+la ida (docs/07 §Módulo B): manipulación directa de OpenXML.
+
+⚠️ **Un PDF escaneado no tiene texto que extraer.** Se detecta —tres caracteres
+por página lo delatan— y se dice; convertirlo es OCR, y eso es el Módulo C
+multimodal [F07·T6].
+
+⚠️ **La conversión pierde cosas**: tablas complejas, imágenes y numeración
+automática. Se avisa **al subir**, en la pantalla, y se guarda la lista de avisos
+en la versión. Descubrirlo en el entregable que ya se le mandó al cliente es otra
+cosa.
 
 ### §8.9 · Capa offline
 

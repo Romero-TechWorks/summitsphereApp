@@ -33,6 +33,16 @@ export const ESTADOS_ORGANIZACION: readonly Opcion[] = [
   { valor: 'cerrado',   etiqueta: 'Cerrado',   tono: 'neutro' },
 ]
 
+/**
+ * Lo que los listados **esconden por defecto** [F01·B6].
+ *
+ * ⚠️ No es lo mismo que borrar: el expediente sigue entero y se ve marcando la
+ * casilla. Pero un cliente cerrado hace ruido todos los días en la lista de
+ * quien trabaja con los vivos, y una lista que se ensucia sola se deja de mirar.
+ */
+export const ESTADOS_ARCHIVADOS_ORGANIZACION: readonly string[] = ['cerrado']
+export const ESTADOS_ARCHIVADOS_PROYECTO: readonly string[] = ['cerrado', 'cancelado']
+
 /** `organizaciones.tamano` */
 export const TAMANOS_ORGANIZACION: readonly Opcion[] = [
   { valor: 'micro',    etiqueta: 'Micro (1–10)' },
@@ -114,6 +124,42 @@ export const ESTADOS_PROYECTO: readonly Opcion[] = [
   { valor: 'pausado',    etiqueta: 'Pausado',    tono: 'advertencia' },
   { valor: 'cerrado',    etiqueta: 'Cerrado',    tono: 'neutro' },
   { valor: 'cancelado',  etiqueta: 'Cancelado',  tono: 'error' },
+]
+
+/**
+ * `bitacora_proyecto.tipo`
+ *
+ * ⚠️ **`cambio_etapa` no se elige a mano**: esas entradas las escribe el trigger
+ * `registrar_cambio_etapa()` de la base cuando alguien mueve el proyecto. Por
+ * eso está fuera de `TIPOS_BITACORA_MANUALES`, que es lo que ofrece el
+ * formulario — un tipo que el usuario puede escribir a mano y que además genera
+ * la base acabaría con dos renglones distintos contando lo mismo.
+ */
+export const TIPOS_BITACORA: readonly Opcion[] = [
+  { valor: 'visita',        etiqueta: 'Visita',        tono: 'info' },
+  { valor: 'entrega',       etiqueta: 'Entrega',       tono: 'exito' },
+  { valor: 'acuerdo',       etiqueta: 'Acuerdo',       tono: 'info' },
+  { valor: 'incidencia',    etiqueta: 'Incidencia',    tono: 'advertencia' },
+  { valor: 'nota',          etiqueta: 'Nota' },
+  { valor: 'cambio_etapa',  etiqueta: 'Cambio de etapa', tono: 'neutro' },
+]
+
+/** Los que se pueden capturar: todos menos el que escribe la base. */
+export const TIPOS_BITACORA_MANUALES = TIPOS_BITACORA.filter((t) => t.valor !== 'cambio_etapa')
+
+/**
+ * `tareas_etapa.estado`
+ *
+ * ⚠️ `no_aplica` no es un adorno: en un cliente que no fabrica, media etapa de
+ * la metodología sobra, y marcarlo es distinto de dejarlo pendiente para
+ * siempre. Una etapa se da por completa cuando no queda nada `pendiente` ni
+ * `en_curso` — lo `no_aplica` no cuenta ni a favor ni en contra.
+ */
+export const ESTADOS_TAREA: readonly Opcion[] = [
+  { valor: 'pendiente',  etiqueta: 'Pendiente' },
+  { valor: 'en_curso',   etiqueta: 'En curso',   tono: 'info' },
+  { valor: 'hecha',      etiqueta: 'Hecha',      tono: 'exito' },
+  { valor: 'no_aplica',  etiqueta: 'No aplica',  tono: 'neutro' },
 ]
 
 /**

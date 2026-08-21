@@ -711,6 +711,96 @@ export type Database = {
           },
         ]
       }
+      tareas_etapa: {
+        Row: {
+          actualizado_en: string
+          creado_en: string
+          creado_por: string | null
+          detalle: string | null
+          estado: string
+          etapa: string
+          fecha_compromiso: string | null
+          hecha_en: string | null
+          hecha_por: string | null
+          id: string
+          orden: number
+          org_id: string
+          proyecto_id: string
+          responsable_id: string | null
+          titulo: string
+        }
+        Insert: {
+          actualizado_en?: string
+          creado_en?: string
+          creado_por?: string | null
+          detalle?: string | null
+          estado?: string
+          etapa: string
+          fecha_compromiso?: string | null
+          hecha_en?: string | null
+          hecha_por?: string | null
+          id?: string
+          orden?: number
+          org_id: string
+          proyecto_id: string
+          responsable_id?: string | null
+          titulo: string
+        }
+        Update: {
+          actualizado_en?: string
+          creado_en?: string
+          creado_por?: string | null
+          detalle?: string | null
+          estado?: string
+          etapa?: string
+          fecha_compromiso?: string | null
+          hecha_en?: string | null
+          hecha_por?: string | null
+          id?: string
+          orden?: number
+          org_id?: string
+          proyecto_id?: string
+          responsable_id?: string | null
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tareas_etapa_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tareas_etapa_hecha_por_fkey"
+            columns: ["hecha_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tareas_etapa_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizaciones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tareas_etapa_proyecto_id_fkey"
+            columns: ["proyecto_id"]
+            isOneToOne: false
+            referencedRelation: "proyectos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tareas_etapa_responsable_id_fkey"
+            columns: ["responsable_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       usuarios: {
         Row: {
           activo: boolean
@@ -803,6 +893,8 @@ export type Database = {
     Functions: {
       es_socio: { Args: never; Returns: boolean }
       mis_organizaciones: { Args: never; Returns: string[] }
+      puedo_borrar_org: { Args: { p_org: string }; Returns: boolean }
+      puedo_borrar_proyecto: { Args: { p_proyecto: string }; Returns: boolean }
       puedo_editar_org: { Args: { p_org: string }; Returns: boolean }
       registrar_inicio_sesion: { Args: never; Returns: undefined }
     }

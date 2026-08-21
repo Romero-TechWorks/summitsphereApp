@@ -47,6 +47,12 @@ export const queryKeys = {
     proyectos: () => ['cartera', 'proyectos'] as const,
     /** Los proyectos de una organización, dentro de su expediente. */
     proyectosDe: (orgId: string) => ['cartera', 'proyectos', orgId] as const,
+    /** El checklist de la metodología de un proyecto, todas sus etapas. */
+    tareas: (proyectoId: string) => ['cartera', 'tareas', proyectoId] as const,
+    /** La línea de tiempo de un proyecto. */
+    bitacora: (proyectoId: string) => ['cartera', 'bitacora', proyectoId] as const,
+    /** La plantilla de tareas de la firma, por tipo de proyecto. */
+    plantillaTareas: () => ['cartera', 'plantilla-tareas'] as const,
     /** El alcance: qué normas y qué sitios cubre un proyecto. */
     alcanceNormas: (proyectoId: string) => ['cartera', 'alcance', 'normas', proyectoId] as const,
     alcanceSitios: (proyectoId: string) => ['cartera', 'alcance', 'sitios', proyectoId] as const,

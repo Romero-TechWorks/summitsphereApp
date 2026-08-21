@@ -13,11 +13,17 @@ import {
   type DatosOrganizacion,
   type OrganizacionEnLista,
 } from '@/lib/queries/cartera'
-import { ESTADOS_ORGANIZACION, etiquetaDe, tonoDe } from '@/lib/cartera/catalogos'
+import {
+  ESTADOS_ARCHIVADOS_ORGANIZACION,
+  ESTADOS_ORGANIZACION,
+  etiquetaDe,
+  tonoDe,
+} from '@/lib/cartera/catalogos'
 import { normalizar } from '@/lib/utils/texto'
 import Aviso from '@/components/ui/Aviso'
 import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
+import Checkbox from '@/components/ui/Checkbox'
 import EncabezadoPagina from '@/components/ui/EncabezadoPagina'
 import EstadoVacio from '@/components/ui/EstadoVacio'
 import Input from '@/components/ui/Input'
@@ -60,6 +66,7 @@ export default function PantallaCartera() {
   // siempre de la caché de React Query (CLAUDE.md · reglas del offline, 2).
   const [texto, setTexto] = useState('')
   const [estado, setEstado] = useState('')
+  const [verCerradas, setVerCerradas] = useState(false)
   const [modalAbierto, setModalAbierto] = useState(false)
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -88,14 +95,21 @@ export default function PantallaCartera() {
     const busqueda = normalizar(texto)
 
     return organizaciones.filter((org) => {
-      if (estado && org.estado !== estado) return false
+      if (estado) {
+        // Un estado elegido a mano manda sobre el escondite: si alguien pide
+        // «cerrado», es que quiere ver los cerrados.
+        if (org.estado !== estado) return false
+      } else if (!verCerradas && ESTADOS_ARCHIVADOS_ORGANIZACION.includes(org.estado)) {
+        return false
+      }
+
       if (!busqueda) return true
 
       return [org.razon_social, org.nombre_comercial, org.rfc, org.giro]
         .filter(Boolean)
         .some((campo) => normalizar(String(campo)).includes(busqueda))
     })
-  }, [organizaciones, texto, estado])
+  }, [organizaciones, texto, estado, verCerradas])
 
   async function guardarNueva(datos: DatosOrganizacion) {
     setGuardando(true)
@@ -176,6 +190,13 @@ export default function PantallaCartera() {
                   <option key={o.valor} value={o.valor}>{o.etiqueta}</option>
                 ))}
               </Select>
+            </div>
+            <div style={{ paddingTop: 8 }}>
+              <Checkbox
+                etiqueta="Ver cerradas"
+                checked={verCerradas}
+                onChange={(e) => setVerCerradas(e.target.checked)}
+              />
             </div>
           </div>
 

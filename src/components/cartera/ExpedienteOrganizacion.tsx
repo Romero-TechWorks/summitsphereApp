@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { queryKeys } from '@/lib/query/keys'
@@ -16,6 +17,7 @@ import {
   cambiarActivoSitio,
   crearContacto,
   crearSitio,
+  eliminarOrganizacion,
   listarContactos,
   listarEquipo,
   listarSitios,
@@ -36,6 +38,7 @@ import {
   tonoDe,
 } from '@/lib/cartera/catalogos'
 import Aviso from '@/components/ui/Aviso'
+import ConfirmarBorrado from '@/components/ui/ConfirmarBorrado'
 import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
 import EncabezadoPagina from '@/components/ui/EncabezadoPagina'
@@ -77,8 +80,10 @@ type EnEdicion<T> = { modo: 'nuevo' } | { modo: 'editar'; fila: T } | null
  */
 export default function ExpedienteOrganizacion({ id }: { id: string }) {
   const cliente = useQueryClient()
+  const router = useRouter()
   const activa = usePestana(PESTANAS)
 
+  const [borrando, setBorrando] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [guardando, setGuardando] = useState(false)
   const [editandoOrg, setEditandoOrg] = useState(false)
@@ -151,6 +156,39 @@ export default function ExpedienteOrganizacion({ id }: { id: string }) {
       setEditandoOrg(false)
     } catch (problema) {
       setError(mensajeDeError(problema))
+    } finally {
+      setGuardando(false)
+    }
+  }
+
+  /**
+   * Eliminar el cliente entero.
+   *
+   * ⚠️ Sólo el socio, y lo impone la política `organizaciones_delete` de la base
+   * —no este botón—. Existe porque la alternativa real es una cartera llena de
+   * datos de prueba que nadie puede quitar (CLAUDE.md regla 13, el matiz).
+   */
+  async function borrar() {
+    if (!organizacion) return
+    setGuardando(true)
+    setError(null)
+
+    try {
+      const { encolado } = await eliminarOrganizacion(organizacion)
+
+      aplicarEscritura<{ id: string }>({
+        cliente,
+        clave: claveCartera,
+        encolado,
+        actualizar: (previo) => previo.filter((o) => o.id !== organizacion.id),
+        ademasInvalidar: [queryKeys.cartera.contactosTodos(), queryKeys.cartera.proyectos()],
+      })
+
+      cliente.removeQueries({ queryKey: queryKeys.cartera.organizacion(id) })
+      router.push('/cartera')
+    } catch (problema) {
+      setError(mensajeDeError(problema))
+      setBorrando(false)
     } finally {
       setGuardando(false)
     }
@@ -324,8 +362,43 @@ export default function ExpedienteOrganizacion({ id }: { id: string }) {
         />
       )}
 
+      {activa === 'resumen' && esSocio && (
+        <div style={{ marginTop: 32, paddingTop: 16, borderTop: '1px solid var(--borde)' }}>
+          <Button variante="peligro" onClick={() => { setError(null); setBorrando(true) }}>
+            Eliminar esta organización
+          </Button>
+          <p style={{ fontSize: 12.5, color: 'var(--texto-dim)', marginTop: 8, maxWidth: 560, lineHeight: 1.55 }}>
+            Para un cliente que ya no se atiende, lo normal es <strong>cerrarlo</strong> —cambiar su
+            estado a «cerrado»—: desaparece de los listados y su expediente se conserva. Esto otro es
+            para lo que nunca debió existir.
+          </p>
+        </div>
+      )}
+
+      <ConfirmarBorrado
+        abierto={borrando}
+        alCerrar={() => setBorrando(false)}
+        titulo="Eliminar la organización"
+        nombre={organizacion.razon_social}
+        queSeLleva={[
+          `${sitios.length} ${sitios.length === 1 ? 'sitio' : 'sitios'}`,
+          `${contactos.length} ${contactos.length === 1 ? 'contacto' : 'contactos'}`,
+          `${proyectos.length} ${proyectos.length === 1 ? 'proyecto' : 'proyectos'}, con sus tareas, su alcance y su bitácora`,
+          `${equipo.length} ${equipo.length === 1 ? 'asignación' : 'asignaciones'} de equipo`,
+        ]}
+        error={error}
+        trabajando={guardando}
+        alConfirmar={borrar}
+      />
+
       {activa === 'proyectos' && (
-        <PanelProyectos orgId={id} sitios={sitios} equipo={equipo} puedoEditar={puedoEditar} />
+        <PanelProyectos
+          orgId={id}
+          sitios={sitios}
+          equipo={equipo}
+          puedoEditar={puedoEditar}
+          esSocio={Boolean(esSocio)}
+        />
       )}
 
       {activa === 'sitios' && (

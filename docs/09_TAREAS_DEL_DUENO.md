@@ -171,6 +171,24 @@ Vale para las tres: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` 
 
 # FASE 01 · Cartera
 
+### `B00b` — Aplicar la migración de tareas y depuración · **Bloquea: B5 y B6**
+
+La segunda migración de la fase (`20260821220000_tareas_y_depuracion.sql`): crea
+`tareas_etapa` y abre el borrado de organizaciones y proyectos para el socio.
+Mismos pasos que `B00`, desde la terminal de WSL:
+
+```bash
+npx supabase db push
+npx supabase gen types typescript --linked > /tmp/database.ts && mv /tmp/database.ts src/types/database.ts
+git diff --stat src/types/database.ts
+```
+
+Sin ella, la pestaña de tareas de un proyecto falla contra la base y el botón de
+eliminar devuelve *«la operación no tocó ninguna fila»* — que es el RLS
+rechazando en silencio, exactamente como está descrito en las trampas heredadas.
+
+---
+
 ### `B00` — Aplicar la migración de la cartera · ✅ **HECHA** (21 ago 2026)
 
 Aplicada y verificada: `npx supabase migration list --linked` da las cinco
@@ -263,6 +281,23 @@ pueden importar; si están en la cabeza de los consultores, hay que sentarse a
 capturarlas.
 
 **Empieza por los cinco clientes más activos.** No por los cincuenta históricos.
+
+### `B04` — Definir la plantilla de tareas · **Bloquea: nada, pero ahorra horas**
+
+La metodología de Summit no se re-teclea en cada cliente. **La plantilla se
+define con el ejemplo**:
+
+1. Abre un proyecto y arma sus tareas etapa por etapa, como deberían ser.
+2. Pulsa **Guardar como plantilla** (sólo tú, como socio). Queda guardada para
+   ese **tipo de proyecto** — implementación, auditoría, capacitación…
+3. En el siguiente proyecto del mismo tipo aparece **Usar la plantilla**, y
+   entran todas de golpe. Después se ajustan: ningún cliente es igual a la
+   plantilla.
+
+⚠️ Guardar la plantilla **sustituye** la que hubiera de ese tipo. No borra ni
+toca las tareas de ningún proyecto ya creado.
+
+---
 
 ### `B03` — Subir el catálogo de normas · **Bloquea: el alcance de los proyectos**
 

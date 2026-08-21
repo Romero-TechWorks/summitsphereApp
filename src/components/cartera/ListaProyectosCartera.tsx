@@ -8,6 +8,7 @@ import { formatDateOnly } from '@/lib/utils/dates'
 import { normalizar } from '@/lib/utils/texto'
 import { listarProyectos } from '@/lib/queries/proyectos'
 import {
+  ESTADOS_ARCHIVADOS_PROYECTO,
   ESTADOS_PROYECTO,
   ETAPAS_PROYECTO,
   TIPOS_PROYECTO,
@@ -17,6 +18,7 @@ import {
 } from '@/lib/cartera/catalogos'
 import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
+import Checkbox from '@/components/ui/Checkbox'
 import EstadoVacio from '@/components/ui/EstadoVacio'
 import Input from '@/components/ui/Input'
 import Lista, { Fila } from '@/components/ui/Lista'
@@ -39,6 +41,7 @@ export default function ListaProyectosCartera() {
   const [texto, setTexto] = useState('')
   const [estado, setEstado] = useState('')
   const [etapa, setEtapa] = useState('')
+  const [verCerrados, setVerCerrados] = useState(false)
 
   const { data: proyectos = [], isPending, error } = useQuery({
     queryKey: queryKeys.cartera.proyectos(),
@@ -49,7 +52,11 @@ export default function ListaProyectosCartera() {
     const busqueda = normalizar(texto)
 
     return proyectos.filter((p) => {
-      if (estado && p.estado !== estado) return false
+      if (estado) {
+        if (p.estado !== estado) return false
+      } else if (!verCerrados && ESTADOS_ARCHIVADOS_PROYECTO.includes(p.estado)) {
+        return false
+      }
       if (etapa && p.etapa !== etapa) return false
       if (!busqueda) return true
 
@@ -57,7 +64,7 @@ export default function ListaProyectosCartera() {
         .filter(Boolean)
         .some((campo) => normalizar(String(campo)).includes(busqueda))
     })
-  }, [proyectos, texto, estado, etapa])
+  }, [proyectos, texto, estado, etapa, verCerrados])
 
   return (
     <>
@@ -97,6 +104,13 @@ export default function ListaProyectosCartera() {
               <option key={o.valor} value={o.valor}>{i + 1}. {o.etiqueta}</option>
             ))}
           </Select>
+        </div>
+        <div style={{ paddingTop: 8 }}>
+          <Checkbox
+            etiqueta="Ver cerrados"
+            checked={verCerrados}
+            onChange={(e) => setVerCerrados(e.target.checked)}
+          />
         </div>
       </div>
 

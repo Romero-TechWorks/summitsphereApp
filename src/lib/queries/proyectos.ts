@@ -322,3 +322,37 @@ export async function quitarSitioDelAlcance(
     offline: filtro,
   })
 }
+
+/**
+ * Borrar un proyecto, con su alcance, sus tareas y su bitácora.
+ *
+ * Mismo criterio que con una organización: sólo el socio, la pantalla pide
+ * escribir el nombre, y el borrado queda en `audit_logs`. Ver
+ * `eliminarOrganizacion()` para el porqué de que esto exista.
+ *
+ * ⚠️ En la Fase 03, un proyecto con auditorías deja de poder borrarse — se
+ * amplía `puedo_borrar_proyecto()`, no esta función.
+ */
+export async function eliminarProyecto(
+  proyecto: Proyecto,
+): Promise<ResultadoEscritura<{ id: string }>> {
+  const filtro = { id: proyecto.id }
+
+  return offlineWrite<{ id: string }>({
+    tabla: 'proyectos',
+    operacion: 'delete',
+    etiqueta: `Eliminar el proyecto ${proyecto.nombre}`,
+    filtro,
+    online: async () => {
+      const supabase = createClient()
+      const { data, error } = await supabase
+        .from('proyectos')
+        .delete()
+        .eq('id', proyecto.id)
+        .select('id')
+      if (error) throw error
+      return exigirFilas(data, 'Eliminar el proyecto')[0]
+    },
+    offline: filtro,
+  })
+}

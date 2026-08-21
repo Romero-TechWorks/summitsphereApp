@@ -1,8 +1,9 @@
 'use client'
 
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-import { useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { queryKeys } from '@/lib/query/keys'
 import { aplicarEscritura } from '@/lib/query/cache'
 import { mensajeDeError } from '@/lib/supabase/errores'
@@ -10,10 +11,12 @@ import { formatDateOnly } from '@/lib/utils/dates'
 import type { MiembroEquipo, Sitio } from '@/lib/queries/cartera'
 import {
   actualizarProyecto,
+  eliminarProyecto,
   type DatosProyecto,
   type Lider,
   type ProyectoConLider,
 } from '@/lib/queries/proyectos'
+import { listarTareas } from '@/lib/queries/tareas'
 import {
   ESTADOS_PROYECTO,
   ETAPAS_PROYECTO,
@@ -25,8 +28,11 @@ import {
 import Aviso from '@/components/ui/Aviso'
 import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
+import ConfirmarBorrado from '@/components/ui/ConfirmarBorrado'
 import Modal from '@/components/ui/Modal'
 import PanelAlcance from './PanelAlcance'
+import PanelBitacora from './PanelBitacora'
+import PanelTareas from './PanelTareas'
 import FormularioProyecto from './FormularioProyecto'
 
 const FORM_PROYECTO = 'form-editar-proyecto'
@@ -45,19 +51,36 @@ export default function DetalleProyecto({
   sitios,
   equipo,
   puedoEditar,
+  esSocio,
   volverHref,
 }: {
   proyecto: ProyectoConLider
   sitios: Sitio[]
   equipo: MiembroEquipo[]
   puedoEditar: boolean
+  /** Sólo un socio puede borrar un proyecto. Lo impone la base, no esta prop. */
+  esSocio: boolean
   /** A dónde vuelve la lista. */
   volverHref: string
 }) {
   const cliente = useQueryClient()
+  const router = useRouter()
   const [editando, setEditando] = useState(false)
+  const [borrando, setBorrando] = useState(false)
+  // Las tres secciones del proyecto, y sólo las tareas abiertas: son lo de
+  // todos los días. En un teléfono, tres secciones desplegadas obligan a
+  // scrollear media pantalla para llegar a lo que se venía a hacer.
+  const [secciones, setSecciones] = useState<Set<string>>(new Set(['tareas']))
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Misma clave que usa `PanelTareas`: React Query la comparte, así que esto no
+  // es una segunda petición. Sirve para decir qué se lleva por delante el
+  // borrado, con número.
+  const { data: tareas = [] } = useQuery({
+    queryKey: queryKeys.cartera.tareas(proyecto.id),
+    queryFn: () => listarTareas(proyecto.id),
+  })
 
   async function guardar(datos: DatosProyecto, lider: Lider | null) {
     setGuardando(true)
@@ -77,6 +100,57 @@ export default function DetalleProyecto({
       setEditando(false)
     } catch (problema) {
       setError(mensajeDeError(problema))
+    } finally {
+      setGuardando(false)
+    }
+  }
+
+  /**
+   * Mover el proyecto a la etapa siguiente.
+   *
+   * ⚠️ Lo dispara una persona desde el aviso de «todas las tareas están
+   * cerradas», nunca la app sola. El renglón de la bitácora lo escribe el
+   * trigger de la base con quién y cuándo.
+   */
+  async function avanzarEtapa(etapa: string) {
+    await guardar(
+      {
+        nombre: proyecto.nombre,
+        tipo: proyecto.tipo,
+        etapa,
+        estado: proyecto.estado,
+        lider_id: proyecto.lider_id,
+        fecha_inicio: proyecto.fecha_inicio,
+        fecha_fin_estimada: proyecto.fecha_fin_estimada,
+        fecha_fin_real: proyecto.fecha_fin_real,
+        monto: proyecto.monto,
+        moneda: proyecto.moneda,
+        objetivo: proyecto.objetivo,
+      },
+      proyecto.lider,
+    )
+  }
+
+  async function borrar() {
+    setGuardando(true)
+    setError(null)
+
+    try {
+      const { encolado } = await eliminarProyecto(proyecto)
+
+      aplicarEscritura<ProyectoConLider>({
+        cliente,
+        clave: queryKeys.cartera.proyectosDe(proyecto.org_id),
+        encolado,
+        actualizar: (previo) => previo.filter((p) => p.id !== proyecto.id),
+        ademasInvalidar: [queryKeys.cartera.proyectos()],
+      })
+
+      // La pantalla que se está mirando ya no existe: se vuelve a la lista.
+      router.push(volverHref)
+    } catch (problema) {
+      setError(mensajeDeError(problema))
+      setBorrando(false)
     } finally {
       setGuardando(false)
     }
@@ -141,9 +215,54 @@ export default function DetalleProyecto({
         </div>
       )}
 
-      <div style={{ paddingTop: 22 }}>
+      <Seccion
+        clave="tareas"
+        titulo="Tareas por etapa"
+        abiertas={secciones}
+        alAlternar={setSecciones}
+      >
+        <PanelTareas
+          proyecto={proyecto}
+          equipo={equipo}
+          puedoEditar={puedoEditar}
+          esSocio={esSocio}
+          alAvanzarEtapa={avanzarEtapa}
+        />
+      </Seccion>
+
+      <Seccion clave="bitacora" titulo="Bitácora" abiertas={secciones} alAlternar={setSecciones}>
+        <PanelBitacora proyecto={proyecto} puedoEditar={puedoEditar} esSocio={esSocio} />
+      </Seccion>
+
+      <Seccion clave="alcance" titulo="Alcance" abiertas={secciones} alAlternar={setSecciones}>
         <PanelAlcance proyecto={proyecto} sitios={sitios} puedoEditar={puedoEditar} />
-      </div>
+      </Seccion>
+
+      {/* ⚠️ El borrado va al fondo, separado y con su texto — nunca un icono
+          suelto arriba (docs/05 §4.4). En esta app casi nada se elimina; cuando
+          aparece un botón así es porque se lleva un expediente entero. */}
+      {esSocio && (
+        <div style={{ marginTop: 32, paddingTop: 16, borderTop: '1px solid var(--borde)' }}>
+          <Button variante="peligro" onClick={() => { setError(null); setBorrando(true) }}>
+            Eliminar este proyecto
+          </Button>
+        </div>
+      )}
+
+      <ConfirmarBorrado
+        abierto={borrando}
+        alCerrar={() => setBorrando(false)}
+        titulo="Eliminar el proyecto"
+        nombre={proyecto.nombre}
+        queSeLleva={[
+          `${tareas.length} ${tareas.length === 1 ? 'tarea' : 'tareas'} de la metodología`,
+          'su alcance de normas y sitios',
+          'su bitácora, incluidos los cambios de etapa',
+        ]}
+        error={error}
+        trabajando={guardando}
+        alConfirmar={borrar}
+      />
 
       <Modal
         abierto={editando}
@@ -202,6 +321,87 @@ function Etapas({ actual, nombre }: { actual: number; nombre: string }) {
         Etapa <span className="mono">{actual || '—'}</span> de{' '}
         <span className="mono">{ETAPAS_PROYECTO.length}</span> · {nombre}
       </p>
+    </div>
+  )
+}
+
+/**
+ * Una sección desplegable del proyecto.
+ *
+ * ⚠️ Sin marco, como todo: lo que la delimita es su hairline verde, que se
+ * enciende cuando está abierta. El estado vive en el detalle y no aquí dentro
+ * para que abrir una no cierre las otras.
+ */
+function Seccion({
+  clave,
+  titulo,
+  abiertas,
+  alAlternar,
+  children,
+}: {
+  clave: string
+  titulo: string
+  abiertas: Set<string>
+  alAlternar: (siguiente: Set<string>) => void
+  children: React.ReactNode
+}) {
+  const abierta = abiertas.has(clave)
+
+  return (
+    <div style={{ marginTop: 22 }}>
+      <button
+        type="button"
+        aria-expanded={abierta}
+        onClick={() => {
+          const copia = new Set(abiertas)
+          if (copia.has(clave)) copia.delete(clave)
+          else copia.add(clave)
+          alAlternar(copia)
+        }}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 10,
+          width: '100%',
+          padding: '4px 2px 10px',
+          background: 'transparent',
+          border: 'none',
+          textAlign: 'left',
+          cursor: 'pointer',
+          color: 'inherit',
+          font: 'inherit',
+        }}
+      >
+        <span
+          style={{
+            fontSize: 13,
+            fontWeight: 600,
+            letterSpacing: '.04em',
+            textTransform: 'uppercase',
+            color: 'var(--texto-dim)',
+          }}
+        >
+          {titulo}
+        </span>
+        <span aria-hidden style={{ fontSize: 12.5, color: 'var(--texto-dim)' }}>
+          {abierta ? 'Ocultar' : 'Ver'}
+        </span>
+      </button>
+
+      <div
+        aria-hidden
+        style={{
+          height: 2,
+          borderRadius: 2,
+          marginBottom: abierta ? 14 : 0,
+          background: abierta
+            ? 'linear-gradient(90deg, var(--verde-hondo), var(--verde) 55%, rgba(61,186,78,0))'
+            : 'rgba(61, 186, 78, .16)',
+        }}
+      />
+
+      {abierta && children}
     </div>
   )
 }

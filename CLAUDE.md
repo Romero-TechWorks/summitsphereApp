@@ -21,7 +21,7 @@ de dominio cuelga de una `org_id`. Ver §Reglas críticas, regla 1.
 
 ## Estado actual — lee esto antes de pedir nada
 
-- **Fase 00 cerrada. De la Fase 01 están hechos B0, B1, B2 y B2b.** B0: el lenguaje
+- **Fase 00 cerrada y la Fase 01 completa por el lado del código** (B0 → B6). B0: el lenguaje
   visual sin tarjetas y el kit de captura (`ui/Lista`, `ui/Modal`, `ui/Input`,
   `ui/Select`, `ui/Textarea`, `ui/Campo`, `ui/Checkbox`, `ui/Pestanas`,
   `ui/EncabezadoPagina`, `ui/Aviso`, `utils/dates`, `utils/useEsMovil`). B1: la
@@ -30,8 +30,27 @@ de dominio cuelga de una `org_id`. Ver §Reglas críticas, regla 1.
   proyectos con su alcance (normas × sitios) y la lista de toda la cartera en
   `/cartera?tab=proyectos`. B2b: el importador del catálogo de normas en
   `/sistemas`, que deja de ser una pantalla pendiente. `npm run build` y
-  `npm run lint` pasan limpios. Lo siguiente es **B3 (tablero de la cartera)** y
-  **B4 (bitácora del proyecto)**.
+  `npm run lint` pasan limpios. **Está desplegado en Vercel y en uso.** B5 y B6
+  —tareas por etapa y depuración— salieron de usarlo, no del plan original. Lo
+  que falta para dar la fase por cerrada es **la prueba del criterio de cierre
+  con datos reales y una segunda cuenta**, más las tareas del dueño `B01`–`B04`.
+  Lo siguiente en el código es la **Fase 02 · Sistemas de gestión**, que ahora
+  incluye los adjuntos (F02·B2b, adelantados desde la Fase 04) y el Markdown de
+  los documentos.
+- ⚠️ **La migración 4 está escrita y probada, pero LA APLICA EL DUEÑO**
+  (`20260821220000_tareas_y_depuracion.sql`, tarea `B00b`): crea `tareas_etapa`
+  y abre el DELETE de organizaciones y proyectos al socio. `src/types/database.ts`
+  ya trae sus tipos escritos a mano con la forma del generador; al aplicarla se
+  regenera y **manda lo generado**.
+- **Quién cerró una tarea y cuándo lo escribe la base**, no el navegador
+  (`sellar_tarea_hecha()`) — igual que el renglón de cambio de etapa. Una fecha
+  que viaja desde el cliente es una fecha que se puede escribir a mano; está
+  comprobado que mandar `hecha_por` de otro se sobrescribe.
+- **Se puede borrar, y sólo el socio**: organizaciones y proyectos, con
+  `puedo_borrar_org()` / `puedo_borrar_proyecto()`. ⚠️ **Esas dos funciones hay
+  que ampliarlas en la Fase 02 y en la 03** — una organización con documentos,
+  auditorías o hallazgos no se borra. Están escritas para que ampliarlas sea
+  tocar un solo sitio.
 - **El catálogo de normas se SUBE, no se siembra.** `normas` y `norma_clausulas`
   nacen vacías y las llena un socio con un `.md` propio desde `/sistemas`
   (`src/lib/normas/importador.ts`). Es lo que mantiene el criterio técnico de la
@@ -114,6 +133,13 @@ de dominio cuelga de una `org_id`. Ver §Reglas críticas, regla 1.
   `usuarios_organizaciones` tiene consecuencias reales, y el reparto se hace en
   la pestaña **Equipo** del expediente — no en `/admin`, que llega en la Fase 06.
   §8.2 · docs/08 §2.
+- **Los widgets del tablero NO tienen vistas en la base**: se calculan en
+  memoria sobre la lista de proyectos que ya está en la caché
+  (`src/lib/tablero/calculos.ts`), y los cuatro comparten **una sola** consulta
+  con `/cartera?tab=proyectos`. Una vista por widget sería otra clave que puede
+  faltar en la caché, y el tablero se abre por la mañana con media barra de
+  señal. Se moverá a vistas con `security_invoker` el día que una firma tenga
+  miles de proyectos.
 - **El indicador de conexión sólo aparece cuando tiene algo que decir**
   (`EstadoConexion` en la Navbar): sin conexión, con cola pendiente o con algo
   rechazado. En verde y vacío no se pinta — un indicador permanente deja de
@@ -230,6 +256,13 @@ Decisiones intencionales. Cambiarlas rompe algo más.
     `estado` + `hallazgos_historial`. Un `DELETE` sobre un hallazgo destruye la
     trazabilidad de la auditoría — que es exactamente lo que un auditor externo
     va a venir a revisar. §8.7.
+    ⚠️ **Dónde está la línea, porque no es "nada se borra nunca":** lo que **no
+    es evidencia de auditoría** sí se borra —un cliente capturado por error, un
+    proyecto de prueba—, **sólo el socio** y **sólo mientras no cuelgue de ello**
+    un hallazgo, una auditoría o un documento aprobado. La comprobación vive en
+    la política de DELETE, no en la pantalla, y el borrado queda en `audit_logs`.
+    Sin esa salida, la primera semana de uso real deja la cartera llena de datos
+    de prueba que nadie puede quitar (F01·B6).
 
 ---
 
