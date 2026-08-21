@@ -209,3 +209,11 @@ export function IconoAlerta(p: PropsIcono) {
     </Svg>
   )
 }
+
+export function IconoCerrar(p: PropsIcono) {
+  return (
+    <Svg {...p}>
+      <path d="M18 6 6 18M6 6l12 12" />
+    </Svg>
+  )
+}

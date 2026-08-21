@@ -75,7 +75,13 @@ Summit:
 ```
 
 El tablero de la firma **es** este embudo. Mover un proyecto de etapa queda en la
-bitácora del proyecto con fecha y responsable.
+bitácora del proyecto con fecha y responsable — lo escribe la base, no la app.
+
+Dónde se abre: dentro del expediente del cliente, pestaña **Proyectos**. El
+detalle vive en la misma pantalla (`?proyecto=<id>`), con su avance de etapas y
+su alcance —normas × sitios— en dos grupos de casillas que guardan al momento.
+`/cartera?tab=proyectos` enseña los de toda la cartera, con filtros por estado y
+por etapa.
 
 ### Bitácora del proyecto
 La línea de tiempo: visitas, entregas, cambios de etapa, acuerdos, incidencias. Es
@@ -85,6 +91,15 @@ memoria del consultor y en un hilo de correo.
 ---
 
 ## Sistemas de gestión `[Fase 02]`
+
+### Normas — el catálogo `[llegó en la Fase 01]`
+La pantalla `/sistemas` empieza siendo esto y sólo esto: **el catálogo de normas
+de la firma, que se sube como archivo**. Un socio escribe su `.md` con la
+estructura de cláusulas y el resumen de Summit para cada una, lo sube, ve el
+saldo de lo que va a cambiar y confirma. Corregir una errata es volver a subirlo.
+
+⚠️ Se adelantó a la Fase 01 porque el **alcance de un proyecto** cuelga de él: sin
+normas cargadas no se puede decir qué cubre un contrato.
 
 ### Documentos — control documental
 Lo que un cliente cree que está comprando cuando contrata una implementación.

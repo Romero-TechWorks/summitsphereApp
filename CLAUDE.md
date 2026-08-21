@@ -21,11 +21,36 @@ de dominio cuelga de una `org_id`. Ver §Reglas críticas, regla 1.
 
 ## Estado actual — lee esto antes de pedir nada
 
-- **Fase 00 completa por el lado del código.** Andamio, armazón fijo, esquema
-  base con RLS, MFA y roles, capa offline, tablero y Turnstile. `npm run build` y
-  `npm run lint` pasan limpios. Lo que queda de la fase son tareas del dueño en
-  paneles (`docs/09_TAREAS_DEL_DUENO.md` · A08, A09) y la prueba de campo en un
-  teléfono. Lo siguiente es la **Fase 01 · Cartera**.
+- **Fase 00 cerrada. De la Fase 01 están hechos B0, B1, B2 y B2b.** B0: el lenguaje
+  visual sin tarjetas y el kit de captura (`ui/Lista`, `ui/Modal`, `ui/Input`,
+  `ui/Select`, `ui/Textarea`, `ui/Campo`, `ui/Checkbox`, `ui/Pestanas`,
+  `ui/EncabezadoPagina`, `ui/Aviso`, `utils/dates`, `utils/useEsMovil`). B1: la
+  migración 3, `/cartera` con su directorio de contactos y el expediente
+  `/cartera/[id]` con Resumen · Proyectos · Sitios · Contactos · **Equipo**. B2:
+  proyectos con su alcance (normas × sitios) y la lista de toda la cartera en
+  `/cartera?tab=proyectos`. B2b: el importador del catálogo de normas en
+  `/sistemas`, que deja de ser una pantalla pendiente. `npm run build` y
+  `npm run lint` pasan limpios. Lo siguiente es **B3 (tablero de la cartera)** y
+  **B4 (bitácora del proyecto)**.
+- **El catálogo de normas se SUBE, no se siembra.** `normas` y `norma_clausulas`
+  nacen vacías y las llena un socio con un `.md` propio desde `/sistemas`
+  (`src/lib/normas/importador.ts`). Es lo que mantiene el criterio técnico de la
+  firma fuera de Git —regla 12— y lo que permite corregir un resumen sin una
+  migración. El importador es **idempotente** y lo que desaparece del archivo se
+  marca `activa = false`, nunca se borra.
+- **El detalle de un proyecto NO tiene ruta propia**: se abre con
+  `?proyecto=<id>` sobre la pestaña de proyectos del expediente. La única ruta de
+  detalle de la cartera es `/cartera/[id]` — los dominios son páginas con
+  pestañas (§2.1).
+- **La migración 3 está aplicada** (21 ago 2026).
+  `supabase/migrations/20260821180000_cartera_y_proyectos.sql` creó `sitios`,
+  `contactos`, `proyectos`, `proyecto_normas`, `proyecto_sitios`,
+  `bitacora_proyecto`, `normas` y `norma_clausulas` —estas dos **vacías**, las
+  llena el importador de `.md` de F01·B2b—, con `puedo_editar_org()`,
+  `heredar_org_del_proyecto()`, `validar_sitio_del_proyecto()` y
+  `registrar_cambio_etapa()`. `npx supabase migration list --linked` da las cinco
+  con `local = remote`, y `src/types/database.ts` regenerado salió idéntico al
+  del repositorio.
 - **La primera migración está aplicada.**
   `supabase/migrations/20260820160600_esquema_base_y_bitacora.sql` creó
   `usuarios`, `organizaciones`, `usuarios_organizaciones`, `config_firma`,
@@ -38,14 +63,16 @@ de dominio cuelga de una `org_id`. Ver §Reglas críticas, regla 1.
   a `/mfa` a quien tenga un factor sin verificar o un rol que lo exija (`socio`,
   `administracion`). La consulta a `usuarios` sólo se paga cuando la cuenta no
   tiene ningún factor: ver `faltaSegundoFactor()`.
-- **Turnstile ya está en `/login`** (F00·B3), pero **quien lo valida es
-  Supabase**, no la app: el token viaja en `options.captchaToken` de
+- **Turnstile está encendido y funcionando** (F00·B3 + `A08`, confirmado el
+  21 ago 2026). El widget vive en `/login`, pero **quien valida el token es
+  Supabase**, no la app: viaja en `options.captchaToken` de
   `signInWithPassword`. Comprobarlo en el navegador —o en un `/api/turnstile`
   propio— sería decorativo, porque el endpoint de autenticación de Supabase es
   público y quien quiera probar contraseñas no pasa por la pantalla.
-  ⚠️ Son **dos mitades**: el widget (aquí) y la protección en el panel de
-  Supabase (`A08`). Con el widget solo, el token se ignora; con la protección
-  sola, **no entra nadie**.
+  ⚠️ Son **dos mitades** y ahora las dos están puestas: el widget (aquí) y la
+  protección en el panel de Supabase. Se apagan juntas y en ese orden —primero
+  el panel, después la variable—: con el widget solo el token se ignora, y con
+  la protección sola **no entra nadie**.
 - **Ya hay un `socio`:** `herrliebert@live.com`, ascendido a mano y con su TOTP
   enrolado. La cuenta se creó *después* de la migración, así que el arranque
   automático del primer socio no ascendió a nadie y **ya no volverá a correr**:
@@ -70,9 +97,23 @@ de dominio cuelga de una `org_id`. Ver §Reglas críticas, regla 1.
   navegador — que no dice el nombre de la app ni menciona que lo guardado sigue a
   salvo, y en campo se lee como que la app perdió el trabajo. Va fuera de
   `(dashboard)` y **excluida del matcher**, igual que `fallback-*.js`.
-- **El tablero no lleva tarjetas.** Cada widget es texto flotando sobre el fondo,
-  con su icono y delimitado por debajo con el verde de Summit; el marco sólo
-  aparece mientras se arrastra. §5 · docs/05_SISTEMA_DE_DISENO.md §4.3.
+- **NADA lleva tarjetas, y el tablero es la plantilla del resto** [F01·B0].
+  Cada bloque o fila es texto flotando sobre el fondo, con su icono y delimitado
+  **por debajo** con el verde de Summit; el marco sólo aparece mientras se
+  arrastra un widget. Los bloques salen de
+  `src/components/tablero/RejillaTablero.tsx` y las filas de
+  `src/components/ui/Lista.tsx` — uno de los dos sirve para casi todo.
+  ⚠️ Tres excepciones, y son de mecánica: los **controles** conservan su marco
+  (un `<input>` sin borde no se ve pulsable), el **modal** lleva superficie
+  porque es una capa por encima y no una caja dentro, y el **armazón** sigue en
+  navy. `ui/Card.tsx` ya no existe. §5 · docs/05_SISTEMA_DE_DISENO.md §4.3.
+- **Quién ESCRIBE en una organización lo decide `puedo_editar_org()`**, no
+  `mis_organizaciones()`. El `SELECT` de una tabla de dominio filtra por
+  organización asignada; el `INSERT` y el `UPDATE` pasan además por esa función,
+  que **excluye al papel `lectura`**. Desde F01·B1 el papel de
+  `usuarios_organizaciones` tiene consecuencias reales, y el reparto se hace en
+  la pestaña **Equipo** del expediente — no en `/admin`, que llega en la Fase 06.
+  §8.2 · docs/08 §2.
 - **El indicador de conexión sólo aparece cuando tiene algo que decir**
   (`EstadoConexion` en la Navbar): sin conexión, con cola pendiente o con algo
   rechazado. En verde y vacío no se pinta — un indicador permanente deja de
@@ -222,13 +263,23 @@ tenía WiFi malo; aquí el auditor está en un sótano de una planta industrial.
    `localhost`, o **en el teléfono contra la URL de Vercel**, que es HTTPS. Esa
    segunda es la única prueba que vale para el criterio de cierre, porque es la
    única que se hace con el dedo.
-7. **Una auditoría se descarga entera antes de entrar a planta.** El plan, sus
+7. **Un filtro de lista no es una consulta.** El texto del buscador y el estado
+   seleccionado **no entran en la clave de caché**: se descarga la lista completa
+   una vez y se filtra **en memoria**. Con una consulta por búsqueda, en una
+   planta sin señal la lista se vacía en cuanto se teclea la primera letra —esa
+   clave no está en la caché— y el consultor concluye que la app perdió sus
+   datos. Ver `queryKeys.cartera.organizaciones()`.
+8. **Una auditoría se descarga entera antes de entrar a planta.** El plan, sus
    cláusulas, la lista de verificación y los hallazgos previos se precargan en la
    caché al abrir la auditoría con señal. Si esto no pasa, el auditor llega al
    piso con una pantalla vacía. §8.11.
 
-**Excepciones conscientes:** los adjuntos tienen cola propia (pesan megabytes y
-van en dos fases); crear y revocar el link del portal no pasa por `offlineWrite`.
+**Excepciones conscientes, y son tres:** los adjuntos tienen cola propia (pesan
+megabytes y van en dos fases); crear y revocar el link del portal no pasa por
+`offlineWrite`; y **la importación del catálogo de normas** tampoco —parte de un
+archivo que sólo existe en esa pantalla, escribe cientos de filas en lote y la
+hace un socio frente a su computadora, nunca un auditor en un sótano. Sin
+conexión, esa pantalla lo dice y no deja empezar.
 
 ---
 

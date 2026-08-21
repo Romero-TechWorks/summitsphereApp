@@ -199,15 +199,22 @@ propiedad.
 
 ## §5 · Estilos
 
-El patrón del proyecto es **estilos inline con variables CSS**:
+El patrón del proyecto es **estilos inline con variables CSS**, y las variables
+llevan su nombre en español, como todo lo demás:
 
 ```tsx
 <div style={{
-  background: 'var(--surface)',
-  border: '1px solid var(--border)',
-  color: 'var(--text)',
+  color: 'var(--texto)',
+  borderBottom: '2px solid rgba(61, 186, 78, .16)',
 }}>
 ```
+
+⚠️ **Sin tarjetas: ni `background` de contenedor, ni `borderRadius`, ni bordes de
+cuatro lados** alrededor de contenido. Cada bloque o fila se delimita por debajo
+con la hairline verde — `src/components/tablero/RejillaTablero.tsx` para bloques,
+`src/components/ui/Lista.tsx` para filas. Los controles de formulario sí llevan
+marco, y el modal su superficie: son las dos excepciones, y son mecánicas.
+[`05_SISTEMA_DE_DISENO.md`](05_SISTEMA_DE_DISENO.md) §4.3.
 
 **No mezclar Tailwind en componentes existentes.** Los nuevos de
 `src/components/ui/` pueden usarlo si respetan las variables. Todo lo que hace

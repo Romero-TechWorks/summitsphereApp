@@ -1,3 +1,4 @@
+import EncabezadoPagina from '@/components/ui/EncabezadoPagina'
 import EstadoVacio from '@/components/ui/EstadoVacio'
 
 /**
@@ -24,16 +25,18 @@ export default function PantallaPendiente({
 }) {
   return (
     <div className="contenido-pagina">
-      <h2 className="display" style={{ fontSize: 32, marginBottom: 4 }}>
-        {titulo}
-      </h2>
-      <p style={{ fontSize: 13, color: 'var(--texto-dim)', marginBottom: 20 }}>
-        Llega en la <span className="mono">Fase {String(fase).padStart(2, '0')}</span>
-      </p>
+      <EncabezadoPagina
+        titulo={titulo}
+        meta={
+          <span>
+            Llega en la <span className="mono">Fase {String(fase).padStart(2, '0')}</span>
+          </span>
+        }
+      />
 
-      <div style={{ background: 'var(--superficie)', border: '1px solid var(--borde)', borderRadius: 6 }}>
-        <EstadoVacio titulo="Todavía no construido" descripcion={descripcion} />
-      </div>
+      {/* Sin recuadro: el estado vacío es texto sobre el fondo, como todo lo
+          demás desde que el tablero es la plantilla (docs/05 §4.3). */}
+      <EstadoVacio titulo="Todavía no construido" descripcion={descripcion} />
     </div>
   )
 }

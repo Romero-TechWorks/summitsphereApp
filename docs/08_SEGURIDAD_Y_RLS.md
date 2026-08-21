@@ -64,6 +64,31 @@ llama. Es la vulnerabilidad clásica de Postgres y Supabase la marca en su linte
 ⚠️ **`STABLE`, no `VOLATILE`.** Sin eso, la función se evalúa una vez por fila y
 una lista de 500 hallazgos hace 500 consultas a `usuarios_organizaciones`.
 
+### La tercera función: quién ESCRIBE  [Fase 01]
+
+`mis_organizaciones()` contesta *"¿la ve?"*. Para *"¿la toca?"* hay una más, y es
+la que le da consecuencias a la columna `papel` de `usuarios_organizaciones`:
+
+```sql
+CREATE OR REPLACE FUNCTION puedo_editar_org(p_org uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT es_socio() OR EXISTS (
+    SELECT 1 FROM usuarios_organizaciones
+     WHERE usuario_id = auth.uid() AND org_id = p_org AND papel <> 'lectura'
+  )
+$$;
+```
+
+⚠️ **`lectura` es un papel de verdad, no una etiqueta.** Quien lo tenga ve el
+expediente completo y no puede modificar nada — ni un contacto, ni el nombre del
+cliente. Es el papel del consultor que entra a consultar un expediente que no
+lleva, y del socio de una firma aliada que revisa sin tocar.
+
 ### La plantilla de política
 
 **Toda** tabla de dominio lleva estas cuatro. Sin excepciones:
@@ -75,14 +100,27 @@ CREATE POLICY "hallazgos_select" ON hallazgos FOR SELECT TO authenticated
   USING (org_id IN (SELECT mis_organizaciones()) OR es_socio());
 
 CREATE POLICY "hallazgos_insert" ON hallazgos FOR INSERT TO authenticated
-  WITH CHECK (org_id IN (SELECT mis_organizaciones()) OR es_socio());
+  WITH CHECK (puedo_editar_org(org_id));
 
 CREATE POLICY "hallazgos_update" ON hallazgos FOR UPDATE TO authenticated
-  USING      (org_id IN (SELECT mis_organizaciones()) OR es_socio())
-  WITH CHECK (org_id IN (SELECT mis_organizaciones()) OR es_socio());
+  USING      (puedo_editar_org(org_id))
+  WITH CHECK (puedo_editar_org(org_id));
 
 -- DELETE: deliberadamente ausente. Un hallazgo se anula, no se borra.
 ```
+
+⚠️ **Leer y escribir usan funciones distintas a propósito.** El `SELECT` va por
+`mis_organizaciones()` —el papel no cambia lo que se ve— y el `INSERT`/`UPDATE`
+por `puedo_editar_org()`, que además excluye a `lectura`. Escribir las cuatro con
+la misma condición era lo que decía este documento hasta la Fase 01, y dejaba el
+papel sin efecto.
+
+⚠️ **Lo que cuelga de un proyecto no manda su `org_id`: lo hereda.** Las tablas
+de alcance y de bitácora lo reciben de un trigger `BEFORE`
+(`heredar_org_del_proyecto()`), porque `WITH CHECK` sólo comprueba que la
+organización sea **una de las tuyas**, no que sea **la del proyecto**: con dos
+clientes asignados, el alcance de uno podría acabar colgado del expediente del
+otro sin violar ninguna política.
 
 ⚠️ **`USING` y `WITH CHECK` en el UPDATE, las dos.** `USING` decide qué filas
 puedes tocar; `WITH CHECK` decide en qué se pueden convertir. Sólo con `USING`,

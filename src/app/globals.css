@@ -30,7 +30,7 @@
   --superficie-3: #e2eaf3;  /* Badges, anidados                      */
 
   /* ── Líneas ─────────────────────────────────────────────────────────── */
-  --borde:        #d5e0ec;  /* Separadores y bordes de tarjeta       */
+  --borde:        #d5e0ec;  /* Separadores y marco del modal         */
   /* Los bordes de CONTROLES son otra cosa que los separadores: WCAG 1.4.11
      pide 3:1 para que se vea dónde termina un campo. --borde da 1.2:1 y sirve
      para dividir; para el marco de un input no alcanza. */

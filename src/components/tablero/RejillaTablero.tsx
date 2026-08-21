@@ -45,13 +45,17 @@ import type { NombreIcono, Widget } from '@/lib/tablero/widgets'
  * la cola (CLAUDE.md · reglas del offline, 2).
  *
  * ── Sobre el aspecto ──────────────────────────────────────────────────────
- * **Aquí no hay tarjetas, y es deliberado.** Nueve recuadros blancos sobre el
- * fondo claro compiten entre sí y ninguno gana: el tablero se lee como una
- * cuadrícula de cajas vacías en vez de como la portada de la firma. Cada widget
- * es texto flotando sobre el fondo, reconocible por su icono y **delimitado por
- * debajo con el verde de Summit**. El marco sólo aparece mientras se arrastra,
- * que es el único momento en el que hace falta ver el bloque como un objeto que
- * se puede tomar. docs/05_SISTEMA_DE_DISENO.md §4.5.
+ * **Aquí no hay tarjetas** — y desde F01·B0, en ninguna pantalla de la app:
+ * **este tablero es la plantilla visual del resto** (docs/05 §4.3). Nueve
+ * recuadros blancos sobre el fondo claro compiten entre sí y ninguno gana: el
+ * tablero se lee como una cuadrícula de cajas vacías en vez de como la portada
+ * de la firma. Cada widget es texto flotando sobre el fondo, reconocible por su
+ * icono y **delimitado por debajo con el verde de Summit**. El marco sólo
+ * aparece mientras se arrastra, que es el único momento en el que hace falta ver
+ * el bloque como un objeto que se puede tomar.
+ *
+ * La versión en fila de este mismo patrón —para listas de contenido— vive en
+ * `src/components/ui/Lista.tsx`.
  */
 
 /**

@@ -157,6 +157,10 @@ quien lo pida. Toda cuenta nace `cliente` y la asciende un socio.
 
 # FASE 01 · Cartera
 
+Migración `20260821180000_cartera_y_proyectos.sql`. **Trae la fase entera de una
+vez** —también el catálogo de normas que llena el importador de F01·B2b— para
+que se aplique una sola migración y los tipos se regeneren una sola vez.
+
 ## `sitios`
 Los centros de trabajo. **Una organización puede tener cinco plantas y el alcance
 del certificado cubrir sólo dos.**
@@ -166,8 +170,9 @@ del certificado cubrir sólo dos.**
 | `nombre` | text NOT NULL | *Planta Toluca* |
 | `direccion`, `municipio`, `entidad`, `cp` | text | |
 | `tipo` | text CHECK | `planta` · `oficina` · `almacen` · `obra` · `sucursal` |
-| `num_trabajadores` | int | Determina qué NOMs aplican |
-| `activo` | boolean | |
+| `num_trabajadores` | int | Determina qué NOMs aplican, **por sitio** |
+| `notas` | text | Accesos, horarios, a quién buscar en la caseta |
+| `activo` | boolean | Se da de baja; no se borra |
 
 ## `contactos`
 
@@ -175,9 +180,25 @@ del certificado cubrir sólo dos.**
 |---|---|---|
 | `nombre`, `puesto`, `correo`, `telefono` | text | |
 | `papel` | text CHECK | `representante_direccion` · `coordinador_sgc` · `responsable_seguridad` · `contacto_comercial` · `otro` |
-| `sitio_id` | uuid FK | |
-| `acceso_portal` | boolean | |
-| `principal` | boolean | |
+| `sitio_id` | uuid FK | Nulo = de toda la organización |
+| `principal` | boolean | Con quién se habla primero |
+| `activo` | boolean | |
+
+⚠️ **`acceso_portal` NO existe todavía**, y es deliberado: el portal del cliente
+llega en la Fase 06 y una casilla que no enciende nada es un interruptor muerto
+(CLAUDE.md regla 11). La columna se agrega en la migración de esa fase, junto a
+lo que la lee.
+
+## `normas` · `norma_clausulas`
+**Catálogos globales, sin `org_id`** — declarados en la lista `EXENTAS` de
+`.github/workflows/rls-check.yml`. Se leen con sesión; sólo los escribe un socio.
+
+⚠️ **Adelantados desde la Fase 02 y VACÍOS.** El catálogo de Summit no se siembra
+desde el repositorio: se sube como archivo `.md` y se indexa desde la app
+(F01·B2b). Es lo que mantiene el criterio técnico de la firma fuera de Git —regla
+12— y lo que permite corregir un resumen sin escribir una migración. El detalle
+de columnas está en la Fase 02, más abajo; en la Fase 01 sólo existen la
+estructura y la política. `condensada` (Token Diet) llega con el Módulo B.
 
 ## `proyectos`
 El contrato. **`etapa` son las seis de la metodología de Summit.**
@@ -191,12 +212,19 @@ El contrato. **`etapa` son las seis de la metodología de Summit.**
 | `lider_id` | uuid FK usuarios | |
 | `fecha_inicio`, `fecha_fin_estimada`, `fecha_fin_real` | date | |
 | `monto` | numeric(14,2) | |
-| `moneda` | text default `'MXN'` | |
+| `moneda` | text CHECK | `MXN` · `USD`, default `MXN` |
 | `objetivo` | text | |
 
 ## `proyecto_normas` · `proyecto_sitios`
 El alcance real, en tablas, no en una cadena de texto. **De aquí sale la lista de
-verificación de una auditoría.**
+verificación de una auditoría.** PK compuesta, y las **dos únicas tablas de la
+fase con `DELETE`**: quitar una norma del alcance es corregir un contrato, no
+destruir un registro.
+
+⚠️ **Su `org_id` la pone un trigger, no el cliente** (`heredar_org_del_proyecto`).
+Y `proyecto_sitios` valida además que el sitio sea de esa misma organización
+(`validar_sitio_del_proyecto`): ni una FK ni un CHECK pueden mirar dos tablas a
+la vez.
 
 ## `bitacora_proyecto`
 Línea de tiempo: visitas, entregas, cambios de etapa, acuerdos.
@@ -209,12 +237,41 @@ Línea de tiempo: visitas, entregas, cambios de etapa, acuerdos.
 | `titulo`, `detalle` | text | |
 | `participantes` | text[] | |
 
+⚠️ Sin `DELETE` y sin trigger de bitácora: **ya es una bitácora**. Una entrada
+equivocada se corrige con otra entrada, y sólo su autor —o un socio— la edita.
+
+### Funciones y triggers — Fase 01
+
+```sql
+puedo_editar_org(uuid)        -- boolean, STABLE, SECURITY DEFINER. Excluye al papel `lectura`
+heredar_org_del_proyecto()    -- trigger BEFORE: la org de lo que cuelga de un proyecto
+validar_sitio_del_proyecto()  -- trigger BEFORE: el sitio del alcance es de ese cliente
+registrar_cambio_etapa()      -- trigger AFTER: mover de etapa escribe en la bitácora
+```
+
+⚠️ **`registrar_cambio_etapa()` lo hace la BASE y no la app.** Sin señal, el
+`UPDATE` del proyecto y el `INSERT` de la bitácora saldrían como dos operaciones
+distintas de la cola; si la segunda fallara, la línea de tiempo mentiría. Y la
+fecha se calcula con `(now() AT TIME ZONE 'America/Mexico_City')::date`, **no con
+`current_date`**: la base corre en UTC, así que a las 19:00 de México
+`current_date` ya es mañana.
+
+⚠️ **`organizaciones_update` se recreó aquí** para usar `puedo_editar_org()`.
+Dejar la organización con una política más floja que la de sus sitios sería una
+incoherencia con forma de bug: un `lectura` que no puede tocar un contacto pero
+sí renombrar al cliente entero.
+
 ---
 
 # FASE 02 · Sistemas de gestión
 
 ## `normas`
 Las siete. **Catálogo global, sin `org_id`.**
+
+⚠️ **La tabla se crea en la Fase 01, no aquí** — `proyecto_normas` la necesita
+para el alcance de un proyecto. Lo que llega en la Fase 02 es su contenido, y
+llega **por el importador de `.md`** (F01·B2b), nunca por una semilla del
+repositorio.
 
 | Columna | Tipo | Ejemplo |
 |---|---|---|
@@ -228,7 +285,9 @@ Semilla: `iso_9001` · `iso_14001` · `iso_45001` · `iso_13485` · `iso_27001` 
 `iso_37001` · `iso_37301`.
 
 ## `norma_clausulas`
-El árbol. **Catálogo global.**
+El árbol. **Catálogo global.** Tabla creada en la Fase 01, junto a `normas`.
+`condensada` se agrega con el Módulo B [Fase 07]: hasta entonces no hay quien la
+lea (CLAUDE.md regla 11).
 
 | Columna | Tipo | Nota |
 |---|---|---|

@@ -109,8 +109,11 @@ llaves.
 - `Sidebar` (escritorio, navy) · `BottomNav` (móvil, 5 destinos) · `Navbar` con
   buscador global y el 🤖 del asistente. Responsive **por estado de React**
   (`isMobile`), no por media queries.
-- Biblioteca `src/components/ui/`: `Button`, `Card`, `Input`, `Modal`, `Badge`,
-  `Skeleton`, `BotonEliminar`, `MenuAcciones`, `FiltrosEnFila`, `feedback`.
+- Biblioteca `src/components/ui/`: `Button`, `Badge`, `Skeleton`, `EstadoVacio`,
+  `Logo`, `Iconos`. ⚠️ Los de captura —`Input`, `Select`, `Textarea`, `Campo`,
+  `Modal`, `Pestanas`— y el patrón de lista llegaron en **F01·B0**, cuando hubo
+  una pantalla real que los usara. `Card` **se eliminó** ahí mismo: desde esa
+  decisión no hay tarjetas en ninguna pantalla.
 - Reglas globales de accesibilidad: anillo de foco `:focus-visible`, mínimo táctil
   44×44 en `pointer: coarse`, `prefers-reduced-motion`.
 
@@ -129,9 +132,11 @@ migración. Separarlos obliga a escribir el proxy dos veces.
   navegador, o en una ruta propia, sería decorativo: el endpoint de
   autenticación es público y quien quiera probar diez mil contraseñas no abre
   esta pantalla.
-  ⚠️ **La otra mitad es del dueño** (`../docs/09_TAREAS_DEL_DUENO.md` · A08):
-  Authentication → Attack Protection, con la llave secreta del widget. Con el
-  widget solo el token se ignora; con la protección sola **no entra nadie**.
+  ⚠️ **La otra mitad es del dueño** (`09_TAREAS_DEL_DUENO.md` · A08):
+  Authentication → Attack Protection, con la llave secreta del widget. ✅ Hecha
+  el 21 ago 2026 — las dos mitades están puestas y el captcha funciona. Con el
+  widget solo el token se ignora; con la protección sola **no entra nadie**, así
+  que se apagan juntas: primero el panel, después la variable.
 - `/mfa` con enrolamiento (QR + clave manual) y reto TOTP. ✅
 - **MFA obligatorio para `socio` y `administracion`** ✅, impuesto en el guard y
   no en la interfaz. `src/lib/auth/roles.ts` traduce a TypeScript el CHECK de
@@ -192,7 +197,7 @@ probar que el armazón, la caché y el RLS funcionan de punta a punta.
 - El widget **«Esperando señal»** es el único con datos reales en la Fase 00:
   enseña la cola de salida. Es la ventana del auditor a lo que lleva sin subir.
 - ⚠️ El `TouchSensor` lleva `activationConstraint` con retardo. Sin él, en el
-  teléfono cualquier gesto de scroll que empiece sobre una tarjeta arranca un
+  teléfono cualquier gesto de scroll que empiece sobre un widget arranca un
   arrastre y el tablero deja de poder scrollearse.
 
 ### Criterio de cierre — Fase 00
@@ -225,25 +230,118 @@ Vercel después de tocar las variables de entorno.
 
 > **2 semanas.** La primera fase que la firma usa de verdad.
 
-## F01·B1 — Organizaciones y sitios
+## F01·B0 — Lenguaje visual y kit de captura  ✅
 
-- `organizaciones`: razón social, RFC, giro, tamaño, logotipo, estado.
+Un bloque previo que el plan original no tenía y la primera pantalla de dominio
+hizo obligatorio: **el tablero es la plantilla visual del resto de la app y no
+hay tarjetas en ninguna parte** (decisión del dueño, 21 ago 2026;
+[`05_SISTEMA_DE_DISENO.md`](05_SISTEMA_DE_DISENO.md) §4.3, que se invirtió).
+
+- `ui/Lista.tsx` — la traducción del bloque del tablero a **fila**: texto sobre
+  el fondo, icono, y la hairline verde que crece al enfocar. Es el patrón de
+  contenido de toda la aplicación.
+- `ui/Campo.tsx` + `Input` · `Select` · `Textarea` — los controles **sí**
+  conservan su marco (`--borde-fuerte`, 3.59:1): un campo sin borde no se ve
+  pulsable. `fontSize: 16` obligatorio, o Safari en iOS amplía la página al
+  enfocar y con el armazón fijo ese zoom no se deshace.
+- `ui/Modal.tsx` — centrado en escritorio, hoja inferior en el teléfono. Cuida
+  las cuatro trampas del armazón: `calc(var(--vh-full) * 0.9)`, `minHeight: 0`,
+  bloqueo del scroller de la app (no del `body`) y área segura en el pie.
+- `ui/Pestanas.tsx` + `usePestana` — **los dominios son pestañas**
+  (`?tab=`), con `<Link>` de verdad para que la URL se pueda compartir.
+  ⚠️ Quien los use va dentro de un `<Suspense>`: leen `useSearchParams()` y sin
+  el límite **el build falla**.
+- `ui/EncabezadoPagina.tsx` y `ui/Aviso.tsx` — el título de pantalla y el aviso
+  con barra de 2px a la izquierda, sin relleno.
+- `utils/dates.ts` — `formatDateOnly` · `toISODate` · `formatDate`. ⚠️ Una
+  columna `date` con `new Date()` corre un día en México, y esta fase está llena
+  de fechas comprometidas con el cliente.
+- `utils/useEsMovil.ts` — el corte de 768px en un solo sitio, que ahora usan el
+  layout y el modal.
+- `Card.tsx` eliminado y sus usos retirados; `public/fallback-*.js` sumado a los
+  ignores de ESLint (lo genera el build de la PWA y ensuciaba el lint con un
+  error en código que nadie escribió).
+
+## F01·B1 — Organizaciones, sitios y contactos  ✅
+
+**Migración 3** (`20260821180000_cartera_y_proyectos.sql`), que trae el esquema
+de **toda** la fase de una vez —incluidas las tablas de B2 y las del catálogo de
+normas de B2b— para que el dueño aplique una sola migración y regenere los tipos
+una sola vez. Las pantallas llegan bloque por bloque.
+
+- `organizaciones`: ya existía desde la Fase 00; aquí gana su expediente.
 - `sitios`: los centros de trabajo de cada organización. **Una organización puede
   tener cinco plantas y el alcance del certificado cubrir sólo dos** — el sitio es
   una entidad, no un campo de texto en la dirección.
-- `contactos`: quién es quién en el cliente, con su rol (representante de la
-  dirección, coordinador del SGC, responsable de seguridad) y si tiene acceso al
-  portal.
+- `contactos`: quién es quién en el cliente, con su papel (representante de la
+  dirección, coordinador del SGC, responsable de seguridad).
+  ⚠️ **Sin `acceso_portal`**: el portal es de la Fase 06 y una casilla que no
+  enciende nada es un interruptor muerto (CLAUDE.md regla 11).
+- **Pantallas**: `/cartera?tab=organizaciones` con buscador **en memoria** —para
+  que siga filtrando sin señal—, `/cartera?tab=contactos` (el directorio de la
+  cartera) y el expediente `/cartera/[id]` con Resumen · Sitios · Contactos ·
+  **Equipo**.
+- **La pestaña Equipo es el reparto de `usuarios_organizaciones`**, o sea la
+  tarea `B02` del dueño hecha desde la app. Vive en el expediente porque se
+  decide mirando al cliente; `/admin?tab=usuarios` [Fase 06] enseñará lo mismo al
+  revés, por persona.
+- **`puedo_editar_org()`**: el papel `lectura` deja de ser una etiqueta y pasa a
+  impedir toda escritura, en la base. Ver [`08_SEGURIDAD_Y_RLS.md`](08_SEGURIDAD_Y_RLS.md) §2.
+- ⚠️ El alta de organizaciones **sigue siendo sólo del socio**: quién entra a la
+  cartera lo decide él, y un consultor que creara una dejaría de verla al
+  instante siguiente —no cumpliría `mis_organizaciones()`—, que se lee como que
+  la app perdió al cliente recién capturado.
 
-## F01·B2 — Proyectos y alcance
+## F01·B2 — Proyectos y alcance  ✅
 
-- `proyectos`: el contrato. Cliente, normas contratadas, sitios en alcance,
-  **etapa** (las seis de la metodología), consultor líder, fechas, monto, estado.
+Sólo código: el esquema lo trajo la migración de B1.
+
+- `proyectos`: el contrato. Cliente, **etapa** (las seis de la metodología),
+  consultor líder, fechas, monto, estado y objetivo. Tipos:
+  `implementacion` · `auditoria` · `capacitacion` · `cumplimiento` ·
+  `automatizacion` · `soporte_it` — los cinco servicios de la firma más el
+  soporte.
 - `proyecto_normas` y `proyecto_sitios`: el alcance real, en tablas, no en una
   cadena de texto. De aquí sale la lista de verificación de una auditoría.
-- Tipos de proyecto: `implementacion` · `auditoria` · `capacitacion` ·
-  `cumplimiento` · `automatizacion` · `soporte_it` — los cinco servicios de la
-  firma más el soporte.
+- **Pantallas**: la pestaña `Proyectos` del expediente (lista + detalle con
+  `?proyecto=<id>`, sin ruta nueva) y `/cartera?tab=proyectos`, la lista de toda
+  la cartera con filtros por estado y etapa. El detalle pinta las seis etapas
+  como avance y el alcance como dos grupos de casillas que **escriben al
+  momento**, cada una por `offlineWrite`.
+- **El consultor líder sale del equipo asignado a esa organización**, no de la
+  plantilla entera de la firma: quien lidera un proyecto tiene que poder verlo.
+  Si el cliente no tiene equipo, el selector lo dice y manda a la pestaña Equipo.
+- ⚠️ **El selector de normas hoy está vacío a propósito** — `normas` nace sin
+  filas y se llena con el importador de B2b. La pantalla lo explica en vez de
+  enseñar una lista vacía.
+- ⚠️ Mover de etapa **no escribe la bitácora desde la app**: lo hace el trigger
+  `registrar_cambio_etapa()`. Con señal intermitente, dos operaciones separadas
+  en la cola pueden dejar la línea de tiempo sin el renglón.
+
+## F01·B2b — Importador del catálogo de normas  ✅
+
+El bloque que el plan original no tenía: **el catálogo no se siembra desde el
+repositorio, se sube** (decisión del dueño, 21 ago 2026).
+
+- `src/lib/normas/importador.ts`: analizador de markdown propio, sin
+  dependencias y determinista. `#` abre una norma, `##` en adelante una cláusula.
+  ⚠️ **El árbol lo arma el NÚMERO, no la profundidad del encabezado**: el padre
+  de `8.5.1` es `8.5` aunque los dos estén en `##`. Un archivo escrito a mano,
+  con niveles inconsistentes, sigue saliendo bien.
+- `[no auditable]` en el título marca lo que no se puede citar en un hallazgo
+  —los capítulos 1, 2 y 3 de una ISO—.
+- **Vista previa obligatoria**: antes de escribir se enseña el saldo por norma
+  —cuántas cláusulas entran, cuántas cambian, cuántas se dan de baja— y confirma
+  una persona. Un importador que escribe y luego informa no se usa dos veces.
+- **Idempotente**: `upsert` por `clave` y por `(norma_id, numero)`. Corregir un
+  resumen es volver a subir el archivo. Lo que desaparece del `.md` se marca
+  `activa = false`, **nunca se borra**: puede haber hallazgos citándolo.
+- Botón para **descargar la plantilla**, sin una sola línea de texto normativo.
+- Sólo un socio importa, impuesto en la base. Vive en `/sistemas`, que deja de
+  ser una pantalla pendiente; el resto del dominio sigue siendo Fase 02.
+- ⚠️ **Excepción consciente a `offlineWrite`**, la tercera del proyecto: parte de
+  un archivo que sólo existe en esa pantalla y escribe cientos de filas en lote.
+  Sin conexión la pantalla lo dice y no deja empezar.
 
 ## F01·B3 — Tablero de la cartera
 
@@ -278,14 +376,22 @@ Decidir quién ve qué: asignar consultores a organizaciones.
 
 ## F02·B1 — Catálogo de normas y cláusulas
 
-- `normas`: las siete ISO, con su versión (`ISO 9001:2015`).
-- `norma_clausulas`: el árbol de cláusulas de cada norma — número, título,
+⚠️ **Este bloque cambió de forma en la Fase 01** (decisión del dueño, 21 ago
+2026). Las tablas `normas` y `norma_clausulas` ya existen —las creó la migración
+3, vacías— y **el catálogo no se siembra: se sube**. El importador de `.md` es
+F01·B2b. Lo que queda aquí es el contenido y lo que se construye encima.
+
+- `normas` y `norma_clausulas`: el árbol de cada norma — número, título,
   **resumen redactado por Summit**, si es auditable, y su padre.
 - ⚠️ **No se copia el texto de la norma.** Ver CLAUDE.md regla 12. Lo que vive en
   la base es la estructura y el resumen propio; el texto licenciado del cliente
-  entra como archivo en su bucket privado.
-- Semilla: el árbol completo de ISO 9001:2015 y 45001:2018 (las dos que la firma
-  más implementa). Las otras cinco, sus cláusulas de primer y segundo nivel.
+  entra como archivo en su bucket privado. Que el catálogo entre por un archivo
+  que el dueño sube —y no por un `INSERT` del repositorio— es lo que mantiene ese
+  criterio técnico fuera de Git.
+- Contenido: el árbol completo de ISO 9001:2015 y 45001:2018 (las dos que la
+  firma más implementa) y, de las otras cinco, sus cláusulas de primer y segundo
+  nivel. Lo entrega el dueño en el `.md` de la tarea `C01`, y **corregirlo es
+  volver a subirlo**: el importador hace `upsert`, no duplica.
 
 ## F02·B2 — Control documental
 

@@ -61,7 +61,7 @@ contraste que ya tiene la marca.
   --superficie-3: #e2eaf3;  /* Badges, anidados                      */
 
   /* ── Líneas ──────────────────────────────────────────────────────── */
-  --borde:        #d5e0ec;  /* Separadores y bordes de tarjeta       */
+  --borde:        #d5e0ec;  /* Separadores y marco del modal         */
   --borde-fuerte: #6f8aa8;  /* Bordes de CONTROLES — 3.59:1, WCAG 1.4.11 */
 
   /* ── Texto ───────────────────────────────────────────────────────── */
@@ -197,47 +197,69 @@ pseudo-estado y un mínimo que aplica a todo lo interactivo a la vez.
   `clickableProps()` de `src/lib/utils/a11y.ts`. Para todo lo demás, un `<button>`
   real.
 
-### §4.3 · Tarjetas sí, excepto donde no
+### §4.3 · Sin tarjetas. En ninguna pantalla
 
-El patrón general es la tarjeta: cada una es **una cosa** — una organización, un
-hallazgo, una acción, una obligación.
+**El tablero es la plantilla visual del resto de la aplicación.** Lo que se
+construya en cualquier fase se parece a `/`, no al revés.
 
-⚠️ **Dos pantallas no llevan tarjetas, y es deliberado:**
+⚠️ **Esta regla se invirtió el 21 ago 2026** (decisión del dueño). Antes decía
+*"tarjetas sí, excepto en tres pantallas"*; ahora es al revés y sin excepciones.
+Si encuentras un `background` de contenedor con `borderRadius` y borde de cuatro
+lados alrededor de contenido, es código anterior a esa fecha o un descuido — no
+un caso especial. `src/components/ui/Card.tsx` **ya no existe**.
 
-- **`/asistente`** enseña documentos y medidas, no cosas: un informe, un
-  porcentaje, la lista de lo que el modelo leyó. La caja no separa nada que no
-  separe ya una línea, y encima anida. La jerarquía la hacen la tipografía y una
-  línea de separación. Ni `background` de contenedor, ni `borderRadius`, ni bordes
-  de cuatro lados; lo que sería un badge relleno se escribe como texto en su
-  color, y un aviso lleva una barra de 2px a la izquierda en vez de relleno. Los
-  `<input>` y `<select>` **sí conservan su marco**: son controles, no
-  contenedores, y un campo sin marco no se ve pulsable.
-- **La ejecución de auditoría en campo** (`/auditorias/[id]`) es una lista densa
-  de ítems que se recorre con el pulgar. Cada tarjeta cuesta 24px de aire que en
-  un teléfono son dos ítems menos por pantalla. Van filas separadas por línea, con
-  el veredicto a la derecha.
-- **El tablero** (`/`). Nueve recuadros blancos sobre el fondo claro compiten
-  entre sí y no gana ninguno: la portada de la firma se lee como una cuadrícula
-  de cajas vacías. Cada widget es **texto flotando sobre el fondo**, encabezado
-  por su icono y **delimitado por debajo con el verde de Summit** — una hairline
-  de `rgba(61,186,78,.16)` de lado a lado y encima un tramo en degradado de
-  `--verde-hondo` a `--verde` que crece al pasar por encima. El marco (fondo,
-  sombra, radio) aparece **sólo mientras se arrastra**, que es el único momento
-  en que hace falta ver el bloque como un objeto que se toma con la mano.
-  `src/components/tablero/RejillaTablero.tsx`.
+Qué significa, en concreto:
 
-  ⚠️ Sin marcos, **el aire es la separación**: el `gap` de la rejilla es lo único
-  que dice dónde termina un widget y empieza el siguiente. Bajarlo a los 12px de
-  una rejilla de tarjetas devuelve el amontonamiento que este diseño evita.
+- **Ni `background` de contenedor, ni `borderRadius`, ni bordes de cuatro
+  lados.** El contenido va sobre `--fondo`, directamente.
+- **La jerarquía la hacen la tipografía, el aire y una línea.** Cada bloque o
+  fila se delimita **por debajo** con el verde de Summit: una hairline de
+  `rgba(61,186,78,.16)` de lado a lado y, encima, un tramo en degradado de
+  `--verde-hondo` a `--verde` que crece cuando el elemento está bajo el cursor o
+  enfocado con el teclado.
+- **El badge sobrevive; el aviso no.** Un `Badge` es una etiqueta de estado —
+  micro-texto en mayúsculas sobre un tinte del 10%— y así está en el tablero,
+  que es la plantilla. Un **aviso**, en cambio, va con una **barra de 2px a la
+  izquierda y sin relleno** (`ui/Aviso.tsx`): un rectángulo tintado del ancho de
+  la pantalla ya es un contenedor, y apilado compite con el contenido en vez de
+  destacarse de él.
+- **El icono deja de ser adorno**: es lo que hace reconocible un bloque antes de
+  leer su título. Por eso el catálogo de widgets lo exige (`NombreIcono` es una
+  unión de literales, no un `string`) y el mapa de iconos no puede devolver
+  `undefined` — se pintan en bucle y uno roto se lleva los nueve.
+- **El aire ES la separación.** Sin marcos, el `gap` de la rejilla y el padding
+  de la fila son lo único que dice dónde termina un elemento y empieza el
+  siguiente. Bajarlos a los 12px de una rejilla de tarjetas devuelve el
+  amontonamiento que este diseño evita.
 
-  ⚠️ Y el icono deja de ser adorno: es lo que hace reconocible cada bloque antes
-  de leer el título. Por eso el catálogo lo exige (`NombreIcono` es una unión de
-  literales, no un `string`) y por eso el mapa de iconos no puede devolver
-  `undefined` — los widgets se pintan en bucle y uno roto se lleva los nueve.
+Dónde vive: `src/components/tablero/RejillaTablero.tsx` (bloques) y
+`src/components/ui/Lista.tsx` (filas). Uno de los dos sirve para casi todo.
+
+**Por qué.** Nueve recuadros blancos sobre el fondo claro compiten entre sí y no
+gana ninguno: la portada de la firma se lee como una cuadrícula de cajas vacías.
+Y en una pantalla de contenido el costo es peor que estético — una tarjeta cuesta
+~24px de aire por elemento, que en un teléfono son dos hallazgos menos por
+pantalla en una lista que se recorre con el pulgar.
+
+**Las tres excepciones, y son de mecánica, no de gusto:**
+
+1. **Los controles conservan su marco.** Un `<input>`, un `<select>` o un
+   `<textarea>` sin borde no se ve pulsable. Van con `--borde-fuerte` (3.59:1),
+   no con `--borde` (1.2:1): WCAG 1.4.11 pide 3:1 para el contorno de un control.
+   `src/components/ui/Campo.tsx`.
+2. **El modal lleva superficie.** Es una capa *por encima* de la pantalla, no una
+   caja *dentro* de ella; sin fondo propio no se separaría de lo que tapa. Lo que
+   va adentro sigue estas reglas.
+3. **El armazón sigue en navy.** Sidebar, Navbar y BottomNav son marco, no
+   contenido.
+
+⚠️ **El marco sí aparece, pero sólo mientras se arrastra un widget del tablero**
+—fondo, sombra y radio—, que es el único momento en el que hace falta ver el
+bloque como un objeto que se toma con la mano.
 
 ### §4.4 · Eliminar, dos formas
 
-- En una fila o tarjeta de lista: `BotonEliminar` (`src/components/ui/`), **sólo
+- En una fila de una lista: `BotonEliminar` (`src/components/ui/`), **sólo
   el icono 🗑**, en el flujo y nunca encimado con `position: absolute` —flotando
   tapa el contenido de la esquina. `titulo` es obligatorio y específico: es el
   `aria-label`.

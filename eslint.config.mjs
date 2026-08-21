@@ -22,6 +22,11 @@ const eslintConfig = [
       'public/workbox-*.js',
       'public/worker-*.js',
       'public/swe-worker-*.js',
+      // ⚠️ El de respaldo también: lo genera el build, lo carga `sw.js` con
+      // `importScripts`, y sin esta línea `npm run lint` sale con 26 avisos y
+      // un error en código que nadie escribió — y un lint ruidoso deja de
+      // mirarse. Es el mismo archivo que va excluido del matcher de `proxy.ts`.
+      'public/fallback-*.js',
     ],
   },
   {

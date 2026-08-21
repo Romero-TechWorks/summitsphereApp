@@ -9,7 +9,9 @@ import { obtenerUsuarioActual } from '@/lib/queries/usuarios'
 import { mensajeDeError } from '@/lib/supabase/errores'
 import { widgetsOrdenados } from '@/lib/tablero/widgets'
 import RejillaTablero from '@/components/tablero/RejillaTablero'
+import Aviso from '@/components/ui/Aviso'
 import Badge from '@/components/ui/Badge'
+import EncabezadoPagina from '@/components/ui/EncabezadoPagina'
 import EstadoVacio from '@/components/ui/EstadoVacio'
 import Skeleton from '@/components/ui/Skeleton'
 
@@ -24,6 +26,11 @@ import Skeleton from '@/components/ui/Skeleton'
  * ⚠️ Todo lo que se ve aquí sale de la caché de React Query, **nunca de un
  * `useState`**. El único estado local es el mensaje de error, que es de la
  * pantalla y no del dato.
+ *
+ * ⚠️ **Esta pantalla es la plantilla visual del resto de la app**
+ * (docs/05_SISTEMA_DE_DISENO.md §4.3): sin tarjetas, sin recuadros, cada bloque
+ * es texto sobre el fondo con su icono y su hairline verde. Lo que se construya
+ * en las fases siguientes se parece a esto, no al revés.
  */
 export default function Tablero() {
   const cliente = useQueryClient()
@@ -82,31 +89,20 @@ export default function Tablero() {
 
   return (
     <div className="contenido-pagina">
-      <h2 className="display" style={{ fontSize: 32, marginBottom: 4 }}>
-        Inicio
-      </h2>
-
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
-        <p style={{ fontSize: 14, color: 'var(--texto-dim)' }}>
-          {usuario ? `Hola, ${usuario.nombre.split(' ')[0]}.` : 'Tu tablero.'}
-        </p>
-        {rol && <Badge tono="neutro">{rol}</Badge>}
-      </div>
+      <EncabezadoPagina
+        titulo="Inicio"
+        meta={
+          <>
+            <span>{usuario ? `Hola, ${usuario.nombre.split(' ')[0]}.` : 'Tu tablero.'}</span>
+            {rol && <Badge tono="neutro">{rol}</Badge>}
+          </>
+        }
+      />
 
       {error && (
-        <p
-          role="alert"
-          style={{
-            fontSize: 13,
-            color: 'var(--error)',
-            background: 'rgba(185, 28, 28, .08)',
-            borderLeft: '2px solid var(--error)',
-            padding: '8px 10px',
-            marginBottom: 14,
-          }}
-        >
-          {error}
-        </p>
+        <div style={{ marginBottom: 14 }}>
+          <Aviso tono="error">{error}</Aviso>
+        </div>
       )}
 
       {cargandoPerfil ? (
@@ -122,42 +118,23 @@ export default function Tablero() {
           ))}
         </div>
       ) : falloPerfil ? (
-        <Recuadro>
-          <EstadoVacio
-            titulo="No se pudo leer tu perfil"
-            descripcion={
-              mensajeDeError(falloPerfil)
-            }
-          />
-        </Recuadro>
+        <EstadoVacio titulo="No se pudo leer tu perfil" descripcion={mensajeDeError(falloPerfil)} />
       ) : !rol ? (
-        <Recuadro>
-          <EstadoVacio
-            titulo="Tu cuenta todavía no tiene un rol reconocido"
-            descripcion={
-              `Un socio de la firma tiene que asignártelo desde la administración` +
-              (rolCrudo ? ` (el guardado es «${rolCrudo}»).` : '.')
-            }
-          />
-        </Recuadro>
+        <EstadoVacio
+          titulo="Tu cuenta todavía no tiene un rol reconocido"
+          descripcion={
+            `Un socio de la firma tiene que asignártelo desde la administración` +
+            (rolCrudo ? ` (el guardado es «${rolCrudo}»).` : '.')
+          }
+        />
       ) : widgets.length === 0 ? (
-        <Recuadro>
-          <EstadoVacio
-            titulo="Sin widgets para tu rol"
-            descripcion="El acceso de los clientes es el portal, que se abre con una liga y no necesita cuenta."
-          />
-        </Recuadro>
+        <EstadoVacio
+          titulo="Sin widgets para tu rol"
+          descripcion="El acceso de los clientes es el portal, que se abre con una liga y no necesita cuenta."
+        />
       ) : (
         <RejillaTablero widgets={widgets} alReordenar={reordenar} />
       )}
-    </div>
-  )
-}
-
-function Recuadro({ children }: { children: React.ReactNode }) {
-  return (
-    <div style={{ background: 'var(--superficie)', border: '1px solid var(--borde)', borderRadius: 6 }}>
-      {children}
     </div>
   )
 }

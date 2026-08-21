@@ -359,7 +359,8 @@ enseñar nada.
 | **Instrucciones** | Cómo debe comportarse. **Sólo el socio** |
 | **Trazas** | Todo lo que hizo, qué se confirmó y qué se corrigió. Con el consumo de tokens |
 
-⚠️ **Esta oficina no usa tarjetas** — ver [`05_SISTEMA_DE_DISENO.md`](05_SISTEMA_DE_DISENO.md) §4.3.
+⚠️ **Esta oficina no usa tarjetas** — como el resto de la app desde F01·B0.
+Ver [`05_SISTEMA_DE_DISENO.md`](05_SISTEMA_DE_DISENO.md) §4.3.
 
 ### Herramientas del chat
 

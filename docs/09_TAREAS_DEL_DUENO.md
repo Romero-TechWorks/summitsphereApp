@@ -113,11 +113,15 @@ correo, y **su rol**:
 
 ---
 
-### `A08` — Encender Turnstile en Supabase · **Bloquea: la protección del login**
+### `A08` — Encender Turnstile en Supabase · ✅ **HECHA** (21 ago 2026)
 
-⚠️ **Turnstile son dos mitades y hay que encender las dos.** La app ya pinta el
-widget en `/login` y le pasa el token a Supabase; lo que falta es que Supabase lo
-valide. Con una mitad sola pasa algo peor que no tenerlo:
+El captcha está funcionando: el widget de `/login` y la protección de Supabase
+están encendidos a la vez. **Lo que sigue queda como referencia** para el día que
+haya que rotar la llave, apagarlo o revisar por qué dejó de entrar alguien.
+
+⚠️ **Turnstile son dos mitades y las dos tienen que estar encendidas.** La app
+pinta el widget en `/login` y le pasa el token a Supabase; Supabase es quien lo
+valida. Con una mitad sola pasa algo peor que no tenerlo:
 
 | Widget en la app | Protección en Supabase | Qué pasa |
 |---|---|---|
@@ -167,6 +171,91 @@ Vale para las tres: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` 
 
 # FASE 01 · Cartera
 
+### `B00` — Aplicar la migración de la cartera · ✅ **HECHA** (21 ago 2026)
+
+Aplicada y verificada: `npx supabase migration list --linked` da las cinco
+migraciones con `local = remote`, y los tipos regenerados salieron **idénticos**
+a los del repositorio. **Lo que sigue queda como referencia** para la próxima
+migración, que la hay en cada fase.
+
+El código de una fase espera tablas que todavía no existen en tu base. La
+migración se escribe y se prueba en el repositorio; aplicarla es tuyo, como todo
+lo que sale hacia fuera.
+
+```bash
+# 1. Sube el esquema nuevo a Supabase
+npx supabase db push
+
+# 2. Vuelve a generar los tipos de TypeScript desde la base ya actualizada.
+#    En DOS pasos, a propósito — ver el aviso de abajo.
+npx supabase gen types typescript --linked > /tmp/database.ts && \
+  mv /tmp/database.ts src/types/database.ts
+
+# 3. Comprueba si la base dice algo distinto de lo que dice el repositorio
+git diff --stat src/types/database.ts
+```
+
+⚠️ **Esto se corre desde la terminal de WSL** (Debian), que es donde vive el
+entorno de este proyecto: ahí `npx supabase` ya está instalado y el proyecto ya
+está enlazado, con su token guardado. Si el comando responde *"no se reconoce
+mv"*, no estás en WSL sino en CMD — abre la terminal correcta antes que buscar
+otro comando.
+
+⚠️ **Y NO mezcles npm entre Windows y WSL sobre esta carpeta.** `node_modules`
+tiene binarios nativos compilados para Linux —el CLI de Supabase, `sharp`,
+`esbuild`, el compilador de Next—; un `npm install` desde PowerShell los
+sustituye por los de Windows y el siguiente `npm run build` en WSL falla con
+errores que no se parecen a su causa. Salir de ahí obliga a borrar `node_modules`
+y reinstalar desde un solo lado.
+
+Si aun así hace falta correrlo desde Windows, el paso 2 cambia — `mv` no existe
+en CMD:
+
+```bat
+:: CMD
+npx supabase gen types typescript --linked > tipos.tmp && move /Y tipos.tmp src\types\database.ts
+```
+
+```powershell
+# PowerShell
+npx supabase gen types typescript --linked | Set-Content -Encoding utf8 tipos.tmp
+Move-Item -Force tipos.tmp src\types\database.ts
+```
+
+⚠️ **En PowerShell, `>` no.** La versión que trae Windows (5.1) escribe el
+archivo en UTF-16: el `database.ts` queda ilegible para las herramientas y el
+`git diff` sale entero en rojo aunque no haya cambiado nada. `Set-Content
+-Encoding utf8` lo evita.
+
+⚠️ **`gen types` escribe a la pantalla, no a un archivo.** Si lo corres sin el
+`>` te imprime miles de líneas de TypeScript en la terminal y no cambia nada. Eso
+es normal, no es un error.
+
+⚠️ **Y por eso va en dos pasos:** `comando > archivo` **vacía el archivo antes de
+ejecutar el comando**. Si `gen types` falla a media faena —sesión caducada,
+proyecto sin enlazar, un corte de red— te quedas con un `database.ts` vacío, y a
+partir de ahí no compila nada con un error que no se parece a su causa. Con el
+archivo temporal, si falla, el bueno sigue en su sitio.
+
+⚠️ **El paso 2 no es opcional ni cosmético.** `src/types/database.ts` se escribió
+a mano para poder programar contra tablas que aún no estaban aplicadas; el
+generador es la única fuente de verdad. Si al regenerarlo aparece un `git diff`,
+gana lo generado — y avísalo, porque significa que la base y el repositorio no
+dicen lo mismo.
+
+Si te pide iniciar sesión o dice *"Cannot find project ref"*, falta enlazar el
+proyecto: `npx supabase login` y después
+`npx supabase link --project-ref <el ref de tu proyecto>`.
+
+⚠️ **Esto no cambia lo que hay en línea.** La app desplegada en Vercel sigue
+siendo el código del último `push`: la base ya tiene las tablas, pero las
+pantallas nuevas no llegan hasta que subas el código. `A09` —el redespliegue— es
+sólo para las variables de entorno, no para el esquema.
+
+Qué crea: `sitios`, `contactos`, `proyectos`, `proyecto_normas`,
+`proyecto_sitios`, `bitacora_proyecto`, `normas` y `norma_clausulas` — estas dos
+últimas **vacías**, que se llenan subiendo tu `.md` (ver `C01`).
+
 ### `B01` — Cargar tu cartera real · **Bloquea: usar la app de verdad**
 
 Las organizaciones, sus plantas y sus contactos. Si hoy están en un Excel, se
@@ -175,13 +264,62 @@ capturarlas.
 
 **Empieza por los cinco clientes más activos.** No por los cincuenta históricos.
 
+### `B03` — Subir el catálogo de normas · **Bloquea: el alcance de los proyectos**
+
+Sin catálogo no se puede decir qué norma cubre un contrato, y sin eso no hay
+matriz de requisitos [Fase 02] ni listas de verificación [Fase 03].
+
+Se escribe en un archivo `.md` **tuyo, que no va al repositorio**, y se sube en
+`/sistemas` → *Elegir archivo*. Ahí mismo puedes descargar la plantilla.
+
+```md
+# ISO 9001:2015 — Sistemas de gestión de la calidad
+
+## 1 Objeto y campo de aplicación [no auditable]
+
+## 4 Contexto de la organización
+El resumen de Summit sobre el capítulo.
+
+### 4.1 Comprensión de la organización y de su contexto
+El resumen de esta cláusula.
+```
+
+- **Para empezar basta con las siete normas y sus capítulos de primer nivel.** El
+  árbol completo es la tarea `C01`, y se hace subiendo el mismo archivo corregido
+  las veces que haga falta: el importador **no duplica**, actualiza.
+- Antes de escribir nada te enseña el saldo —cuántas cláusulas entran, cuántas
+  cambian, cuántas se dan de baja— y decides tú.
+- ⚠️ **El resumen lo redactas tú, no se copia el texto de la norma.** Es obra
+  protegida; lo que vive en la base es la estructura y el criterio de Summit.
+- ⚠️ Cambiar el **nombre** de una norma en el archivo (`ISO 9001`) crea una norma
+  nueva en vez de renombrar la que había: el nombre es su identidad. El título y
+  la versión sí se pueden corregir libremente.
+
+---
+
 ### `B02` — Decidir quién ve qué · **Bloquea: el aislamiento entre clientes**
 
-Asignar cada consultor a sus organizaciones, desde `/admin?tab=usuarios`.
+Asignar cada consultor a sus organizaciones. Se hace **dentro del expediente del
+cliente**: `/cartera` → la organización → pestaña **Equipo** → *Asignar*.
+(`/admin?tab=usuarios` llega en la Fase 06 y enseñará lo mismo al revés, por
+persona.)
+
+Con qué papel:
+
+| Papel | Qué puede |
+|---|---|
+| **Líder** | Lleva el cliente. Ve y modifica todo su expediente |
+| **Apoyo** | Trabaja en el expediente: captura, edita, levanta hallazgos |
+| **Auditor** | Igual, pensado para quien audita ese cliente |
+| **Sólo lectura** | **Ve el expediente y no puede modificar nada** |
 
 ⚠️ **Esto no es burocracia: es lo que impide que un consultor vea los hallazgos de
 un cliente que no le toca.** Si asignas a todos a todo, desactivas la protección
 más importante del sistema.
+
+⚠️ **Tú, como socio, ves toda la cartera sin estar asignado a nada.** Por eso una
+organización recién creada aparece vacía de equipo y sólo tú la ves: hasta que
+asignes a alguien, para el resto de la firma no existe.
 
 ---
 

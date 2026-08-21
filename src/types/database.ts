@@ -53,6 +53,67 @@ export type Database = {
         }
         Relationships: []
       }
+      bitacora_proyecto: {
+        Row: {
+          creado_en: string
+          creado_por: string | null
+          detalle: string | null
+          fecha: string
+          id: string
+          org_id: string
+          participantes: string[]
+          proyecto_id: string
+          tipo: string
+          titulo: string
+        }
+        Insert: {
+          creado_en?: string
+          creado_por?: string | null
+          detalle?: string | null
+          fecha: string
+          id?: string
+          org_id: string
+          participantes?: string[]
+          proyecto_id: string
+          tipo?: string
+          titulo: string
+        }
+        Update: {
+          creado_en?: string
+          creado_por?: string | null
+          detalle?: string | null
+          fecha?: string
+          id?: string
+          org_id?: string
+          participantes?: string[]
+          proyecto_id?: string
+          tipo?: string
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bitacora_proyecto_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bitacora_proyecto_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizaciones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bitacora_proyecto_proyecto_id_fkey"
+            columns: ["proyecto_id"]
+            isOneToOne: false
+            referencedRelation: "proyectos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       config_firma: {
         Row: {
           actualizado_en: string
@@ -105,6 +166,169 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      contactos: {
+        Row: {
+          activo: boolean
+          actualizado_en: string
+          correo: string | null
+          creado_en: string
+          creado_por: string | null
+          id: string
+          nombre: string
+          notas: string | null
+          org_id: string
+          papel: string
+          principal: boolean
+          puesto: string | null
+          sitio_id: string | null
+          telefono: string | null
+        }
+        Insert: {
+          activo?: boolean
+          actualizado_en?: string
+          correo?: string | null
+          creado_en?: string
+          creado_por?: string | null
+          id?: string
+          nombre: string
+          notas?: string | null
+          org_id: string
+          papel?: string
+          principal?: boolean
+          puesto?: string | null
+          sitio_id?: string | null
+          telefono?: string | null
+        }
+        Update: {
+          activo?: boolean
+          actualizado_en?: string
+          correo?: string | null
+          creado_en?: string
+          creado_por?: string | null
+          id?: string
+          nombre?: string
+          notas?: string | null
+          org_id?: string
+          papel?: string
+          principal?: boolean
+          puesto?: string | null
+          sitio_id?: string | null
+          telefono?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contactos_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contactos_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizaciones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contactos_sitio_id_fkey"
+            columns: ["sitio_id"]
+            isOneToOne: false
+            referencedRelation: "sitios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      norma_clausulas: {
+        Row: {
+          activa: boolean
+          actualizado_en: string
+          auditable: boolean
+          creado_en: string
+          id: string
+          norma_id: string
+          numero: string
+          orden: number
+          padre_id: string | null
+          resumen: string | null
+          titulo: string
+        }
+        Insert: {
+          activa?: boolean
+          actualizado_en?: string
+          auditable?: boolean
+          creado_en?: string
+          id?: string
+          norma_id: string
+          numero: string
+          orden?: number
+          padre_id?: string | null
+          resumen?: string | null
+          titulo: string
+        }
+        Update: {
+          activa?: boolean
+          actualizado_en?: string
+          auditable?: boolean
+          creado_en?: string
+          id?: string
+          norma_id?: string
+          numero?: string
+          orden?: number
+          padre_id?: string | null
+          resumen?: string | null
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "norma_clausulas_norma_id_fkey"
+            columns: ["norma_id"]
+            isOneToOne: false
+            referencedRelation: "normas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "norma_clausulas_padre_id_fkey"
+            columns: ["padre_id"]
+            isOneToOne: false
+            referencedRelation: "norma_clausulas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      normas: {
+        Row: {
+          activa: boolean
+          actualizado_en: string
+          clave: string
+          creado_en: string
+          id: string
+          nombre: string
+          titulo: string | null
+          version: string | null
+        }
+        Insert: {
+          activa?: boolean
+          actualizado_en?: string
+          clave: string
+          creado_en?: string
+          id?: string
+          nombre: string
+          titulo?: string | null
+          version?: string | null
+        }
+        Update: {
+          activa?: boolean
+          actualizado_en?: string
+          clave?: string
+          creado_en?: string
+          id?: string
+          nombre?: string
+          titulo?: string | null
+          version?: string | null
+        }
+        Relationships: []
       }
       notificaciones: {
         Row: {
@@ -236,6 +460,257 @@ export type Database = {
           },
         ]
       }
+      proyecto_normas: {
+        Row: {
+          creado_en: string
+          creado_por: string | null
+          norma_id: string
+          org_id: string
+          proyecto_id: string
+        }
+        Insert: {
+          creado_en?: string
+          creado_por?: string | null
+          norma_id: string
+          org_id: string
+          proyecto_id: string
+        }
+        Update: {
+          creado_en?: string
+          creado_por?: string | null
+          norma_id?: string
+          org_id?: string
+          proyecto_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proyecto_normas_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proyecto_normas_norma_id_fkey"
+            columns: ["norma_id"]
+            isOneToOne: false
+            referencedRelation: "normas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proyecto_normas_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizaciones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proyecto_normas_proyecto_id_fkey"
+            columns: ["proyecto_id"]
+            isOneToOne: false
+            referencedRelation: "proyectos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      proyecto_sitios: {
+        Row: {
+          creado_en: string
+          creado_por: string | null
+          org_id: string
+          proyecto_id: string
+          sitio_id: string
+        }
+        Insert: {
+          creado_en?: string
+          creado_por?: string | null
+          org_id: string
+          proyecto_id: string
+          sitio_id: string
+        }
+        Update: {
+          creado_en?: string
+          creado_por?: string | null
+          org_id?: string
+          proyecto_id?: string
+          sitio_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proyecto_sitios_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proyecto_sitios_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizaciones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proyecto_sitios_proyecto_id_fkey"
+            columns: ["proyecto_id"]
+            isOneToOne: false
+            referencedRelation: "proyectos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proyecto_sitios_sitio_id_fkey"
+            columns: ["sitio_id"]
+            isOneToOne: false
+            referencedRelation: "sitios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      proyectos: {
+        Row: {
+          actualizado_en: string
+          creado_en: string
+          creado_por: string | null
+          estado: string
+          etapa: string
+          fecha_fin_estimada: string | null
+          fecha_fin_real: string | null
+          fecha_inicio: string | null
+          id: string
+          lider_id: string | null
+          moneda: string
+          monto: number | null
+          nombre: string
+          objetivo: string | null
+          org_id: string
+          tipo: string
+        }
+        Insert: {
+          actualizado_en?: string
+          creado_en?: string
+          creado_por?: string | null
+          estado?: string
+          etapa?: string
+          fecha_fin_estimada?: string | null
+          fecha_fin_real?: string | null
+          fecha_inicio?: string | null
+          id?: string
+          lider_id?: string | null
+          moneda?: string
+          monto?: number | null
+          nombre: string
+          objetivo?: string | null
+          org_id: string
+          tipo?: string
+        }
+        Update: {
+          actualizado_en?: string
+          creado_en?: string
+          creado_por?: string | null
+          estado?: string
+          etapa?: string
+          fecha_fin_estimada?: string | null
+          fecha_fin_real?: string | null
+          fecha_inicio?: string | null
+          id?: string
+          lider_id?: string | null
+          moneda?: string
+          monto?: number | null
+          nombre?: string
+          objetivo?: string | null
+          org_id?: string
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proyectos_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proyectos_lider_id_fkey"
+            columns: ["lider_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proyectos_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizaciones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sitios: {
+        Row: {
+          activo: boolean
+          actualizado_en: string
+          cp: string | null
+          creado_en: string
+          creado_por: string | null
+          direccion: string | null
+          entidad: string | null
+          id: string
+          municipio: string | null
+          nombre: string
+          notas: string | null
+          num_trabajadores: number | null
+          org_id: string
+          tipo: string
+        }
+        Insert: {
+          activo?: boolean
+          actualizado_en?: string
+          cp?: string | null
+          creado_en?: string
+          creado_por?: string | null
+          direccion?: string | null
+          entidad?: string | null
+          id?: string
+          municipio?: string | null
+          nombre: string
+          notas?: string | null
+          num_trabajadores?: number | null
+          org_id: string
+          tipo?: string
+        }
+        Update: {
+          activo?: boolean
+          actualizado_en?: string
+          cp?: string | null
+          creado_en?: string
+          creado_por?: string | null
+          direccion?: string | null
+          entidad?: string | null
+          id?: string
+          municipio?: string | null
+          nombre?: string
+          notas?: string | null
+          num_trabajadores?: number | null
+          org_id?: string
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sitios_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sitios_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizaciones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       usuarios: {
         Row: {
           activo: boolean
@@ -328,6 +803,7 @@ export type Database = {
     Functions: {
       es_socio: { Args: never; Returns: boolean }
       mis_organizaciones: { Args: never; Returns: string[] }
+      puedo_editar_org: { Args: { p_org: string }; Returns: boolean }
       registrar_inicio_sesion: { Args: never; Returns: undefined }
     }
     Enums: {

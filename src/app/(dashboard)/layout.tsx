@@ -1,12 +1,13 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { Suspense } from 'react'
 import Sidebar, { ANCHO_SIDEBAR } from '@/components/layout/Sidebar'
 import Navbar from '@/components/layout/Navbar'
 import BottomNav from '@/components/layout/BottomNav'
 import ScrollReset from '@/components/layout/ScrollReset'
 import ProveedorConsultas, { EsperaCache } from '@/components/ProveedorConsultas'
 import { APP_SCROLL_ID } from '@/lib/utils/appScroll'
+import { useEsMovil } from '@/lib/utils/useEsMovil'
 
 /**
  * EL ARMAZÓN FIJO (docs/03_ARQUITECTURA.md §8).
@@ -35,20 +36,10 @@ export default function DashboardLayout({
   // El layout monta componentes distintos —Sidebar o BottomNav—, no los mismos
   // con otro CSS. Una media query no puede decidir eso.
   //
-  // ⚠️ Arranca en `true` a propósito: el servidor no conoce el ancho de la
-  // ventana, así que el primer render tiene que ser el mismo en los dos lados o
-  // React marca un error de hidratación. Se asume móvil porque es donde trabaja
-  // el auditor.
-  const [isMobile, setIsMobile] = useState(true)
-
-  useEffect(() => {
-    function medir() {
-      setIsMobile(window.innerWidth < 768)
-    }
-    medir()
-    window.addEventListener('resize', medir)
-    return () => window.removeEventListener('resize', medir)
-  }, [])
+  // ⚠️ El corte vive en `useEsMovil` y no repetido aquí: el modal también lo
+  // necesita —en el teléfono sube desde abajo como hoja, no centrado— y dos
+  // copias del mismo número acaban divergiendo.
+  const isMobile = useEsMovil()
 
   return (
     // ⚠️ El proveedor envuelve TODO el armazón, no sólo el contenido: el
