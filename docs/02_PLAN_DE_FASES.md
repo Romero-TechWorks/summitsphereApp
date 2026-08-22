@@ -475,7 +475,7 @@ proyecto y guardarlas como plantilla de su tipo.
 
 > **3 semanas.** Aquí la app deja de ser un CRM y se vuelve la herramienta de la firma.
 
-## F02·B1 — Catálogo de normas y cláusulas
+## F02·B1 — Catálogo de normas y cláusulas  🟡 *falta el contenido (`C01`)*
 
 ⚠️ **Este bloque cambió de forma en la Fase 01** (decisión del dueño, 21 ago
 2026). Las tablas `normas` y `norma_clausulas` ya existen —las creó la migración
@@ -494,7 +494,7 @@ F01·B2b. Lo que queda aquí es el contenido y lo que se construye encima.
   nivel. Lo entrega el dueño en el `.md` de la tarea `C01`, y **corregirlo es
   volver a subirlo**: el importador hace `upsert`, no duplica.
 
-## F02·B2 — Control documental
+## F02·B2 — Control documental  ✅ *código listo, 22 ago 2026*
 
 El corazón de un SGC y la razón por la que un cliente contrata una consultoría.
 
@@ -511,6 +511,26 @@ El corazón de un SGC y la razón por la que un cliente contrata una consultorí
 - **Biblioteca por cliente y por proyecto.** `documentos` cuelga de la
   organización y lleva un `proyecto_id` opcional: el mismo expediente se puede
   mirar entero o filtrado por el contrato que lo produjo.
+
+⚠️ **Cuatro reglas de este bloque las sostiene la BASE, no la pantalla**
+(`20260822120000_sistemas_de_gestion.sql`): una versión aprobada no se
+sobrescribe (`proteger_version_aprobada()`), aprobar jubila a la anterior y
+apunta el documento a la nueva en una sola escritura del cliente
+(`jubilar_version_anterior()`), quién aprobó y cuándo lo escribe el servidor
+(`sellar_version_documento()`), y un documento con alguna versión aprobada no se
+borra (`puedo_borrar_documento()`). La interfaz se limita a no ofrecer botones
+que ya están garantizados a fallar.
+
+⚠️ **`documento_versiones.archivo_url` se llama `archivo_ruta`** (22 ago 2026):
+el bucket es privado, así que lo que se guarda es la ruta en Storage y la URL se
+firma al abrir. Una URL firmada guardada en una columna caduca en una hora.
+
+⚠️ **Subir el ARCHIVO de una versión es la CUARTA excepción consciente a
+`offlineWrite`** y sólo una mitad: pesa megabytes, sale de un `File` que sólo
+existe en esa pantalla, hay que convertirlo antes de guardarlo y lo hace un
+consultor con el Word del cliente delante de su computadora. Todo lo demás
+—crear el documento, escribir una versión a mano, mandarla a revisión,
+aprobarla, vincular cláusulas— pasa por la cola.
 
 ### Markdown como formato de trabajo  ← *propuesto por el dueño, 21 ago 2026*
 
@@ -538,40 +558,62 @@ procesar nada.
 - ⚠️ **El original nunca se tira.** El `.md` es una representación; el archivo
   que firmó el cliente es el `.docx` o el PDF, y es el que un auditor pide.
 
-## F02·B2b — Adjuntos  ← *adelantado desde F04·B2*
+## F02·B2b — Adjuntos  ✅ *código listo, 22 ago 2026*  ← *adelantado desde F04·B2*
 
 La infraestructura de archivos estaba planeada para la Fase 04, **y llega tarde
 para cómo se usa la app**: las evidencias son el pan de cada día desde que hay
 tareas y documentos. Se adelanta entera, y la Fase 03 la encuentra hecha en vez
 de inventarla para las fotos de campo.
 
-- Bucket privado, **cola propia** en IndexedDB (`src/lib/offline/adjuntos.ts`),
-  subida en dos fases. No es el `outbox`: una subida pesa megabytes y se vacía
-  **después** de los datos.
+- Bucket privado `evidencias`, **cola propia** en IndexedDB
+  (`src/lib/offline/adjuntos.ts`), subida en dos fases.
+- ⚠️ **Qué va por cada cola, y por qué** (precisado al implementarlo, 22 ago
+  2026): **la FILA** de `adjuntos` viaja por el `outbox` normal —es una escritura
+  de tabla y así conserva su ORDEN respecto a las demás—; **el BINARIO** espera
+  en la cola propia y sube **después** de que la de datos esté vacía. Si la fila
+  fuera también por la cola de binarios, marcar como hecha una tarea con
+  evidencia obligatoria llegaría al servidor **antes** que su adjunto y
+  `sellar_tarea_hecha()` la rechazaría — justo al recuperar la señal, con el
+  auditor ya fuera de la planta. Y al revés: una foto de 4 MB no puede retrasar
+  el envío de treinta hallazgos de texto.
 - Filtrado por **campo dominante**
   (tarea de etapa → tarea de acción → acción → hallazgo → documento →
   organización), **nunca con un OR**.
-- ⚠️ `subirAdjunto()` sólo encola; subir es `sincronizarAdjuntos()` y **hay que
+- ⚠️ **La tabla nace con las FK que hoy existen**: `tarea_etapa_id` y
+  `documento_id`. `hallazgo_id` la añade la Fase 03 y `accion_id`, `tarea_id` y
+  `obligacion_id` la 04 y la 05 — una FK a una tabla que no existe es un error
+  de migración, no una previsión. El orden completo sí está escrito desde ahora
+  en `CAMPOS_DOMINANTES`, para que añadir una sea una línea aquí y otra en
+  `heredar_org_del_adjunto()`.
+- ⚠️ `adjuntar()` sólo encola; subir es `sincronizarAdjuntos()` y **hay que
   esperarlo** — refrescar sin esperar es el «hay que subirla dos veces» de JDM
   Built.
+- **`tareas_etapa.exige_evidencia` entra aquí**, que es cuando deja de ser un
+  interruptor muerto: `sellar_tarea_hecha()` rechaza el paso a `hecha` si la
+  tarea no tiene ningún adjunto.
 - ⚠️ El bucket es privado y se lee con URL firmada: **lo ya subido no se ve sin
   señal**. Tomar la foto y adjuntarla, sí. Es una limitación real que la interfaz
   tiene que decir, no esconder.
 
-## F02·B3 — Matriz de requisitos
+## F02·B3 — Matriz de requisitos  ✅ *código listo, 22 ago 2026*
 
 La tabla que contesta *"¿cuánto nos falta para certificarnos?"*.
 
 - Por cada cláusula auditable del alcance del proyecto: estado
   `no_iniciado / documentado / implementado / evidenciado / no_aplica`, con
-  justificación obligatoria si es `no_aplica`.
+  justificación obligatoria si es `no_aplica` — **y la exige el CHECK de la
+  base**, no la pantalla.
 - Documento(s) que la cubren y evidencia que la respalda.
+  ⚠️ **El vínculo se declara desde el DOCUMENTO** (`documento_clausulas`), no
+  desde la matriz: un documento cubre varias cláusulas y se dice una sola vez,
+  en su expediente. La matriz enseña el resultado — y sobre todo **enseña cuándo
+  no hay nada**, que es lo que un auditor de certificación va a encontrar.
 - Porcentaje de avance por norma y por capítulo — el número que el cliente pide
   en cada reunión.
 - **El diagnóstico inicial (etapa 1) es esta matriz recién llenada.** No es un
   documento aparte.
 
-## F02·B4 — Procesos, riesgos e indicadores
+## F02·B4 — Procesos, riesgos e indicadores  ✅ *código listo, 22 ago 2026*
 
 - `procesos`: el mapa de procesos del cliente (estratégicos, operativos, de
   soporte), con su dueño y sus entradas/salidas.
@@ -594,10 +636,18 @@ La tabla que contesta *"¿cuánto nos falta para certificarnos?"*.
 
 ### Tareas del dueño — Fase 02
 
-`C01` Validar el árbol de cláusulas sembrado (es el criterio técnico de la firma,
-no puede salir de un modelo sin revisión). `C02` Definir los estados de la matriz
-de requisitos si difieren de los propuestos. `C03` Crear el bucket `documentos` y
-verificar que es **privado**.
+`C00` **Aplicar las dos migraciones de la fase**, en orden:
+`20260822120000_sistemas_de_gestion.sql` (el esquema) y después
+`20260822120100_storage_documentos_y_evidencias.sql` (los buckets y sus
+políticas). Van separadas a propósito: la segunda toca `storage.objects`, que no
+es un esquema nuestro, y si falla por permisos no puede llevarse por delante el
+esquema de la fase. Requiere que `B00b` esté aplicada.
+`C01` Validar el árbol de cláusulas (es el criterio técnico de la firma, no puede
+salir de un modelo sin revisión). `C02` Definir los estados de la matriz de
+requisitos si difieren de los propuestos. `C03` Verificar que el bucket
+`documentos` quedó **privado**. `C04` Verificar lo mismo con `evidencias`
+—subió desde la Fase 03, donde era `D03`, porque los adjuntos se adelantaron a
+F02·B2b—.
 
 ---
 
@@ -672,7 +722,8 @@ Este es el bloque donde el proyecto se gana o se pierde.
 
 `D01` Aportar el formato oficial del informe de auditoría de la firma. `D02`
 Validar la clasificación de hallazgos y sus criterios (qué hace mayor a una NC).
-`D03` Crear el bucket `evidencias` y verificar que es privado.
+`D03` → **movido a `C04`** (22 ago 2026): el bucket `evidencias` se creó con los
+adjuntos, que se adelantaron a F02·B2b.
 
 ---
 

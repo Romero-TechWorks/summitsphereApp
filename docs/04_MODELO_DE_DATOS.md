@@ -306,6 +306,12 @@ sí renombrar al cliente entero.
 
 # FASE 02 · Sistemas de gestión
 
+> **Todo lo de abajo lo crea `20260822120000_sistemas_de_gestion.sql`** (22 ago
+> 2026), salvo `normas` y `norma_clausulas`, que ya existían de la migración 3.
+> Las políticas de Storage van en `20260822120100_storage_documentos_y_evidencias.sql`,
+> **aparte a propósito**: tocan `storage.objects`, que no es un esquema nuestro,
+> y si fallan por permisos no pueden llevarse por delante el esquema del dominio.
+
 ## `normas`
 Las siete. **Catálogo global, sin `org_id`.**
 
@@ -363,7 +369,8 @@ El control documental. El corazón de un SGC.
 | `documento_id` | uuid FK | |
 | `version` | text | `1.0`, `2.0` |
 | `estado` | text CHECK | `borrador` · `en_revision` · `aprobado` · `obsoleto` |
-| `archivo_url` | text | El original, en el bucket privado `documentos`. **Nunca se tira** |
+| `archivo_ruta` | text | ⚠️ La **RUTA** del original en el bucket privado `documentos`, no una URL: el bucket es privado y se firma al abrir. Una URL firmada guardada aquí caduca en una hora. **El archivo nunca se tira** |
+| `archivo_nombre`, `archivo_tipo`, `archivo_tamano` | | Cómo se llamaba de verdad. La ruta lleva el id de la versión, porque dos revisiones del manual se llaman las dos `Manual de Calidad.docx` |
 | `markdown` | text | La misma versión convertida a Markdown: lo que se lee y se edita en la app, y lo que leerá el asistente [Fase 07] |
 | `origen_markdown` | text CHECK | `docx` · `pdf` · `escrito` — de dónde salió, y por tanto cuánto fiarse |
 | `avisos_conversion` | text[] | Qué no sobrevivió: tablas, imágenes, numeración automática |
@@ -375,6 +382,18 @@ El control documental. El corazón de un SGC.
 anterior `obsoleto` y la conserva. Un auditor externo pide exactamente eso.
 Editar el Markdown de una versión aprobada **crea la siguiente**, no la modifica.
 
+**Y lo impone la base, no la pantalla** — cuatro piezas:
+
+| Pieza | Qué garantiza |
+|---|---|
+| `proteger_version_aprobada()` | Una versión aprobada sólo puede pasar a `obsoleto`; cualquier otro cambio se rechaza. Una obsoleta ya no cambia nada |
+| `jubilar_version_anterior()` | Aprobar jubila a la anterior **y** apunta `documentos.version_vigente_id` a la nueva, en una sola escritura del cliente. Tres operaciones de la cola podrían llegar desparejadas sin señal, y un documento con dos versiones aprobadas es el hallazgo que la firma le levanta a sus clientes |
+| `sellar_version_documento()` | `aprobo_id` y `fecha_aprobacion` los escribe el servidor, con `auth.uid()` y la fecha en la zona de la firma. ⚠️ `elaboro_id` y `reviso_id` **no** se sellan: son capturables, y firmar como revisor a quien sólo movió el estado sería inventar una firma |
+| `puedo_borrar_documento()` | Un documento con alguna versión `aprobado` u `obsoleto` no se borra. Un borrador capturado por error, sí |
+
+⚠️ El DELETE de `documento_versiones` sólo alcanza a los `borrador`. Un borrador
+es un archivo a medias; una versión aprobada es el expediente.
+
 ⚠️ **El Markdown es una representación, no el documento.** Lo que firmó el
 cliente es el archivo original; el `.md` sirve para leerlo en el teléfono,
 editarlo sin Word y dárselo al asistente sin volver a procesarlo. Si los dos
@@ -383,9 +402,18 @@ discrepan, manda el original.
 ## `adjuntos`
 Cola propia, bucket privado [F02·B2b, adelantado desde la Fase 04].
 
+⚠️ **La tabla nace con las claves foráneas que HOY existen: `tarea_etapa_id` y
+`documento_id`.** Las otras cuatro apuntarían a tablas que todavía no se han
+creado —`hallazgos` es de la Fase 03, y `acciones`, `tareas` y `obligaciones` de
+la 04 y la 05—, y una FK a una tabla inexistente es un error de migración, no una
+previsión. Cada fase añade la suya con un `alter table`. El **orden completo** sí
+está escrito ya en `CAMPOS_DOMINANTES` (`src/lib/offline/adjuntos.ts`) y en el
+`coalesce` de `heredar_org_del_adjunto()`, para que ampliarlo sean dos líneas.
+
 | Columna | Tipo | Nota |
 |---|---|---|
-| `tarea_etapa_id`, `tarea_id`, `accion_id`, `hallazgo_id`, `documento_id`, `obligacion_id` | uuid FK NULL | ⚠️ Se filtra con `campoDominante()`, **nunca con un OR** (§8.8) |
+| `tarea_etapa_id`, `documento_id` | uuid FK NULL | ⚠️ Se filtra con `campoDominante()`, **nunca con un OR** (§8.8) |
+| `tarea_id`, `accion_id`, `hallazgo_id`, `obligacion_id` | | ⚠️ **Todavía no existen**: las añaden las Fases 03, 04 y 05 |
 | `ruta` | text | Ruta en Storage |
 | `nombre`, `tipo_mime`, `tamano` | | |
 | `titulo` | text | Lo que el usuario escribe |
@@ -395,6 +423,22 @@ Cola propia, bucket privado [F02·B2b, adelantado desde la Fase 04].
 etapa es más específica que la acción, y la acción más que el hallazgo. Si un
 adjunto llegara con dos, gana el primero de la lista — y por eso el orden se
 escribe una sola vez, en `campoDominante()`.
+
+⚠️ **`org_id` la pone `heredar_org_del_adjunto()`** a partir del campo dominante,
+no el cliente. Un adjunto suelto de la organización —sin tarea y sin documento—
+sí manda la suya, y el `WITH CHECK` de la política la valida.
+
+⚠️ **El DELETE es sólo del socio.** Una foto adjunta a un hallazgo [Fase 03] es
+evidencia de auditoría: si cualquiera pudiera quitarla, la trazabilidad
+dependería de que nadie se equivoque de botón. Y **borrar la fila no borra el
+objeto del bucket**: deliberado mientras no haya cron de limpieza — un archivo
+huérfano cuesta unos centavos, una evidencia borrada por accidente no se
+recupera.
+
+⚠️ **`tareas_etapa.exige_evidencia` entra en esta migración**, no en la 4: es la
+columna que `sellar_tarea_hecha()` usa para rechazar el paso a `hecha` sin
+adjunto. Antes de que existiera `adjuntos` habría sido un interruptor muerto
+(CLAUDE.md regla 11).
 
 ## `documento_clausulas`
 Qué cláusula cubre qué documento. Alimenta la matriz de requisitos.
@@ -437,6 +481,15 @@ Qué cláusula cubre qué documento. Alimenta la matriz de requisitos.
 ⚠️ `nivel` es columna generada con una multiplicación de enteros — **inmutable, sin
 problema**. Lo que **no** puede ir en una columna generada es una fecha a texto
 (§4 y CLAUDE.md).
+
+⚠️ **Y en TypeScript llega como `number | null`, no como `number`.** El generador
+de Supabase no marca las columnas generadas ni como no anulables ni como no
+insertables; así sale de `supabase gen types`, y **lo generado manda**. En la
+base nunca es null —`probabilidad` e `impacto` son NOT NULL—, así que el código
+lo lee con `nivelDe()` (`src/lib/queries/riesgos.ts`), que recalcula lo mismo que
+calcularía Postgres. Y **nadie manda `nivel` en un insert**, aunque el tipo lo
+permita: Postgres lo rechaza con *«cannot insert a non-DEFAULT value into column
+nivel»*.
 
 ## `indicadores` · `mediciones`
 

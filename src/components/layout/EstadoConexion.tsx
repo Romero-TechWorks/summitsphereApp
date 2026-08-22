@@ -2,8 +2,14 @@
 
 import { useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
+import { reintentarSubida } from '@/lib/offline/adjuntos'
 import { reintentarFallidos } from '@/lib/offline/cola'
-import { useEnLinea, useOperacionesCola, useResumenCola } from '@/lib/offline/estado'
+import {
+  useEnLinea,
+  useOperacionesCola,
+  useResumenCola,
+  useSubidasPendientes,
+} from '@/lib/offline/estado'
 import { sincronizar } from '@/lib/offline/sync'
 
 /**
@@ -22,18 +28,27 @@ export default function EstadoConexion({ compacto = false }: { compacto?: boolea
   const enLinea = useEnLinea()
   const { pendientes, fallidos } = useResumenCola()
   const operaciones = useOperacionesCola()
+  // Los binarios son cola aparte: una foto pendiente no es lo mismo que un
+  // hallazgo sin guardar, y se cuentan y se enseñan por separado [F02·B2b].
+  const subidas = useSubidasPendientes()
 
   const [abierto, setAbierto] = useState(false)
   const [trabajando, setTrabajando] = useState(false)
 
-  if (enLinea && pendientes === 0 && fallidos === 0) return null
+  if (enLinea && pendientes === 0 && fallidos === 0 && subidas.length === 0) return null
 
-  const { color, texto } = describir(enLinea, pendientes, fallidos)
+  const { color, texto } = describir(enLinea, pendientes, fallidos, subidas.length)
 
   async function reintentar() {
     setTrabajando(true)
     try {
       if (fallidos > 0) await reintentarFallidos()
+      for (const subida of subidas.filter((s) => s.estado === 'fallida')) {
+        await reintentarSubida(subida.id)
+      }
+      // ⚠️ Se ESPERA: `sincronizar` vacía primero los datos y después los
+      // binarios. Refrescar sin esperar es el «hay que subirla dos veces»
+      // (docs/03 §8.8, regla 4).
       await sincronizar(cliente)
     } finally {
       setTrabajando(false)
@@ -70,11 +85,16 @@ export default function EstadoConexion({ compacto = false }: { compacto?: boolea
             background: color,
             flexShrink: 0,
             // El latido sólo mientras algo está saliendo.
-            animation: enLinea && pendientes > 0 ? 'latido-punto 1.2s ease-in-out infinite' : undefined,
+            animation:
+              enLinea && pendientes + subidas.length > 0
+                ? 'latido-punto 1.2s ease-in-out infinite'
+                : undefined,
           }}
         />
         {compacto ? (
-          pendientes + fallidos > 0 && <span className="mono">{pendientes + fallidos}</span>
+          pendientes + fallidos + subidas.length > 0 && (
+            <span className="mono">{pendientes + fallidos + subidas.length}</span>
+          )
         ) : (
           <span>{texto}</span>
         )}
@@ -119,9 +139,9 @@ export default function EstadoConexion({ compacto = false }: { compacto?: boolea
                 : 'Puedes seguir trabajando. Todo se guarda en el teléfono y sube al volver la señal.'}
             </p>
 
-            {operaciones.length === 0 ? (
+            {operaciones.length === 0 && subidas.length === 0 ? (
               <p style={{ fontSize: 12.5, color: 'var(--texto-dim)' }}>No hay nada pendiente.</p>
-            ) : (
+            ) : operaciones.length === 0 ? null : (
               <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {operaciones.map((operacion) => (
                   <li
@@ -153,7 +173,43 @@ export default function EstadoConexion({ compacto = false }: { compacto?: boolea
               </ul>
             )}
 
-            {enLinea && operaciones.length > 0 && (
+            {subidas.length > 0 && (
+              <>
+                <p style={{ fontSize: 12.5, fontWeight: 600, margin: '12px 0 4px' }}>
+                  Archivos por subir
+                </p>
+                <p style={{ fontSize: 11.5, color: 'var(--texto-dim)', marginBottom: 6 }}>
+                  Van después de los datos: pesan más y no pueden retrasarlos.
+                </p>
+                <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {subidas.map((subida) => (
+                    <li
+                      key={subida.id}
+                      style={{
+                        padding: '7px 9px',
+                        background: 'var(--superficie-2)',
+                        borderRadius: 6,
+                        borderLeft: `2px solid ${
+                          subida.estado === 'fallida' ? 'var(--error)' : 'var(--borde-fuerte)'
+                        }`,
+                      }}
+                    >
+                      <p style={{ fontSize: 12.5 }}>{subida.nombre}</p>
+                      <p style={{ fontSize: 11.5, color: 'var(--texto-dim)', marginTop: 2 }}>
+                        {(subida.tamano / 1024 / 1024).toFixed(1)} MB
+                      </p>
+                      {subida.estado === 'fallida' && subida.motivo && (
+                        <p style={{ fontSize: 11.5, color: 'var(--error)', marginTop: 2 }}>
+                          {subida.motivo}
+                        </p>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+
+            {enLinea && operaciones.length + subidas.length > 0 && (
               <button
                 type="button"
                 onClick={reintentar}
@@ -181,11 +237,13 @@ export default function EstadoConexion({ compacto = false }: { compacto?: boolea
   )
 }
 
-function describir(enLinea: boolean, pendientes: number, fallidos: number) {
+function describir(enLinea: boolean, pendientes: number, fallidos: number, subidas: number) {
+  const total = pendientes + subidas
+
   if (!enLinea) {
     return {
       color: 'var(--nav-alerta)',
-      texto: pendientes > 0 ? `Sin conexión · ${pendientes} por subir` : 'Sin conexión',
+      texto: total > 0 ? `Sin conexión · ${total} por subir` : 'Sin conexión',
     }
   }
   if (fallidos > 0) {
@@ -196,6 +254,6 @@ function describir(enLinea: boolean, pendientes: number, fallidos: number) {
   }
   return {
     color: 'var(--nav-activo)',
-    texto: `${pendientes} por subir`,
+    texto: `${total} por subir`,
   }
 }

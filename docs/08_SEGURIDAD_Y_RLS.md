@@ -126,18 +126,47 @@ CREATE POLICY "hallazgos_update" ON hallazgos FOR UPDATE TO authenticated
 -- DELETE: deliberadamente ausente. Un hallazgo se anula, no se borra.
 ```
 
+### Dónde SÍ hay DELETE, y con qué candado  [Fases 01 y 02]
+
+La regla 13 no es «nada se borra nunca»: es «no se borra la evidencia de
+auditoría». La línea vive **en una función por tabla**, para que ampliarla sea
+tocar un sitio:
+
+| Función | Qué exige hoy | Ampliar en |
+|---|---|---|
+| `puedo_borrar_org()` | socio **y** sin `documentos` | F03: sin `auditorias` ni `hallazgos` |
+| `puedo_borrar_proyecto()` | socio **y** sin `documentos` | F03: sin `auditorias` |
+| `puedo_borrar_documento()` | editor **y** sin ninguna versión `aprobado` u `obsoleto` | — |
+
+Y tres tablas con DELETE abierto al editor porque **no son evidencia**:
+`tareas_etapa` (trabajo interno de método), `procesos` (el mapa cambia con los
+años) y `riesgos` (un taller de análisis produce filas mal capturadas). En
+cambio, `adjuntos` sólo lo borra un **socio**, y `documento_versiones` sólo si
+está en `borrador`.
+
 ⚠️ **Leer y escribir usan funciones distintas a propósito.** El `SELECT` va por
 `mis_organizaciones()` —el papel no cambia lo que se ve— y el `INSERT`/`UPDATE`
 por `puedo_editar_org()`, que además excluye a `lectura`. Escribir las cuatro con
 la misma condición era lo que decía este documento hasta la Fase 01, y dejaba el
 papel sin efecto.
 
-⚠️ **Lo que cuelga de un proyecto no manda su `org_id`: lo hereda.** Las tablas
-de alcance y de bitácora lo reciben de un trigger `BEFORE`
-(`heredar_org_del_proyecto()`), porque `WITH CHECK` sólo comprueba que la
-organización sea **una de las tuyas**, no que sea **la del proyecto**: con dos
-clientes asignados, el alcance de uno podría acabar colgado del expediente del
-otro sin violar ninguna política.
+⚠️ **Lo que cuelga de otra fila no manda su `org_id`: lo hereda.** Lo reciben de
+un trigger `BEFORE`, porque `WITH CHECK` sólo comprueba que la organización sea
+**una de las tuyas**, no que sea **la de la fila padre**: con dos clientes
+asignados, el alcance de uno podría acabar colgado del expediente del otro sin
+violar ninguna política. Hay cuatro de estos triggers:
+
+| Función | La ponen en |
+|---|---|
+| `heredar_org_del_proyecto()` | alcance, bitácora, `tareas_etapa`, `requisitos` |
+| `heredar_org_del_documento()` | `documento_versiones`, `documento_clausulas` |
+| `heredar_org_del_indicador()` | `mediciones` |
+| `heredar_org_del_adjunto()` | `adjuntos`, **a partir del campo dominante** — y su `coalesce` lleva el mismo orden que `CAMPOS_DOMINANTES` en el cliente |
+
+Y dos guardas del mismo tipo, que comprueban que una fila referenciada sea **del
+mismo cliente**: `validar_sitio_del_proyecto()` y `validar_contacto_de_la_org()`
+(el dueño de un proceso). Ninguna de las dos la puede hacer una clave foránea ni
+un CHECK, porque tienen que mirar otra tabla.
 
 ⚠️ **`USING` y `WITH CHECK` en el UPDATE, las dos.** `USING` decide qué filas
 puedes tocar; `WITH CHECK` decide en qué se pueden convertir. Sólo con `USING`,
@@ -186,7 +215,9 @@ a `anon`. Ver §5.
 
 ## §4 · Storage
 
-Cinco buckets, **todos privados**:
+Cinco buckets, **todos privados**. Los dos primeros existen desde F02·B2b
+(`20260822120100_storage_documentos_y_evidencias.sql`); los otros tres llegan con
+su fase:
 
 | Bucket | Guarda | Nota |
 |---|---|---|
@@ -200,13 +231,46 @@ Las políticas de Storage filtran por el **primer segmento de la ruta**, que es 
 organización:
 
 ```sql
--- documentos/{org_id}/{documento_id}/{archivo}
+-- documentos/{org_id}/{documento_id}/{version_id}.{ext}
+-- evidencias/{org_id}/{aaaa}/{adjunto_id}.{ext}
 CREATE POLICY "documentos_leer" ON storage.objects FOR SELECT TO authenticated
 USING (
   bucket_id = 'documentos'
-  AND (storage.foldername(name))[1] IN (SELECT mis_organizaciones()::text)
+  AND (public.org_de_la_ruta(name) IN (SELECT public.mis_organizaciones())
+       OR public.es_socio())
 );
 ```
+
+⚠️ **`public.org_de_la_ruta(text)`, no `storage.foldername(name)[1]::uuid`**, y
+por dos motivos: (1) un primer segmento que no sea un UUID daría un 22P02
+—*«invalid input syntax for type uuid»*— **dentro de una política**, que es un
+error incomprensible donde lo correcto es un simple «no»; la función devuelve
+`null` y ya. (2) `storage.foldername` está declarada VOLATILE en el esquema de
+Supabase, y una función volátil dentro de una política se reevalúa por fila;
+`split_part(ruta, '/', 1)` es inmutable de verdad.
+
+⚠️ **Quién sube pasa por `puedo_editar_org()`**, igual que en las tablas: el
+papel `lectura` no escribe tampoco en Storage.
+
+⚠️ **`evidencias` NO tiene política de UPDATE, y es deliberado.** Una evidencia
+no se reemplaza: si la foto salió movida, se sube otra. Que un objeto de
+evidencia cambie de contenido conservando su ruta es exactamente lo que un
+auditor externo no puede permitir — la fila de `adjuntos` diría una cosa y el
+archivo sería otra.
+
+⚠️ **Borrar del bucket es sólo del socio**, en los dos. Y borrar la fila de
+`adjuntos` **no borra el objeto**: mientras no haya cron de limpieza, un archivo
+huérfano cuesta unos centavos y una evidencia borrada por accidente no se
+recupera.
+
+⚠️ **Las políticas van en migración APARTE del esquema del dominio.**
+`create policy on storage.objects` toca un esquema que no es nuestro y puede
+fallar por permisos según cómo esté el proyecto; dentro de la migración grande se
+llevaría por delante todo el esquema de la fase.
+
+⚠️ El `insert into storage.buckets … on conflict (id) do update set public = false`
+de esa migración es a propósito: **vuelve a poner el bucket en privado** aunque
+alguien lo haya creado a mano marcando la casilla equivocada.
 
 ⚠️ **Un bucket público no tiene arreglo posterior.** Cualquiera con la URL entra,
 para siempre, aunque después se cierre — la URL ya circuló. Y aquí las URLs son

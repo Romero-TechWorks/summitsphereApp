@@ -91,7 +91,10 @@ obligatorio está hecho.
 
 Las tareas salen de una **plantilla por tipo de proyecto** —la metodología no se
 re-teclea en cada cliente— y después se editan libremente. Las que exigen
-evidencia no se pueden dar por hechas sin un adjunto.
+evidencia no se pueden dar por hechas sin un adjunto: **lo impide la base**
+(`sellar_tarea_hecha()`), no la pantalla, y la fila lo avisa con «Pide evidencia»
+antes de que nadie toque la casilla. La evidencia se adjunta desde el mismo
+modal de edición de la tarea [F02·B2b].
 
 ⚠️ **Cerrar las tareas de una etapa no mueve el proyecto de etapa.** La app lo
 propone; avanzar lo decide el consultor y queda en la bitácora con su nombre.
@@ -118,6 +121,13 @@ saldo de lo que va a cambiar y confirma. Corregir una errata es volver a subirlo
 ⚠️ Se adelantó a la Fase 01 porque el **alcance de un proyecto** cuelga de él: sin
 normas cargadas no se puede decir qué cubre un contrato.
 
+### Cómo se elige el cliente
+Las cinco pestañas de este dominio son de **un cliente**, no de la cartera
+entera: un documento, un proceso y un riesgo son de alguien. El selector de
+arriba vive en la URL (`?org=<id>`), así que se cambia de pestaña sin perder el
+cliente y el enlace se puede mandar por correo. La pestaña de Normas no lo pide:
+el catálogo es de la firma.
+
 ### Documentos — control documental
 Lo que un cliente cree que está comprando cuando contrata una implementación.
 Es **la biblioteca del cliente**, y se puede mirar entera o filtrada por el
@@ -136,9 +146,25 @@ proyecto que la produjo.
   `.docx` con la plantilla de Summit [Fase 07]. ⚠️ La conversión avisa de lo que
   no sobrevive (tablas complejas, imágenes) y **un PDF escaneado no se puede
   convertir**: eso necesita el módulo multimodal.
+- ⚠️ **El saldo de la conversión se enseña ANTES de guardar nada**: cuántos
+  caracteres salieron, qué se perdió, y el texto entero desplegable. Un conversor
+  que escribe y después informa es un conversor en el que nadie confía la segunda
+  vez.
+- ⚠️ **Subir el archivo necesita conexión.** Pesa megabytes y no pasa por la cola
+  de salida. Lo que sí se puede hacer sin señal es **escribir una versión a
+  mano**, mandarla a revisión y aprobarla: eso es texto y se encola como todo lo
+  demás.
+- El expediente de un documento tiene cuatro secciones: **Texto** (con el visor
+  o el editor de Markdown y el botón para abrir el original), **Versiones** (el
+  historial con sus firmas y sus botones de ciclo de vida), **Cláusulas** (lo que
+  cubre) y **Evidencia** (el acta de aprobación, la lista de difusión).
 
 ### Requisitos — la matriz
 La pantalla que contesta *"¿cuánto nos falta para certificarnos?"*.
+
+⚠️ Cuelga de un **proyecto**, no de la organización: el alcance —qué normas se
+están implementando— es del contrato, y una misma planta puede llevar 9001 este
+año y 45001 el siguiente. Por eso hay un segundo selector.
 
 Por cada cláusula auditable del alcance: `no iniciado` · `documentado` ·
 `implementado` · `evidenciado` · `no aplica`. El `no aplica` **exige
@@ -153,6 +179,11 @@ el cliente pide en cada reunión mensual.
 ### Procesos
 El mapa de procesos: estratégicos, operativos, de soporte. Con su dueño del lado
 del cliente, sus entradas y sus salidas.
+
+⚠️ El dueño de un proceso es **gente del cliente** —sale del directorio de
+contactos, no de los usuarios de la firma—: es a quien el auditor le pregunta en
+el piso y quien firma la evidencia. Un proceso se **da de baja**, no se borra
+mientras haya documentos que cuelguen de él.
 
 ### Riesgos
 Riesgos y oportunidades por proceso, con probabilidad × impacto = nivel, y su

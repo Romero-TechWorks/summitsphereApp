@@ -360,6 +360,54 @@ asignes a alguien, para el resto de la firma no existe.
 
 # FASE 02 · Sistemas de gestión
 
+### `C00` — Aplicar las dos migraciones de la fase · **Bloquea: TODA la Fase 02**
+
+⚠️ **Van en este orden, y `B00b` tiene que estar aplicada antes.** La segunda
+amplía funciones que nacen en la migración de tareas.
+
+```bash
+# 1. El esquema del dominio: documentos, versiones, adjuntos, requisitos,
+#    procesos, riesgos, indicadores y mediciones. Y amplía puedo_borrar_org()
+#    para que una organización con documentos ya no se pueda borrar.
+npx supabase db push
+
+# 2. Los tipos, en DOS pasos —el redireccionamiento directo trunca el archivo
+#    si el comando falla a media escritura.
+npx supabase gen types typescript --linked > /tmp/database.ts && mv /tmp/database.ts src/types/database.ts
+
+# 3. Comparar con lo que dice el repositorio. Si sale distinto, MANDA LO GENERADO.
+git diff --stat src/types/database.ts
+```
+
+**Son dos archivos y van separados a propósito:**
+
+| Migración | Qué hace |
+|---|---|
+| `20260822120000_sistemas_de_gestion.sql` | El esquema completo de la fase |
+| `20260822120100_storage_documentos_y_evidencias.sql` | Los buckets `documentos` y `evidencias` y sus políticas |
+
+⚠️ **Por qué separadas:** la segunda escribe políticas sobre `storage.objects`,
+que es un esquema de Supabase y no nuestro. Según cómo esté configurado el
+proyecto puede fallar por permisos, y dentro de la migración grande se llevaría
+por delante el esquema entero de la fase. Si la segunda falla, el dominio ya está
+aplicado y los buckets se crean a mano (`C03` y `C04`) — sólo faltarían las
+políticas, y ahí sí avísame.
+
+⚠️ `src/types/database.ts` ya trae los tipos de esta fase **escritos a mano** con
+la forma del generador, para que el código compile antes de que apliques nada. Al
+aplicarla se regeneran de verdad; **manda lo generado**, no lo que hay.
+
+**Las dos migraciones se probaron enteras antes de dártelas** (22 ago 2026), en un
+Postgres 17 desechable con las seis anteriores aplicadas en orden. Pasaron 17
+comprobaciones de comportamiento: la herencia de `org_id`, el sello de la firma de
+aprobación, que aprobar una versión jubile a la anterior, que una versión aprobada
+no se deje editar, que un `no aplica` sin justificación se rechace, que una tarea
+con evidencia obligatoria no se pueda dar por hecha sin adjunto, y que una
+organización con documentos ya no se pueda borrar. Y los tipos generados desde ese
+esquema salieron **idénticos** a los del repositorio. Eso no sustituye a aplicarla
+—tu base tiene datos y la mía estaba vacía—, pero sí quiere decir que no vas a
+encontrarte un error de sintaxis a media aplicación.
+
 ### `C01` — Validar el árbol de cláusulas · **Bloquea: las Fases 02, 03 y 05**
 
 ⚠️ **La tarea más importante de toda la lista, y la única que no se puede delegar
@@ -388,14 +436,30 @@ La matriz de requisitos propone cinco estados: *no iniciado*, *documentado*,
 manera, dilo **antes** de que se capturen mil requisitos — después es una
 migración.
 
-### `C03` — Crear la carpeta de documentos · **Bloquea: subir documentos**
+### `C03` — Verificar la carpeta de documentos · **Bloquea: subir documentos**
 
-En Supabase → Storage → New bucket → nombre `documentos` → **Private**.
+**La crea la migración de `C00`**, ya privada. Lo tuyo es comprobarlo: Supabase →
+Storage → `documentos` → tiene que decir **Private**.
 
 ⚠️ **Verifica que diga "Private".** Un bucket público deja los documentos de tus
 clientes accesibles para cualquiera que tenga el link — y una vez que el link
-circuló, cerrarlo después no sirve de nada. Paso a paso en
-[`../guias/02_SUPABASE.md`](../guias/02_SUPABASE.md).
+circuló, cerrarlo después no sirve de nada. La migración lo vuelve a poner en
+privado por si alguien lo creó a mano con la casilla equivocada, pero míralo. Paso
+a paso en [`../guias/02_SUPABASE.md`](../guias/02_SUPABASE.md).
+
+### `C04` — Verificar la carpeta de evidencias · **Bloquea: adjuntar evidencia**
+
+Lo mismo con el bucket `evidencias`, que también crea la migración de `C00`.
+
+⚠️ **Esta tarea era `D03` de la Fase 03.** Subió de fase porque los adjuntos se
+adelantaron a F02·B2b: desde que hay tareas y documentos hace falta poder colgar
+una foto o un acta firmada, y la Fase 03 se la encuentra hecha en vez de
+inventarla para las fotos de campo.
+
+⚠️ **Lo que está subido no se ve sin señal, y no es un fallo.** El bucket es
+privado: cada archivo se abre con una liga firmada al momento, que es una llamada
+al servidor. Tomar la foto y adjuntarla en la planta, sí; abrir la de la semana
+pasada estando sin señal, no. La app lo dice en pantalla.
 
 ---
 
@@ -415,9 +479,10 @@ de la firma, en una página.
 Va a vivir dentro de la app como ayuda contextual cuando un auditor clasifique un
 hallazgo. Es lo que hace que dos auditores distintos clasifiquen igual.
 
-### `D03` — Crear la carpeta de evidencias · **Bloquea: las fotos de auditoría**
+### `D03` — Crear la carpeta de evidencias · → **movida a `C04`** (22 ago 2026)
 
-Igual que `C03`, bucket `evidencias`, **privado**.
+El bucket `evidencias` se crea con la migración de la Fase 02: los adjuntos se
+adelantaron a F02·B2b. Ver `C04`.
 
 ---
 

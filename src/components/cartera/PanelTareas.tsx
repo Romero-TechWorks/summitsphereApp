@@ -35,6 +35,7 @@ import Button from '@/components/ui/Button'
 import Checkbox from '@/components/ui/Checkbox'
 import Modal from '@/components/ui/Modal'
 import Skeleton from '@/components/ui/Skeleton'
+import PanelAdjuntos from '@/components/adjuntos/PanelAdjuntos'
 import FormularioTarea from './FormularioTarea'
 
 const FORM_TAREA = 'form-tarea'
@@ -419,6 +420,26 @@ export default function PanelTareas({
             alEnviar={guardar}
           />
         )}
+
+        {/* ⚠️ La evidencia sólo aparece al EDITAR, nunca al crear: un adjunto
+            cuelga de una tarea que ya existe, y encolarlo contra una fila que
+            todavía no se ha escrito dejaría el archivo apuntando a nada
+            [F02·B2b]. */}
+        {edicion?.modo === 'editar' && (
+          <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--borde)' }}>
+            <PanelAdjuntos
+              orgId={proyecto.org_id}
+              destino={{ tarea_etapa_id: edicion.tarea.id }}
+              puedoEditar={puedoEditar}
+              esSocio={esSocio}
+              ayuda={
+                edicion.tarea.exige_evidencia
+                  ? 'Esta tarea pide evidencia: no se puede marcar como hecha hasta que tenga al menos un archivo.'
+                  : undefined
+              }
+            />
+          </div>
+        )}
       </Modal>
     </div>
   )
@@ -469,6 +490,12 @@ function FilaTarea({
             <Badge tono={tonoDe(ESTADOS_TAREA, tarea.estado)}>
               {etiquetaDe(ESTADOS_TAREA, tarea.estado)}
             </Badge>
+          )}
+          {/* Se dice ANTES de intentar marcarla: si no, el auditor toca la
+              casilla en la planta y recibe un rechazo del servidor sin saber
+              por qué [F02·B2b]. */}
+          {tarea.exige_evidencia && !hecha && (
+            <Badge tono="advertencia">Pide evidencia</Badge>
           )}
         </div>
       </div>

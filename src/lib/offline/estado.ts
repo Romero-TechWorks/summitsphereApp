@@ -8,6 +8,12 @@
 
 import { useSyncExternalStore } from 'react'
 import {
+  leerSubidas,
+  subidasDelServidor,
+  suscribirAdjuntos,
+  type SubidaPendiente,
+} from './adjuntos'
+import {
   colaDelServidor,
   leerCola,
   leerResumenCola,
@@ -46,4 +52,16 @@ export function useResumenCola(): ResumenCola {
 
 export function useOperacionesCola(): OperacionCola[] {
   return useSyncExternalStore(suscribirCola, leerCola, colaDelServidor)
+}
+
+/**
+ * Los binarios que todavía no llegaron al bucket [F02·B2b].
+ *
+ * ⚠️ Es una cola distinta de la de datos y se enseña aparte: «3 escrituras
+ * pendientes» y «2 fotos por subir» son dos cosas que le pasan cosas distintas.
+ * Una foto pendiente no impide seguir trabajando; una escritura fallida sí
+ * necesita que alguien mire.
+ */
+export function useSubidasPendientes(): SubidaPendiente[] {
+  return useSyncExternalStore(suscribirAdjuntos, leerSubidas, subidasDelServidor)
 }

@@ -29,9 +29,38 @@ export type Pestana = {
  * Next no puede prerenderizar la ruta y **el build falla**. Es el mismo motivo
  * por el que `ScrollReset` va envuelto en el layout.
  */
-export default function Pestanas({ pestanas }: { pestanas: readonly Pestana[] }) {
+export default function Pestanas({
+  pestanas,
+  conservar,
+}: {
+  pestanas: readonly Pestana[]
+  /**
+   * Qué parámetros del query string sobreviven al cambio de pestaña.
+   *
+   * ⚠️ Por defecto **ninguno**, y es lo correcto para casi todo: el `?proyecto=`
+   * de la cartera no tiene sentido en la pestaña de contactos, y arrastrarlo
+   * dejaría URLs que enseñan un detalle que ya no se está mirando.
+   *
+   * `/sistemas` sí pasa `['org']`: ahí el cliente elegido es el contexto de
+   * cinco de las seis pestañas, y perderlo al cambiar de pestaña obligaría a
+   * elegirlo otra vez cada vez — que es exactamente el gesto que el selector
+   * existe para ahorrar.
+   */
+  conservar?: readonly string[]
+}) {
   const ruta = usePathname()
+  const params = useSearchParams()
   const activa = usePestana(pestanas)
+
+  function href(clave: string): string {
+    const siguientes = new URLSearchParams()
+    siguientes.set('tab', clave)
+    for (const nombre of conservar ?? []) {
+      const valor = params.get(nombre)
+      if (valor) siguientes.set(nombre, valor)
+    }
+    return `${ruta}?${siguientes.toString()}`
+  }
 
   return (
     <div
@@ -48,7 +77,7 @@ export default function Pestanas({ pestanas }: { pestanas: readonly Pestana[] })
       {pestanas.map((pestana) => (
         <Enlace
           key={pestana.clave}
-          href={`${ruta}?tab=${pestana.clave}`}
+          href={href(pestana.clave)}
           etiqueta={pestana.etiqueta}
           activa={pestana.clave === activa}
         />

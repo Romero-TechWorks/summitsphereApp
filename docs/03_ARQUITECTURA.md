@@ -97,9 +97,11 @@ src/
   lib/
     queries/            TODA consulta a Supabase vive aquí
     supabase/           client.ts (navegador) · server.ts (servidor)
-    offline/            db · outbox · mutate · sync · adjuntos · dictados
+    offline/            idb · cola · mutate · sync · persistencia · adjuntos · dictados
     query/              keys.ts · QueryProvider.tsx
-    normas/             catálogo de normas, cláusulas y NOMs
+    normas/             importador del catálogo de normas
+    documentos/         zip · docx · pdf · markdown · convertir   [F02·B2]
+    sistemas/           catálogos de la Fase 02 (documentos, requisitos, riesgos…)
     asistente/          proveedor · esquemas · instrucciones · herramientas
     plantillas/         catálogo · datos · render
     utils/              helpers puros
@@ -254,6 +256,22 @@ const { data, isLoading } = useQuery({
 ⚠️ **Nunca `useEffect` + `useState` para cargar datos.** Sin señal no hay caché, y
 sin caché no hay app en campo.
 
+### §6.1 · Insert-o-update decidido en el cliente, no `upsert`
+
+Dos tablas de la Fase 02 tienen un índice único que **no es su clave primaria**:
+`requisitos (proyecto_id, clausula_id)` y `mediciones (indicador_id, periodo)`.
+Con esas, **no se usa `upsert`**.
+
+El motivo es la cola: `ejecutarOperacion()` reproduce un `upsert` sin
+`onConflict`, así que Postgres lo resuelve por la clave primaria. Un segundo
+cambio sin señal sobre la misma cláusula llegaría con otro `id` generado y
+chocaría contra el índice único — un rechazo que aparece media hora después,
+al reconectar, sin nadie mirando.
+
+En su lugar se mira **la fila que ya está en la caché** —que es la fuente de
+verdad— y se elige `insert` o `update` en el cliente. El mismo gesto funciona
+igual con señal y sin ella.
+
 ---
 
 ## §7 · Rutas y guardas
@@ -332,22 +350,44 @@ del folio de la auditoría, que ya existe en la caché, más un consecutivo loca
 Un hallazgo no se borra: se anula con motivo o se reclasifica, y queda su
 historial.
 
-### §8.8 · Adjuntos — cuatro reglas  [F02·B2b]
+### §8.8 · Adjuntos — cinco reglas  [F02·B2b]
 
-1. El bucket es **privado** (guarda evidencia de auditoría). Se lee con URL
-   firmada, así que **las fotos ya subidas no se ven sin señal**; tomarlas sí.
-2. Tienen **cola propia** (`src/lib/offline/adjuntos.ts`), no el `outbox`: una
-   subida no es una escritura de tabla, va en dos fases y pesa megabytes. Se vacía
-   **después** de los datos.
+1. El bucket `evidencias` es **privado** (guarda evidencia de auditoría). Se lee
+   con URL firmada, así que **las fotos ya subidas no se ven sin señal**;
+   tomarlas sí. La pantalla lo dice.
+2. **La subida va en DOS FASES, por DOS colas distintas**, y el reparto importa:
+
+   | Qué | Por dónde | Por qué |
+   |---|---|---|
+   | La **fila** de `adjuntos` | el `outbox` normal, con `offlineWrite` | Es una escritura de tabla y así conserva su ORDEN respecto a las demás |
+   | El **binario** | cola propia, `src/lib/offline/adjuntos.ts` | Pesa megabytes; se vacía **después** de los datos |
+
+   ⚠️ Si la fila fuera también por la cola de binarios, marcar como hecha una
+   tarea con `exige_evidencia` llegaría al servidor **antes** que su adjunto y
+   `sellar_tarea_hecha()` la rechazaría — justo al recuperar la señal, con el
+   auditor ya fuera de la planta. Y al revés: una foto de 4 MB no puede retrasar
+   el envío de treinta hallazgos de texto.
 3. La lista local y la del servidor filtran con `campoDominante()`
    (tarea de etapa → tarea de acción → acción → hallazgo → documento →
-   organización), **nunca con un OR**.
-4. **`subirAdjunto()` sólo encola; subir es `sincronizarAdjuntos()` y hay que
+   organización), **nunca con un OR**. ⚠️ De esos seis, **hoy existen dos**:
+   `tarea_etapa_id` y `documento_id`. Los demás los añaden las Fases 03, 04 y 05
+   —una FK a una tabla que no existe no se puede escribir—, pero el orden
+   completo ya está en `CAMPOS_DOMINANTES` y en `heredar_org_del_adjunto()`.
+4. **`adjuntar()` sólo encola; subir es `sincronizarAdjuntos()` y hay que
    esperarlo** — refrescar sin esperar es el "hay que subirla dos veces".
+5. La ruta empieza **siempre** por la `org_id`: es de lo único que cuelga la
+   política de Storage (§8 de docs/08). Y lleva un `uuid`, no el nombre del
+   archivo: dos fotos de un teléfono se llaman las dos `IMG_0421.jpg`.
 
 ⚠️ **Esta capa se adelantó de la Fase 04 a la Fase 02** (21 ago 2026): las
 evidencias hacen falta en cuanto existen tareas y documentos, y la Fase 03 la
 necesita para las fotos de campo. La Fase 04 sólo la conecta a las acciones.
+
+⚠️ **`ALMACEN_ADJUNTOS` obligó a subir `VERSION_BD` de 1 a 2** en
+`src/lib/offline/idb.ts`. Añadir un `createObjectStore` sin tocar el número no
+hace nada: el navegador sólo llama a `onupgradeneeded` cuando la versión cambia,
+y la primera lectura de ese almacén falla con `NotFoundError` **en el teléfono
+del consultor y en ningún equipo de desarrollo** —donde la base se creó de cero—.
 
 ### §8.8.1 · Documentos y Markdown
 
@@ -358,12 +398,25 @@ volver a procesar nada.
 
 | Dirección | Cómo | Dónde |
 |---|---|---|
-| `.docx` → Markdown | descomprimir + `word/document.xml` con RegEx | F02·B2 |
-| PDF → Markdown | extracción de texto con `pdfjs-dist` (ya es dependencia) | F02·B2 |
+| `.docx` → Markdown | `src/lib/documentos/zip.ts` + `docx.ts`: lector de ZIP propio (~80 líneas, `DecompressionStream('deflate-raw')`) y `word/document.xml` con RegEx | F02·B2 ✅ |
+| PDF → Markdown | `src/lib/documentos/pdf.ts`: `pdfjs-dist` (ya es dependencia), líneas y párrafos reconstruidos por la coordenada vertical | F02·B2 ✅ |
+| Markdown → bloques para leerlo | `src/lib/documentos/markdown.ts` + `components/sistemas/VisorMarkdown.tsx` | F02·B2 ✅ |
 | Markdown → `.docx` | el transpilador a OpenXML de la plantilla de Summit | F07·T7 |
 
-⚠️ **Sin `pandoc` ni `docx.js`** — es la misma decisión que ya estaba tomada para
-la ida (docs/07 §Módulo B): manipulación directa de OpenXML.
+⚠️ **El visor devuelve ESTRUCTURA, no HTML, y es una decisión de seguridad.** El
+texto viene del Word que mandó un cliente por correo; un conversor que produjera
+una cadena de HTML obligaría a pintarla con `dangerouslySetInnerHTML`, y bastaría
+un `<img onerror=…>` escondido en un manual de calidad para ejecutar código en la
+sesión de un consultor que ve los expedientes de **todos** los clientes.
+
+⚠️ **La conversión ocurre en el NAVEGADOR.** El `.docx` no viaja a ningún
+servidor para convertirse: un manual de calidad es información del cliente.
+
+⚠️ **Sin `pandoc`, sin `docx.js` y sin `jszip`** — es la misma decisión que ya
+estaba tomada para la ida (docs/07 §Módulo B): manipulación directa de OpenXML.
+`jszip` son 100 KB minificados de los que la mitad sirve para *escribir* ZIPs,
+que aquí no se hace nunca, y los descarga un auditor en una nave industrial con
+media barra de señal.
 
 ⚠️ **Un PDF escaneado no tiene texto que extraer.** Se detecta —tres caracteres
 por página lo delatan— y se dice; convertirlo es OCR, y eso es el Módulo C

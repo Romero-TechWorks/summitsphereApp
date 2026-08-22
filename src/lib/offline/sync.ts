@@ -9,16 +9,22 @@
 import type { QueryClient } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
 import { esFalloDeRed, mensajeDeError } from '@/lib/supabase/errores'
+import { refrescarSubidas, sincronizarAdjuntos, leerSubidas } from './adjuntos'
 import { marcarFallo, pendientes, quitarDeCola, refrescarCola } from './cola'
 import { ejecutarOperacion } from './mutate'
 
-export type ResultadoSincronia = { enviadas: number; fallidas: number }
+export type ResultadoSincronia = {
+  enviadas: number
+  fallidas: number
+  /** Binarios que llegaron al bucket en esta tanda [F02·B2b]. */
+  adjuntos: number
+}
 
 /** Una sola sincronía a la vez: dos en paralelo mandarían la misma fila dos veces. */
 let sincronizando = false
 
 export async function sincronizar(cliente: QueryClient): Promise<ResultadoSincronia> {
-  const vacio: ResultadoSincronia = { enviadas: 0, fallidas: 0 }
+  const vacio: ResultadoSincronia = { enviadas: 0, fallidas: 0, adjuntos: 0 }
 
   if (sincronizando) return vacio
   if (typeof navigator !== 'undefined' && navigator.onLine === false) return vacio
@@ -39,6 +45,11 @@ export async function sincronizar(cliente: QueryClient): Promise<ResultadoSincro
     const { data: { session } } = await createClient().auth.getSession()
     if (!session) return vacio
 
+    // ⚠️ Si quedó algo a medias de una sesión anterior, la lista en memoria está
+    // vacía hasta que se lee de IndexedDB. Sin esto, la primera sincronía tras
+    // abrir la app no subiría los adjuntos pendientes.
+    await refrescarSubidas()
+
     // ⚠️ En serie y en orden. Ver `cola.ts`: el paralelo rompe la secuencia.
     for (const operacion of pendientes()) {
       try {
@@ -56,10 +67,17 @@ export async function sincronizar(cliente: QueryClient): Promise<ResultadoSincro
       }
     }
 
-    // Lo que subió cambió el servidor: la caché deja de ser verdad.
-    if (enviadas > 0) await cliente.invalidateQueries()
+    // ⚠️ **Los binarios van DESPUÉS de los datos, y siempre en este orden.**
+    // Una foto de 4 MB no puede retrasar el envío de treinta hallazgos de texto,
+    // y la fila del adjunto tiene que estar en el servidor antes de que llegue
+    // su archivo. Además, `sellar_tarea_hecha()` exige la fila —no el binario—
+    // para dar por hecha una tarea con evidencia obligatoria (F02·B2b).
+    const { subidas } = await sincronizarAdjuntos()
 
-    return { enviadas, fallidas }
+    // Lo que subió cambió el servidor: la caché deja de ser verdad.
+    if (enviadas > 0 || subidas > 0) await cliente.invalidateQueries()
+
+    return { enviadas, fallidas, adjuntos: subidas }
   } finally {
     sincronizando = false
   }
@@ -84,7 +102,7 @@ export function iniciarSincronizacion(cliente: QueryClient): () => void {
   document.addEventListener('visibilitychange', alVolverAlFrente)
 
   const temporizador = window.setInterval(() => {
-    if (pendientes().length > 0) intentar()
+    if (pendientes().length > 0 || leerSubidas().length > 0) intentar()
   }, 30_000)
 
   return () => {

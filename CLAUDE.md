@@ -21,36 +21,53 @@ de dominio cuelga de una `org_id`. Ver §Reglas críticas, regla 1.
 
 ## Estado actual — lee esto antes de pedir nada
 
-- **Fase 00 cerrada y la Fase 01 completa por el lado del código** (B0 → B6). B0: el lenguaje
-  visual sin tarjetas y el kit de captura (`ui/Lista`, `ui/Modal`, `ui/Input`,
-  `ui/Select`, `ui/Textarea`, `ui/Campo`, `ui/Checkbox`, `ui/Pestanas`,
-  `ui/EncabezadoPagina`, `ui/Aviso`, `utils/dates`, `utils/useEsMovil`). B1: la
-  migración 3, `/cartera` con su directorio de contactos y el expediente
-  `/cartera/[id]` con Resumen · Proyectos · Sitios · Contactos · **Equipo**. B2:
-  proyectos con su alcance (normas × sitios) y la lista de toda la cartera en
-  `/cartera?tab=proyectos`. B2b: el importador del catálogo de normas en
-  `/sistemas`, que deja de ser una pantalla pendiente. `npm run build` y
-  `npm run lint` pasan limpios. **Está desplegado en Vercel y en uso.** B5 y B6
-  —tareas por etapa y depuración— salieron de usarlo, no del plan original. Lo
-  que falta para dar la fase por cerrada es **la prueba del criterio de cierre
-  con datos reales y una segunda cuenta**, más las tareas del dueño `B01`–`B04`.
-  Lo siguiente en el código es la **Fase 02 · Sistemas de gestión**, que ahora
-  incluye los adjuntos (F02·B2b, adelantados desde la Fase 04) y el Markdown de
-  los documentos.
-- ⚠️ **La migración 4 está escrita y probada, pero LA APLICA EL DUEÑO**
-  (`20260821220000_tareas_y_depuracion.sql`, tarea `B00b`): crea `tareas_etapa`
-  y abre el DELETE de organizaciones y proyectos al socio. `src/types/database.ts`
-  ya trae sus tipos escritos a mano con la forma del generador; al aplicarla se
-  regenera y **manda lo generado**.
+- **Fase 00 cerrada, Fase 01 completa por el lado del código (B0 → B6), y
+  Fase 02 escrita entera** (B2, B2b, B3, B4). De la Fase 01: el lenguaje visual
+  sin tarjetas y el kit de captura, `/cartera` con su directorio y el expediente
+  `/cartera/[id]`, proyectos con su alcance, el importador de normas, el tablero,
+  la bitácora, las tareas por etapa y la depuración. **Está desplegado en Vercel
+  y en uso.** Lo que falta para dar la Fase 01 por cerrada es **la prueba del
+  criterio de cierre con datos reales y una segunda cuenta**, más las tareas del
+  dueño `B01`–`B04`.
+- **De la Fase 02 (22 ago 2026):** `/sistemas` deja de ser el catálogo de normas
+  y se vuelve el dominio completo, con seis pestañas —Documentos · Requisitos ·
+  Procesos · Riesgos · Indicadores · Normas— y un **selector de cliente en el
+  query string** (`?org=`). Control documental con ciclo de vida y Markdown
+  (`src/lib/documentos/`: lector de ZIP propio, `.docx` → md, PDF → md, visor sin
+  `dangerouslySetInnerHTML`), adjuntos con cola propia, matriz de requisitos con
+  su porcentaje de avance, y procesos, riesgos e indicadores. `npm run lint` y
+  `npm run build` pasan limpios. **Falta probarlo contra la base real**: nada de
+  esto se ha ejecutado todavía contra Supabase, porque las migraciones las aplica
+  el dueño. **Lo que SÍ está probado son las migraciones**: se aplicaron las ocho
+  en orden sobre un Postgres 17 desechable y pasaron 17 comprobaciones de
+  comportamiento (herencia de `org_id`, sello de la firma de aprobación,
+  jubilación de la versión anterior, rechazo de editar una aprobada, `no aplica`
+  sin justificación, tarea con evidencia obligatoria sin adjunto, organización
+  con documentos). Los tipos generados desde ese esquema salieron **idénticos**
+  a `src/types/database.ts`.
+- ⚠️ **HAY TRES MIGRACIONES ESCRITAS Y SIN APLICAR, Y VAN EN ESTE ORDEN:**
+  1. `20260821220000_tareas_y_depuracion.sql` — tarea `B00b`. Crea `tareas_etapa`
+     y abre el DELETE de organizaciones y proyectos al socio.
+  2. `20260822120000_sistemas_de_gestion.sql` — tarea `C00`. **Todo** el esquema
+     de la Fase 02, y amplía `puedo_borrar_org()` / `puedo_borrar_proyecto()`.
+  3. `20260822120100_storage_documentos_y_evidencias.sql` — tarea `C00`. Los
+     buckets `documentos` y `evidencias` y sus políticas. **Aparte a propósito**:
+     toca `storage.objects`, que no es un esquema nuestro, y si falla por permisos
+     no puede llevarse por delante el esquema del dominio.
+
+  `src/types/database.ts` trae los tipos de las tres **escritos a mano** con la
+  forma del generador. Al aplicarlas se regenera y **manda lo generado**.
 - **Quién cerró una tarea y cuándo lo escribe la base**, no el navegador
   (`sellar_tarea_hecha()`) — igual que el renglón de cambio de etapa. Una fecha
   que viaja desde el cliente es una fecha que se puede escribir a mano; está
   comprobado que mandar `hecha_por` de otro se sobrescribe.
 - **Se puede borrar, y sólo el socio**: organizaciones y proyectos, con
-  `puedo_borrar_org()` / `puedo_borrar_proyecto()`. ⚠️ **Esas dos funciones hay
-  que ampliarlas en la Fase 02 y en la 03** — una organización con documentos,
-  auditorías o hallazgos no se borra. Están escritas para que ampliarlas sea
-  tocar un solo sitio.
+  `puedo_borrar_org()` / `puedo_borrar_proyecto()`. **La ampliación de la Fase 02
+  ya está escrita**: una organización o un proyecto **con documentos ya no se
+  borra**. ⚠️ **Quedan las de la Fase 03** —auditorías y hallazgos—, y son dos
+  líneas comentadas dentro de esas mismas funciones. Se les sumó una tercera,
+  `puedo_borrar_documento()`: un documento con alguna versión aprobada u obsoleta
+  es evidencia y no se borra; un borrador capturado por error, sí.
 - **El catálogo de normas se SUBE, no se siembra.** `normas` y `norma_clausulas`
   nacen vacías y las llena un socio con un `.md` propio desde `/sistemas`
   (`src/lib/normas/importador.ts`). Es lo que mantiene el criterio técnico de la
@@ -60,7 +77,51 @@ de dominio cuelga de una `org_id`. Ver §Reglas críticas, regla 1.
 - **El detalle de un proyecto NO tiene ruta propia**: se abre con
   `?proyecto=<id>` sobre la pestaña de proyectos del expediente. La única ruta de
   detalle de la cartera es `/cartera/[id]` — los dominios son páginas con
-  pestañas (§2.1).
+  pestañas (§2.1). **El expediente de un documento sigue el mismo patrón**:
+  `?documento=<id>` sobre `/sistemas?tab=documentos&org=<id>`.
+- **`/sistemas` pide un cliente, y vive en la URL.** Cinco de sus seis pestañas
+  son de *un* cliente, no de la cartera entera: el selector escribe `?org=<id>`,
+  así que cambiar de pestaña no lo pierde y el enlace se puede mandar por correo.
+  Una `org` que ya no está —enlace viejo, cliente borrado, expediente de otro
+  consultor— cae en «ninguna», nunca en una pantalla consultando con un id
+  fantasma. Normas no lo pide: el catálogo es de la firma.
+- **Cuatro reglas del control documental las sostiene la BASE, no la pantalla**
+  [F02·B2]: una versión aprobada no se sobrescribe
+  (`proteger_version_aprobada()`); aprobar **jubila** a la anterior y apunta el
+  documento a la nueva en una sola escritura del cliente
+  (`jubilar_version_anterior()`) —tres operaciones de la cola podrían llegar
+  desparejadas sin señal, y un documento con dos versiones aprobadas a la vez es
+  el hallazgo que la firma le levanta a sus clientes—; quién aprobó y cuándo lo
+  escribe el servidor (`sellar_version_documento()`); y un documento con una
+  versión aprobada no se borra. La interfaz sólo evita ofrecer botones que ya
+  están garantizados a fallar.
+  ⚠️ `elaboro_id` y `reviso_id` **no se sellan**: son capturables. Firmar como
+  revisor a quien sólo movió el estado sería inventar una firma.
+- **La conversión de documentos pasa en el NAVEGADOR y devuelve estructura, no
+  HTML.** `src/lib/documentos/` trae un lector de ZIP propio (~80 líneas con
+  `DecompressionStream('deflate-raw')`, sin `jszip`), `.docx` → Markdown con
+  RegEx sobre `word/document.xml`, PDF → Markdown con `pdfjs-dist`, y un
+  analizador que el visor pinta como nodos de React. ⚠️ **Ni una línea de
+  `dangerouslySetInnerHTML`**: ese texto viene del Word que mandó un cliente por
+  correo, y un `<img onerror=…>` escondido ahí correría en la sesión de un
+  consultor que ve los expedientes de todos los clientes.
+- **La cola de adjuntos son DOS colas, y el reparto importa** [F02·B2b]: **la
+  fila** de `adjuntos` va por el `outbox` normal —así conserva su orden respecto
+  a las demás escrituras— y **el binario** por la cola propia de
+  `src/lib/offline/adjuntos.ts`, que se vacía **después** de los datos. Al revés,
+  marcar hecha una tarea con `exige_evidencia` llegaría antes que su adjunto y
+  `sellar_tarea_hecha()` la rechazaría justo al recuperar la señal, con el
+  auditor ya fuera de la planta.
+  ⚠️ `ALMACEN_ADJUNTOS` obligó a subir `VERSION_BD` de 1 a 2 en
+  `src/lib/offline/idb.ts`. Un `createObjectStore` sin tocar ese número no hace
+  nada, y falla **sólo en el teléfono del consultor** —donde la base ya existía—,
+  nunca en un equipo de desarrollo.
+- **`upsert` NO se usa con un índice único que no sea la clave primaria.**
+  `requisitos (proyecto_id, clausula_id)` y `mediciones (indicador_id, periodo)`
+  eligen `insert` o `update` mirando la fila que ya está en la caché. La cola
+  resuelve sus `upsert` por la clave primaria, así que un segundo cambio sin
+  señal llegaría con otro `id` y chocaría contra el índice — un rechazo que
+  aparece media hora después y sin nadie mirando (§6.1).
 - **La migración 3 está aplicada** (21 ago 2026).
   `supabase/migrations/20260821180000_cartera_y_proyectos.sql` creó `sitios`,
   `contactos`, `proyectos`, `proyecto_normas`, `proyecto_sitios`,
@@ -263,6 +324,13 @@ Decisiones intencionales. Cambiarlas rompe algo más.
     la política de DELETE, no en la pantalla, y el borrado queda en `audit_logs`.
     Sin esa salida, la primera semana de uso real deja la cartera llena de datos
     de prueba que nadie puede quitar (F01·B6).
+    **Dónde está hoy, tabla por tabla:** `puedo_borrar_org()` y
+    `puedo_borrar_proyecto()` exigen socio **y sin documentos**;
+    `puedo_borrar_documento()`, editor y **sin versión aprobada u obsoleta**.
+    Borran sin candado extra `tareas_etapa`, `procesos` y `riesgos` —trabajo
+    interno, no evidencia—; `documento_versiones` sólo si está en `borrador`; y
+    `adjuntos`, **sólo el socio**. Ampliar es tocar una función, no cinco
+    políticas.
 
 ---
 
@@ -307,12 +375,23 @@ tenía WiFi malo; aquí el auditor está en un sótano de una planta industrial.
    caché al abrir la auditoría con señal. Si esto no pasa, el auditor llega al
    piso con una pantalla vacía. §8.11.
 
-**Excepciones conscientes, y son tres:** los adjuntos tienen cola propia (pesan
-megabytes y van en dos fases); crear y revocar el link del portal no pasa por
-`offlineWrite`; y **la importación del catálogo de normas** tampoco —parte de un
-archivo que sólo existe en esa pantalla, escribe cientos de filas en lote y la
-hace un socio frente a su computadora, nunca un auditor en un sótano. Sin
-conexión, esa pantalla lo dice y no deja empezar.
+**Excepciones conscientes, y son cuatro:**
+
+1. **Los adjuntos**, sólo en su mitad binaria: la **fila** de `adjuntos` sí pasa
+   por `offlineWrite` —y tiene que pasar, para conservar el orden—; lo que va por
+   la cola propia es el archivo.
+2. **Crear y revocar el link del portal**, que no tiene sentido sin red.
+3. **La importación del catálogo de normas**: parte de un archivo que sólo existe
+   en esa pantalla, escribe cientos de filas en lote y la hace un socio frente a
+   su computadora.
+4. **Subir el ARCHIVO de una versión de documento** [F02·B2]: pesa megabytes,
+   sale de un `File` que sólo existe en esa pantalla, hay que convertirlo antes
+   de guardarlo, y lo hace un consultor con el Word del cliente delante — nunca
+   un auditor en un sótano. **Sólo esa mitad**: crear el documento, escribir una
+   versión a mano, mandarla a revisión, aprobarla y vincular cláusulas pasan por
+   la cola como todo lo demás.
+
+En las cuatro, sin conexión la pantalla **lo dice y no deja empezar**.
 
 ---
 
@@ -404,7 +483,7 @@ src/
   app/(auth)/          → login + mfa
   app/(dashboard)/     → todo lo protegido por sesión
     cartera/           → organizaciones + proyectos + contactos
-    sistemas/          → documentos + requisitos + indicadores + riesgos
+    sistemas/          → documentos + requisitos + procesos + riesgos + indicadores
     auditorias/        → programa + auditorías + hallazgos
     cumplimiento/      → matriz NOM + vencimientos + dictámenes
     capacitacion/      → cursos + programa + sesiones + constancias
@@ -418,7 +497,9 @@ src/
   lib/queries/         → todas las consultas Supabase
   lib/supabase/        → client.ts (browser) + server.ts
   lib/offline/         → cola, caché, adjuntos, dictados y sincronía
-  lib/normas/          → catálogo de normas, cláusulas y NOMs
+  lib/normas/          → importador del catálogo de normas
+  lib/documentos/      → zip · docx · pdf · markdown · convertir  [F02·B2]
+  lib/sistemas/        → catálogos de la Fase 02
   lib/asistente/       → proveedor, esquemas Zod, instrucciones, herramientas
   lib/plantillas/      → informes y documentos imprimibles
   lib/utils/           → helpers puros

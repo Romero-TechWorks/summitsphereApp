@@ -17,10 +17,23 @@
  */
 
 const NOMBRE_BD = 'summitapp'
-const VERSION_BD = 1
+
+/**
+ * ⚠️ **Subir esta versión es lo ÚNICO que crea un almacén nuevo.** El navegador
+ * sólo llama a `onupgradeneeded` cuando el número cambia; con la base ya abierta
+ * en el teléfono de un consultor, añadir un `createObjectStore` sin tocar aquí
+ * no hace nada — y la primera lectura de ese almacén falla con
+ * `NotFoundError` en el aparato de campo y en ninguno de desarrollo, porque en
+ * desarrollo la base se creó desde cero.
+ *
+ * 1 → 2 (F02·B2b): entra `adjuntos`, la cola de subida de evidencias.
+ */
+const VERSION_BD = 2
 
 export const ALMACEN_CACHE = 'cache'
 export const ALMACEN_COLA = 'cola'
+/** Los binarios que esperan a subir al bucket privado [F02·B2b]. */
+export const ALMACEN_ADJUNTOS = 'adjuntos'
 
 let promesaBD: Promise<IDBDatabase | null> | null = null
 
@@ -54,6 +67,9 @@ export function abrirBD(): Promise<IDBDatabase | null> {
       if (!bd.objectStoreNames.contains(ALMACEN_CACHE)) bd.createObjectStore(ALMACEN_CACHE)
       if (!bd.objectStoreNames.contains(ALMACEN_COLA)) {
         bd.createObjectStore(ALMACEN_COLA, { keyPath: 'id' })
+      }
+      if (!bd.objectStoreNames.contains(ALMACEN_ADJUNTOS)) {
+        bd.createObjectStore(ALMACEN_ADJUNTOS, { keyPath: 'id' })
       }
     }
 

@@ -58,6 +58,54 @@ export const queryKeys = {
     alcanceSitios: (proyectoId: string) => ['cartera', 'alcance', 'sitios', proyectoId] as const,
   },
   /**
+   * Los sistemas de gestión [Fase 02]: la biblioteca documental, la matriz de
+   * requisitos y el mapa de procesos de cada cliente.
+   *
+   * ⚠️ Casi todo cuelga de una organización y **no de un filtro**. El buscador,
+   * el tipo de documento y el estado de un requisito NO entran en la clave: se
+   * descarga la lista del cliente una vez y se filtra en memoria (CLAUDE.md ·
+   * reglas del offline, 7). Con una clave por filtro, en la planta la lista se
+   * vacía al teclear la primera letra.
+   */
+  sistemas: {
+    todo: () => ['sistemas'] as const,
+    /** El mapa de procesos de un cliente. */
+    procesos: (orgId: string) => ['sistemas', 'procesos', orgId] as const,
+    /** La biblioteca documental de un cliente, entera. */
+    documentos: (orgId: string) => ['sistemas', 'documentos', orgId] as const,
+    /** Un documento con todas sus versiones y las cláusulas que cubre. */
+    documento: (documentoId: string) => ['sistemas', 'documento', documentoId] as const,
+    /**
+     * Qué documento cubre cada cláusula, para todo el cliente. Es lo que le da
+     * respaldo a la matriz de requisitos: sin esto, «documentado» es una
+     * afirmación sin nada detrás.
+     */
+    cobertura: (orgId: string) => ['sistemas', 'cobertura', orgId] as const,
+    /** La matriz de requisitos de un proyecto. */
+    requisitos: (proyectoId: string) => ['sistemas', 'requisitos', proyectoId] as const,
+    /**
+     * Las cláusulas auditables del alcance de un proyecto: las filas que la
+     * matriz tiene que enseñar, existan o no todavía en `requisitos`.
+     */
+    clausulasDelAlcance: (proyectoId: string) =>
+      ['sistemas', 'clausulas-alcance', proyectoId] as const,
+    riesgos: (orgId: string) => ['sistemas', 'riesgos', orgId] as const,
+    indicadores: (orgId: string) => ['sistemas', 'indicadores', orgId] as const,
+    /** Las mediciones de un indicador, para su semáforo y su serie. */
+    mediciones: (indicadorId: string) => ['sistemas', 'mediciones', indicadorId] as const,
+  },
+  /**
+   * Los adjuntos [F02·B2b].
+   *
+   * ⚠️ La clave lleva el **campo dominante**, no un OR: `campoDominante()`
+   * decide de quién cuelga el adjunto y esta clave lo refleja. Un adjunto que
+   * apareciera bajo dos claves se invalidaría en una y no en la otra.
+   */
+  adjuntos: {
+    todo: () => ['adjuntos'] as const,
+    de: (campo: string, id: string) => ['adjuntos', campo, id] as const,
+  },
+  /**
    * El catálogo de normas. Fuera de `cartera` porque no es de nadie: lo usan
    * también los sistemas de gestión [Fase 02] y las auditorías [Fase 03].
    */

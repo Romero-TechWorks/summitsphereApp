@@ -56,6 +56,15 @@ export type DatosTarea = {
   responsable_id: string | null
   fecha_compromiso: string | null
   orden: number
+  /**
+   * Si esta tarea no se puede dar por hecha sin un adjunto [F02·B2b].
+   *
+   * ⚠️ **No es una casilla decorativa**: `sellar_tarea_hecha()` rechaza el
+   * cambio a `hecha` si no hay ninguna fila en `adjuntos` apuntando a la tarea.
+   * Entró con los adjuntos justamente para no ser un interruptor muerto
+   * (CLAUDE.md regla 11).
+   */
+  exige_evidencia: boolean
 }
 
 export async function crearTarea(
@@ -346,6 +355,10 @@ export async function instanciarPlantilla(
           responsable_id: null,
           fecha_compromiso: null,
           orden: orden++,
+          // La plantilla no guarda la exigencia de evidencia: se decide por
+          // cliente, y marcarla a ciegas en doce tareas dejaría media
+          // metodología bloqueada el día que alguien no tenga qué adjuntar.
+          exige_evidencia: false,
         },
         null,
       )

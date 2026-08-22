@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { z } from 'zod'
+import Checkbox from '@/components/ui/Checkbox'
 import Input from '@/components/ui/Input'
 import Select from '@/components/ui/Select'
 import Textarea from '@/components/ui/Textarea'
@@ -18,6 +19,7 @@ const esquema = z.object({
   estado: z.string().min(1),
   responsable_id: z.string(),
   fecha_compromiso: z.string().refine((v) => v === '' || FECHA.test(v), 'Fecha inválida'),
+  exige_evidencia: z.boolean(),
 })
 
 type Campos = z.infer<typeof esquema>
@@ -51,10 +53,11 @@ export default function FormularioTarea({
     estado: inicial?.estado ?? 'pendiente',
     responsable_id: inicial?.responsable_id ?? '',
     fecha_compromiso: inicial?.fecha_compromiso ?? '',
+    exige_evidencia: inicial?.exige_evidencia ?? false,
   })
   const [errores, setErrores] = useState<Partial<Record<keyof Campos, string>>>({})
 
-  function escribir(campo: keyof Campos, valor: string) {
+  function escribir(campo: keyof Campos, valor: string | boolean) {
     setCampos((previo) => ({ ...previo, [campo]: valor }))
   }
 
@@ -84,6 +87,7 @@ export default function FormularioTarea({
         estado: d.estado,
         responsable_id: d.responsable_id || null,
         fecha_compromiso: d.fecha_compromiso || null,
+        exige_evidencia: d.exige_evidencia,
       },
       miembro?.usuario
         ? { id: miembro.usuario.id, nombre: miembro.usuario.nombre, correo: miembro.usuario.correo }
@@ -146,6 +150,17 @@ export default function FormularioTarea({
           onChange={(e) => escribir('fecha_compromiso', e.target.value)}
         />
       </div>
+
+      {/* ⚠️ Esta casilla la hace verdadera la BASE: `sellar_tarea_hecha()`
+          rechaza el paso a «hecha» si no hay ningún adjunto colgando de la
+          tarea. Se marca en las que entregan algo —el acta firmada, la foto del
+          extintor—, no en «llamar al cliente». */}
+      <Checkbox
+        etiqueta="Pedir evidencia para darla por hecha"
+        ayuda="No se podrá marcar como hecha hasta que tenga al menos un archivo adjunto. Lo impide la base, no la pantalla."
+        checked={campos.exige_evidencia}
+        onChange={(e) => escribir('exige_evidencia', e.target.checked)}
+      />
     </form>
   )
 }

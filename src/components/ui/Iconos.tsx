@@ -217,3 +217,62 @@ export function IconoCerrar(p: PropsIcono) {
     </Svg>
   )
 }
+
+// ─────────────────────────────────────────────── Fase 02 · sistemas de gestión
+
+export function IconoDocumento(p: PropsIcono) {
+  return (
+    <Svg {...p}>
+      <path d="M7 3h7l4 4v14H7z" />
+      <path d="M14 3v4h4" />
+      <path d="M10 12h5M10 15.5h5M10 19h3" />
+    </Svg>
+  )
+}
+
+export function IconoProceso(p: PropsIcono) {
+  return (
+    <Svg {...p}>
+      <rect x="2.5" y="8.5" width="6" height="7" rx="1.2" />
+      <rect x="15.5" y="8.5" width="6" height="7" rx="1.2" />
+      <path d="M8.5 12h7" />
+      <path d="M13.5 10l2 2-2 2" />
+    </Svg>
+  )
+}
+
+export function IconoRiesgo(p: PropsIcono) {
+  return (
+    <Svg {...p}>
+      <path d="M12 3 3 8v5c0 4.4 3.7 7.4 9 8.5 5.3-1.1 9-4.1 9-8.5V8z" />
+      <path d="M12 9v4M12 16.5h.01" />
+    </Svg>
+  )
+}
+
+export function IconoIndicador(p: PropsIcono) {
+  return (
+    <Svg {...p}>
+      <path d="M3 20h18" />
+      <path d="M6 20v-6M11 20V8M16 20v-9M21 20V5" />
+    </Svg>
+  )
+}
+
+export function IconoMatriz(p: PropsIcono) {
+  return (
+    <Svg {...p}>
+      <rect x="3" y="3" width="18" height="18" rx="2" />
+      <path d="M3 9h18M3 15h18M9 3v18" />
+      <path d="M12.5 11.8l1.7 1.7 3.3-3.4" />
+    </Svg>
+  )
+}
+
+export function IconoAdjunto(p: PropsIcono) {
+  return (
+    <Svg {...p}>
+      <path d="M20 11.5 12.2 19.3a4.6 4.6 0 0 1-6.5-6.5l8-8a3.1 3.1 0 1 1 4.4 4.4l-8 8a1.6 1.6 0 0 1-2.2-2.2l7.3-7.3" />
+    </Svg>
+  )
+}

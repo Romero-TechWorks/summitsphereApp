@@ -51,6 +51,22 @@ export type UsuarioFirma = Pick<Tables<'usuarios'>, 'id' | 'nombre' | 'correo' |
 const EMBEBIDO_USUARIO =
   '*, usuario:usuarios!usuarios_organizaciones_usuario_id_fkey(id, nombre, correo, rol, activo)'
 
+/**
+ * Cómo se llama un cliente en pantalla.
+ *
+ * ⚠️ El nombre comercial manda sobre la razón social, y no es cosmético: en la
+ * cartera de la firma hay «Aceros del Bajío» y «ADB Manufactura S.A. de C.V.»
+ * refiriéndose a lo mismo, y quien atiende al cliente lo conoce por el primero.
+ * La razón social va debajo, que es donde hace falta al facturar.
+ *
+ * Nunca vacío: `razon_social` es NOT NULL en la base.
+ */
+export function nombreDeOrganizacion(
+  org: Pick<Organizacion, 'razon_social' | 'nombre_comercial'>,
+): string {
+  return org.nombre_comercial || org.razon_social
+}
+
 /** Lee un conteo embebido de PostgREST sin poder devolver `undefined`. */
 export function conteo(embebido: { count: number }[] | null | undefined): number {
   return embebido?.[0]?.count ?? 0
