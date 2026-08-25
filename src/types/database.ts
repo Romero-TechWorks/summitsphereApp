@@ -1467,6 +1467,7 @@ export type Database = {
           actualizado_en: string
           auditable: boolean
           creado_en: string
+          es_demo: boolean
           id: string
           norma_id: string
           numero: string
@@ -1480,6 +1481,7 @@ export type Database = {
           actualizado_en?: string
           auditable?: boolean
           creado_en?: string
+          es_demo?: boolean
           id?: string
           norma_id: string
           numero: string
@@ -1493,6 +1495,7 @@ export type Database = {
           actualizado_en?: string
           auditable?: boolean
           creado_en?: string
+          es_demo?: boolean
           id?: string
           norma_id?: string
           numero?: string
@@ -1524,6 +1527,7 @@ export type Database = {
           actualizado_en: string
           clave: string
           creado_en: string
+          es_demo: boolean
           id: string
           nombre: string
           titulo: string | null
@@ -1534,6 +1538,7 @@ export type Database = {
           actualizado_en?: string
           clave: string
           creado_en?: string
+          es_demo?: boolean
           id?: string
           nombre: string
           titulo?: string | null
@@ -1544,6 +1549,7 @@ export type Database = {
           actualizado_en?: string
           clave?: string
           creado_en?: string
+          es_demo?: boolean
           id?: string
           nombre?: string
           titulo?: string | null
@@ -1607,6 +1613,7 @@ export type Database = {
           actualizado_en: string
           creado_en: string
           creado_por: string | null
+          es_demo: boolean
           estado: string
           giro: string | null
           id: string
@@ -1621,6 +1628,7 @@ export type Database = {
           actualizado_en?: string
           creado_en?: string
           creado_por?: string | null
+          es_demo?: boolean
           estado?: string
           giro?: string | null
           id?: string
@@ -1635,6 +1643,7 @@ export type Database = {
           actualizado_en?: string
           creado_en?: string
           creado_por?: string | null
+          es_demo?: boolean
           estado?: string
           giro?: string | null
           id?: string
@@ -2353,6 +2362,7 @@ export type Database = {
           certificaciones: string[]
           correo: string
           creado_en: string
+          es_dev: boolean
           id: string
           nombre: string
           rol: string
@@ -2365,6 +2375,7 @@ export type Database = {
           certificaciones?: string[]
           correo: string
           creado_en?: string
+          es_dev?: boolean
           id: string
           nombre: string
           rol?: string
@@ -2377,6 +2388,7 @@ export type Database = {
           certificaciones?: string[]
           correo?: string
           creado_en?: string
+          es_dev?: boolean
           id?: string
           nombre?: string
           rol?: string
@@ -2454,6 +2466,7 @@ export type Database = {
       puedo_borrar_proyecto: { Args: { p_proyecto: string }; Returns: boolean }
       puedo_editar_org: { Args: { p_org: string }; Returns: boolean }
       registrar_inicio_sesion: { Args: never; Returns: undefined }
+      soy_dev: { Args: never; Returns: boolean }
     }
     Enums: {
       [_ in never]: never

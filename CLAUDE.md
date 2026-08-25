@@ -21,6 +21,65 @@ de dominio cuelga de una `org_id`. Ver §Reglas críticas, regla 1.
 
 ## Estado actual — lee esto antes de pedir nada
 
+- ⚠️ **HAY DOS MIGRACIONES ESCRITAS Y SIN APLICAR: la partición de pruebas**
+  (`20260825120000_particion_de_pruebas.sql` y
+  `20260825120100_storage_particion_de_pruebas.sql`, tarea `A10`). Parten la base
+  en dos con **una sola igualdad**, `organizaciones.es_demo = soy_dev()`: a un
+  lado la cartera real del cliente, al otro la de demostración, que sólo ve una
+  cuenta con `usuarios.es_dev`. Ninguna ve a la otra, y el candado está en el RLS.
+  Probadas en Docker con las diez anteriores en orden **y con datos sembrados
+  antes de aplicarlas** —el camino real, no una base vacía—: **76 comprobaciones
+  de comportamiento**, catorce de ellas de regresión. `src/types/database.ts` está
+  regenerado desde ese esquema.
+  **Lo que hay que saber para no romperlo:**
+  - **`dev` NO es un rol, es una marca ENCIMA del rol.** Con un sexto valor en el
+    CHECK de `usuarios.rol`, `es_socio()` sería falso para la cuenta de pruebas y
+    ésa no podría dar de alta un cliente, importar el catálogo, borrar ni repartir
+    equipo — justo lo que hay que poder probar. `ROLES` en
+    `src/lib/auth/roles.ts` **no se toca**.
+  - ⚠️ **`mis_organizaciones()` CAMBIÓ DE SIGNIFICADO y ninguna política nueva
+    lleva ya `or public.es_socio()`.** Devuelve «todo lo que puedo ver, ya
+    filtrado por partición», la rama del socio incluida. Esa rama suelta en cada
+    política era una puerta lateral que se salta cualquier filtro: un socio de
+    pruebas la cruzaba y veía los clientes reales. Se quitó de las 32 políticas de
+    dominio, y **volver a escribirla en una tabla nueva reabre el agujero**. Para
+    un socio no-dev el resultado es idéntico al de antes. §8.2 · docs/08 §2.1.
+  - **Todo lo que lleva `org_id` se parte solo**; ni una política de dominio
+    menciona `es_demo`. Lo que sí lo lleva es `organizaciones`, `normas` y
+    `norma_clausulas` — la cláusula lo hereda de su norma, y si la norma cambia de
+    lado sus cláusulas la siguen.
+  - ⚠️ **`normas.clave` pasó de `unique (clave)` a `unique (clave, es_demo)`, y
+    por eso el importador ya NO hace `upsert` sobre `clave`** (misma regla que
+    `requisitos` y `mediciones`, §6.1). Sin ese cambio la cuenta de pruebas no
+    podría importar su propio `iso_9001` mientras exista el del cliente, y su
+    cartera de demostración se quedaría con un alcance apuntando a normas
+    invisibles.
+  - **`config_firma.plantillas` es lo único que la base NO puede partir** —una
+    tabla de una fila—, así que se separa por espacio de nombres dentro del jsonb
+    (`plantillas.dev`), desde `src/lib/auth/particion.ts`. Por eso
+    `leerPlantillaTareas`/`leerPlantillaVerificacion` reciben `esDev` **y la clave
+    de caché lo lleva dentro**: sin él, cambiar de cuenta en el mismo navegador
+    serviría la plantilla de la otra partición desde la caché persistida.
+  - **El consecutivo de folios también se partió.** `asignar_folio_auditoria()`
+    cuenta fuera del RLS, así que una auditoría de prueba se llevaba el
+    `AUD-2026-007` y el cliente pasaba del 006 al 008. La partición de pruebas usa
+    `DEMO-`, y la migración renumeró las auditorías viejas para que la primera
+    real sea `AUD-2026-001`.
+  - **El distintivo `DEV` de la Navbar es PERMANENTE**, al revés que
+    `EstadoConexion`. Las dos carteras se ven idénticas; sin él, «¿esto que estoy
+    borrando es del cliente o es de mentira?» no tiene respuesta en pantalla.
+  - ⚠️ **De paso se cerró un agujero que ya existía en Storage**:
+    `documentos_borrar` y `evidencias_borrar` decían `es_socio()` sin mirar la
+    ruta, así que un socio podía borrar objetos con rutas que
+    `org_de_la_ruta()` no sabe leer — y que por tanto nadie puede ver.
+- **La lista del cliente vive en `docs/11_TAREAS_DEL_CLIENTE.md`** (25 ago 2026).
+  Lo que se **captura dentro de la app** —cartera, proyectos, catálogo de normas,
+  alcance, equipo, documentos, auditorías— salió de `docs/09`, que se queda con lo
+  técnico: paneles, llaves, migraciones y buckets. Las tareas que se mudaron
+  (`B01`, `B02`, `B03`, `B04`, `C01`, `C02`) dejaron su renglón con el enlace para
+  que las claves de `docs/02` sigan resolviendo. **Está escrita para alguien que
+  no programa**, con la navegación pantalla por pantalla: si cambias una etiqueta
+  de la interfaz que aparezca ahí, corrígela en el mismo commit.
 - **Fase 00 cerrada, Fase 01 completa por el lado del código (B0 → B6), y
   Fase 02 escrita entera** (B2, B2b, B3, B4). De la Fase 01: el lenguaje visual
   sin tarjetas y el kit de captura, `/cartera` con su directorio y el expediente
@@ -359,7 +418,8 @@ de dominio cuelga de una `org_id`. Ver §Reglas críticas, regla 1.
 | `docs/06_MODULOS_FUNCIONALES.md` | Cómo se usa cada módulo |
 | `docs/07_ASISTENTE_Y_AUTOMATIZACION.md` | Módulos A, B y C |
 | `docs/08_SEGURIDAD_Y_RLS.md` | Roles, políticas, secretos |
-| `docs/09_TAREAS_DEL_DUENO.md` | Pasos manuales del dueño (Supabase, Vercel, Cloudflare) |
+| `docs/09_TAREAS_DEL_DUENO.md` | Pasos manuales y **técnicos** del dueño (Supabase, Vercel, Cloudflare) |
+| `docs/11_TAREAS_DEL_CLIENTE.md` | Lo que el cliente **captura dentro de la app**, paso a paso y sin jerga |
 | `guias/*` | Montaje de la infraestructura |
 
 **Regla de oro:** si un cambio afecta lo descrito en cualquiera de estos
@@ -379,6 +439,9 @@ Decisiones intencionales. Cambiarlas rompe algo más.
    frontend— **en SummitApp el gateo vive en la base**. Toda política operativa
    filtra por `org_id IN (SELECT ...)` según la asignación del usuario. Una tabla
    nueva sin `org_id` y sin política es una fuga, no un pendiente. §8.2.
+   ⚠️ **Y la política se escribe `USING (org_id IN (SELECT mis_organizaciones()))`
+   a secas.** Desde `A10` la rama del socio vive dentro de esa función, ya
+   filtrada por partición; añadirle `or public.es_socio()` la reabre por fuera.
 
 2. **Middleware:** el archivo es `src/proxy.ts` con función exportada `proxy`, NO
    `middleware.ts` (Next.js 16 lo deprecó). Su `matcher` **debe excluir**: los

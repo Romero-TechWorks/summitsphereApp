@@ -141,9 +141,10 @@ export type ResumenImportacion = {
 /**
  * Escribe el catálogo.
  *
- * Es **idempotente**: `upsert` por `clave` en las normas y por
- * `(norma_id, numero)` en las cláusulas. Subir dos veces el mismo archivo deja
- * la base igual; subirlo corregido corrige. Eso es lo que convierte la tarea
+ * Es **idempotente**: se busca por `clave` en las normas —dentro de la propia
+ * partición, ver abajo— y se hace `upsert` por `(norma_id, numero)` en las
+ * cláusulas. Subir dos veces el mismo archivo deja la base igual; subirlo
+ * corregido corrige. Eso es lo que convierte la tarea
  * `C01` del dueño —validar el criterio técnico— en algo que se puede hacer en
  * varias tardes sin miedo.
  *
@@ -168,19 +169,35 @@ export async function importarCatalogo(analisis: Analisis): Promise<ResumenImpor
   let desactivadas = 0
 
   for (const norma of analisis.normas) {
-    const { data: filaNorma, error: falloNorma } = await supabase
+    // ⚠️ **Aquí NO va un `upsert`, y es la misma regla que en `requisitos` y
+    // `mediciones`** (CLAUDE.md §6.1): `normas` dejó de tener `clave` única a
+    // secas y pasó a `unique (clave, es_demo)` con la partición de pruebas, y
+    // `es_demo` **no lo manda el navegador** —lo sella `sellar_particion()`—.
+    // Un `onConflict: 'clave'` ya no encuentra índice y PostgREST responde
+    // 42P10; y un `onConflict: 'clave,es_demo'` obligaría a mandar una columna
+    // que la base va a sobrescribir de todas formas.
+    //
+    // La forma honesta es la de siempre: preguntar primero. Y la consulta ya
+    // viene filtrada por partición por el RLS, así que devuelve como mucho una
+    // fila — la de MI lado.
+    const { data: yaEsta, error: falloBusqueda } = await supabase
       .from('normas')
-      .upsert(
-        {
-          clave: norma.clave,
-          nombre: norma.nombre,
-          version: norma.version,
-          titulo: norma.titulo,
-          activa: true,
-        },
-        { onConflict: 'clave' },
-      )
       .select('id')
+      .eq('clave', norma.clave)
+      .maybeSingle()
+
+    if (falloBusqueda) throw falloBusqueda
+
+    const campos = {
+      nombre: norma.nombre,
+      version: norma.version,
+      titulo: norma.titulo,
+      activa: true,
+    }
+
+    const { data: filaNorma, error: falloNorma } = yaEsta
+      ? await supabase.from('normas').update(campos).eq('id', yaEsta.id).select('id')
+      : await supabase.from('normas').insert({ clave: norma.clave, ...campos }).select('id')
 
     if (falloNorma) throw falloNorma
     // ⚠️ Cero filas aquí es el RLS diciendo que no: `normas` sólo la escribe un

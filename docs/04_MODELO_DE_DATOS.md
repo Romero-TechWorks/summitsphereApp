@@ -33,6 +33,12 @@ La raíz de la multi-tenencia. **Todo cuelga de aquí.**
 | `logotipo_url` | text | |
 | `estado` | text CHECK | `prospecto` · `activo` · `pausado` · `cerrado` |
 | `notas` | text | |
+| `es_demo` | boolean NOT NULL default false | **La partición de pruebas.** De qué lado vive este cliente. La sella `sellar_particion()` al crearlo y no se cambia desde la app |
+
+⚠️ **`es_demo` es la raíz de la partición, igual que `organizaciones` es la raíz
+de la multi-tenencia.** Todo lo que lleva `org_id` queda partido por herencia, sin
+una columna más: la regla entera es `organizaciones.es_demo = soy_dev()` y vive
+dentro de `mis_organizaciones()`. Ver docs/08 §2 y `09_TAREAS_DEL_DUENO.md` · `A10`.
 
 ## `usuarios`
 Espeja `auth.users`. El perfil y el rol viven aquí.
@@ -47,6 +53,13 @@ Espeja `auth.users`. El perfil y el rol viven aquí.
 | `certificaciones` | text[] | *Auditor líder ISO 9001*, *ISO 45001*… Se imprime en el informe de auditoría |
 | `activo` | boolean default true | |
 | `avatar_url` | text | |
+| `es_dev` | boolean NOT NULL default false | **Cuenta de pruebas**: ve sólo la partición de demostración. **No es un rol**, se pone encima del rol |
+
+⚠️ **`es_dev` no está en el CHECK de `rol` a propósito.** Con un sexto rol,
+`es_socio()` sería falso para la cuenta de pruebas y ésa no podría dar de alta un
+cliente, importar el catálogo ni repartir equipo — que es justo lo que hay que
+poder probar. Y sólo un socio **de la partición real** puede ponerla o quitarla:
+`proteger_rol_usuario()`.
 
 ⚠️ Esta tabla **no lleva `org_id`**: un consultor sirve a varias organizaciones.
 El vínculo es la tabla siguiente.
@@ -72,7 +85,7 @@ plantillas.
 | `id` | int PK CHECK (`id = 1`) | Fila única, impuesta por el CHECK |
 | `razon_social`, `rfc`, `direccion`, `telefono`, `correo`, `logotipo_url` | text | |
 | `modulos_activos` | text[] | Qué está encendido. Ver *módulos apagados de fábrica* |
-| `plantillas` | jsonb | Configuración de los entregables imprimibles |
+| `plantillas` | jsonb | Configuración de los entregables imprimibles. **Lleva dentro la partición**: `{ tareas, verificacion, dev: { tareas, verificacion } }`. Es la única tabla que el RLS no puede partir —tiene una sola fila—, así que se separa por espacio de nombres desde `src/lib/auth/particion.ts` |
 | `plazos_default` | jsonb | Días por tipo de hallazgo |
 
 ⚠️ **La lee cualquiera con sesión: ninguna contraseña va aquí.**
@@ -191,7 +204,13 @@ lo que la lee.
 
 ## `normas` · `norma_clausulas`
 **Catálogos globales, sin `org_id`** — declarados en la lista `EXENTAS` de
-`.github/workflows/rls-check.yml`. Se leen con sesión; sólo los escribe un socio.
+`.github/workflows/rls-check.yml`. Sólo los escribe un socio.
+
+⚠️ **Desde `A10` ya no se leen «con sesión» sino «con sesión y de tu lado»**: las
+dos llevan `es_demo` y sus políticas filtran por `es_demo = soy_dev()`. El motivo
+no es la simetría: el importador es idempotente y **marca `activa = false` lo que
+no viene en el archivo**, así que una prueba de importación contra un catálogo
+compartido daría de baja cláusulas reales que los hallazgos del cliente citan.
 
 ⚠️ **Adelantados desde la Fase 02 y VACÍOS.** El catálogo de Summit no se siembra
 desde el repositorio: se sube como archivo `.md` y se indexa desde la app
@@ -322,11 +341,24 @@ repositorio.
 
 | Columna | Tipo | Ejemplo |
 |---|---|---|
-| `clave` | text UNIQUE | `iso_9001` |
+| `clave` | text | `iso_9001` |
 | `nombre` | text | `ISO 9001` |
 | `version` | text | `2015` |
 | `titulo` | text | `Sistemas de gestión de la calidad` |
 | `activa` | boolean | |
+| `es_demo` | boolean NOT NULL default false | La partición. La sella `sellar_particion()` |
+| **UNIQUE** | `(clave, es_demo)` | ⚠️ Ver abajo |
+
+⚠️ **`clave` dejó de ser única a secas y pasó a serlo POR PARTICIÓN** con `A10`.
+Sin ese cambio la partición del catálogo no serviría de nada: con `iso_9001` única
+en toda la base, la cuenta de pruebas **no podría importar su propio catálogo**
+mientras exista el del cliente, y su cartera de demostración se quedaría con
+proyectos cuyo alcance apunta a normas que no puede ver.
+
+⚠️ **Y por eso el importador ya no hace `upsert` sobre `clave`**: es la misma
+regla que en `requisitos` y `mediciones` (§6.1). Busca primero —la consulta ya
+viene filtrada por partición por el RLS, así que devuelve como mucho una fila, la
+de su lado— y después decide `insert` o `update`.
 
 Semilla: `iso_9001` · `iso_14001` · `iso_45001` · `iso_13485` · `iso_27001` ·
 `iso_37001` · `iso_37301`.
@@ -346,6 +378,7 @@ lea (CLAUDE.md regla 11).
 | `condensada` | text | La *Token Diet* del Módulo B: `[ISO9001\|8.5.1\|Ctrl_Produccion\|Req:Info_Documentada,Monitoreo,Competencia]` |
 | `auditable` | boolean | Los capítulos 0-3 no se auditan |
 | `orden` | int | |
+| `es_demo` | boolean NOT NULL default false | **Se hereda de la norma** (`heredar_particion_de_la_norma`), nunca lo manda el cliente. Y si una norma cambia de lado, sus cláusulas la siguen (`propagar_particion_de_la_norma`) |
 
 ## `documentos` · `documento_versiones`
 El control documental. El corazón de un SGC.

@@ -95,16 +95,22 @@ export default function PanelVerificacion({
     queryFn: listarNormasConClausulas,
   })
 
-  const { data: plantilla = {} } = useQuery({
-    queryKey: queryKeys.auditorias.plantillaVerificacion(),
-    queryFn: leerPlantillaVerificacion,
-  })
-
   const { data: usuario } = useQuery({
     queryKey: queryKeys.usuario.actual(),
     queryFn: obtenerUsuarioActual,
   })
   const esSocio = usuario?.rol === 'socio'
+
+  // ⚠️ De qué lado de la partición se lee la plantilla de la firma. Va también
+  // en la clave de caché: `src/lib/auth/particion.ts`.
+  const esDev = usuario?.es_dev === true
+
+  const { data: plantilla = {} } = useQuery({
+    queryKey: queryKeys.auditorias.plantillaVerificacion(esDev),
+    queryFn: () => leerPlantillaVerificacion(esDev),
+    // Hasta saber quién pregunta no se sabe de qué rama del jsonb leer.
+    enabled: usuario !== undefined,
+  })
 
   const normasDelAlcance = useMemo(() => alcance.map((a) => a.norma_id), [alcance])
   const clavesDelAlcance = useMemo(
@@ -225,9 +231,12 @@ export default function PanelVerificacion({
         normaDeLaClausula,
         clavesDelAlcance,
         giro,
+        esDev,
       )
       if (!encolado) {
-        void cliente.invalidateQueries({ queryKey: queryKeys.auditorias.plantillaVerificacion() })
+        void cliente.invalidateQueries({
+          queryKey: queryKeys.auditorias.plantillaVerificacion(esDev),
+        })
       }
       setAviso('Guardada como plantilla de la firma para estas normas y este giro.')
     } catch (problema) {

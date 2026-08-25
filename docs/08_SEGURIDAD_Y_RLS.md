@@ -51,6 +51,9 @@ un `socio` no llega a ninguna ruta que no sea `/mfa`.
 ```sql
 -- Qué organizaciones puede ver quien pregunta.
 -- SECURITY DEFINER para poder leer usuarios_organizaciones sin recursión de RLS.
+--
+-- ⚠️ Desde A10 devuelve TODO lo que puedo ver, ya filtrado por partición y con
+-- la cartera completa si soy socio. Ver «§2.1 · La partición de pruebas».
 CREATE OR REPLACE FUNCTION mis_organizaciones()
 RETURNS setof uuid
 LANGUAGE sql
@@ -58,7 +61,12 @@ STABLE
 SECURITY DEFINER
 SET search_path = public
 AS $$
-  SELECT org_id FROM usuarios_organizaciones WHERE usuario_id = auth.uid()
+  SELECT o.id
+    FROM organizaciones o
+   WHERE o.es_demo = soy_dev()
+     AND ( es_socio()
+        OR EXISTS (SELECT 1 FROM usuarios_organizaciones uo
+                    WHERE uo.usuario_id = auth.uid() AND uo.org_id = o.id) )
 $$;
 
 CREATE OR REPLACE FUNCTION es_socio()
@@ -94,17 +102,125 @@ STABLE
 SECURITY DEFINER
 SET search_path = public
 AS $$
-  SELECT es_socio() OR EXISTS (
-    SELECT 1 FROM usuarios_organizaciones
-     WHERE usuario_id = auth.uid() AND org_id = p_org AND papel <> 'lectura'
-  )
+  SELECT EXISTS (SELECT 1 FROM organizaciones o
+                  WHERE o.id = p_org AND o.es_demo = soy_dev())
+     AND ( es_socio() OR EXISTS (
+       SELECT 1 FROM usuarios_organizaciones
+        WHERE usuario_id = auth.uid() AND org_id = p_org AND papel <> 'lectura'
+     ) )
 $$;
 ```
+
+⚠️ La comprobación de partición se hace contra la fila de la organización **por su
+clave primaria**, no con `p_org IN (SELECT mis_organizaciones())`: esta función se
+evalúa una vez por fila en los `WITH CHECK`, y ahí una búsqueda por PK cuesta lo
+que un `EXISTS` y un recorrido de la cartera entera no.
 
 ⚠️ **`lectura` es un papel de verdad, no una etiqueta.** Quien lo tenga ve el
 expediente completo y no puede modificar nada — ni un contacto, ni el nombre del
 cliente. Es el papel del consultor que entra a consultar un expediente que no
 lleva, y del socio de una firma aliada que revisa sin tocar.
+
+## §2.1 · La partición de pruebas  [`A10`, 25 ago 2026]
+
+Encima de la multi-tenencia hay un segundo corte, y es **perpendicular** al
+primero: la multi-tenencia separa a un cliente de otro dentro de la firma; la
+partición separa **la firma entera de su banco de pruebas**.
+
+El problema que resuelve: la instancia traía la cartera de demostración con la que
+se le enseñó el flujo al cliente, y el cliente empezó a capturar lo real encima.
+Borrar la demostración pierde el único juego de datos completo que existe para
+probar; dejarla revuelta mete clientes inventados en el tablero de una firma que
+audita de verdad.
+
+**Toda la partición es una igualdad:**
+
+```sql
+organizaciones.es_demo = soy_dev()
+```
+
+```sql
+CREATE OR REPLACE FUNCTION soy_dev()
+RETURNS boolean
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM usuarios WHERE id = auth.uid() AND es_dev AND activo
+  )
+$$;
+```
+
+⚠️ **`dev` no es un rol, es una marca encima del rol.** Con un sexto valor en el
+CHECK de `usuarios.rol`, `es_socio()` sería falso para la cuenta de pruebas y ésa
+no podría dar de alta un cliente, importar el catálogo, borrar ni repartir equipo
+— justo lo que hay que poder probar. Así la cuenta de pruebas es un socio
+**completo dentro de su partición**, y además puede probar cómo se ve la app
+siendo consultor o auditor.
+
+### Dónde vive el corte, tabla por tabla
+
+| Qué | Cómo se parte |
+|---|---|
+| Las ~32 tablas con `org_id` | Solas, por `mis_organizaciones()`. **Ni una política de dominio menciona `es_demo`** |
+| `organizaciones` | `es_demo`, sellada por `sellar_particion()` |
+| `normas` · `norma_clausulas` | `es_demo` propia; la cláusula la hereda de su norma. `UNIQUE (clave, es_demo)` |
+| Storage (`documentos`, `evidencias`) | Por la `org_id` del primer segmento de la ruta, que ya pasa por `mis_organizaciones()` |
+| `audit_logs` | Por `org_id`. Lo que no cuelga de ninguna organización, sólo el socio real |
+| `config_firma.plantillas` | **Fuera de la base**: espacio de nombres en el jsonb (`src/lib/auth/particion.ts`). Es una tabla de una fila; no hay RLS que parta columnas |
+| `usuarios` · el resto de `config_firma` | **No se parte.** La plantilla de la firma es una sola, y los módulos encendidos son de la firma |
+
+### Lo que cambió en las políticas, y por qué no es una relajación
+
+Hasta `A10`, toda política de dominio era:
+
+```sql
+USING (org_id IN (SELECT mis_organizaciones()) OR es_socio())
+```
+
+Esa segunda rama es **una puerta lateral que se salta cualquier filtro que se
+ponga en la primera**: un socio de pruebas la cruzaría y vería los clientes
+reales. La rama se mudó **dentro** de `mis_organizaciones()`, donde sí está
+filtrada, y las 32 políticas quedaron en:
+
+```sql
+USING (org_id IN (SELECT mis_organizaciones()))
+```
+
+Para un socio que no sea dev el resultado es **idéntico** al de antes: antes veía
+todas las organizaciones por la rama lateral, ahora las ve porque la función se
+las devuelve. Para todos los demás tampoco cambia nada: sus organizaciones
+asignadas están todas de su lado.
+
+⚠️ **De paso se cerró un agujero que ya existía en Storage.** `documentos_borrar`
+y `evidencias_borrar` decían `bucket_id = '…' AND es_socio()`, sin mirar la ruta:
+un socio podía borrar cualquier objeto del bucket, **incluidos los que
+`org_de_la_ruta()` no sabe leer y que por tanto nadie puede ver**. Poder borrar lo
+que no se puede ver no es un permiso, es un accidente esperando.
+
+### Los candados de la partición
+
+1. **La partición la sella la base, no el navegador.** `sellar_particion()` pone
+   `es_demo := soy_dev()` en el INSERT e impide cambiarla en el UPDATE. Es la
+   misma decisión que `heredar_org_del_proyecto()`.
+2. **Una cuenta de pruebas no puede quitarse su propia marca**, ni ponérsela a
+   nadie: `proteger_rol_usuario()`. Sí puede administrar **otras cuentas de
+   pruebas** —hace falta para probar los roles—, nunca una real. Sin esto la
+   partición sería una cortesía y no un candado.
+3. **La salida del dueño existe y es una sola:** una conexión directa —psql, el
+   editor SQL del panel— sí puede mover una fila de lado. Tiene que poder: es
+   como se marcó la cartera de demostración al aplicar `A10`.
+
+⚠️ **`service_role` se salta la partición entera**, igual que se salta el
+aislamiento entre clientes. El cron y las rutas de API con la llave de servicio
+ven las dos mitades. Es el mismo reparto de siempre y no cambia con esto.
+
+⚠️ **El consecutivo de folios también se partió.** `asignar_folio_auditoria()` es
+SECURITY DEFINER y cuenta fuera del RLS; sin partirlo, una auditoría de prueba se
+llevaba el `AUD-2026-007` y el cliente pasaba del 006 al 008 sin explicación. La
+partición de pruebas usa el prefijo `DEMO-`, que además se lee de un vistazo en
+una captura de pantalla.
+
+---
 
 ### La plantilla de política
 
@@ -113,8 +229,10 @@ lleva, y del socio de una firma aliada que revisa sin tocar.
 ```sql
 ALTER TABLE hallazgos ENABLE ROW LEVEL SECURITY;
 
+-- ⚠️ SIN `OR es_socio()`. Esa rama vive dentro de mis_organizaciones() desde
+-- A10; escribirla aquí abre una puerta lateral que se salta la partición.
 CREATE POLICY "hallazgos_select" ON hallazgos FOR SELECT TO authenticated
-  USING (org_id IN (SELECT mis_organizaciones()) OR es_socio());
+  USING (org_id IN (SELECT mis_organizaciones()));
 
 CREATE POLICY "hallazgos_insert" ON hallazgos FOR INSERT TO authenticated
   WITH CHECK (puedo_editar_org(org_id));

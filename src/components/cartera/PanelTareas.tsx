@@ -87,6 +87,10 @@ export default function PanelTareas({
     queryFn: obtenerUsuarioActual,
   })
 
+  // ⚠️ De qué lado de la partición se lee la plantilla de la firma. Va también
+  // en la clave de caché: `src/lib/auth/particion.ts`.
+  const esDev = usuario?.es_dev === true
+
   const { data: tareas = [], isPending, error: fallo } = useQuery({
     queryKey: queryKeys.cartera.tareas(proyecto.id),
     queryFn: () => listarTareas(proyecto.id),
@@ -94,9 +98,12 @@ export default function PanelTareas({
 
   // La plantilla de la firma. Es una fila de configuración, no una consulta cara.
   const { data: plantilla = {} } = useQuery({
-    queryKey: queryKeys.cartera.plantillaTareas(),
-    queryFn: leerPlantillaTareas,
-    enabled: puedoEditar,
+    queryKey: queryKeys.cartera.plantillaTareas(esDev),
+    queryFn: () => leerPlantillaTareas(esDev),
+    // Hasta saber quién pregunta no se sabe de qué rama del jsonb leer, y
+    // arrancar en `false` traería la plantilla de la firma a una cuenta de
+    // pruebas durante el primer render.
+    enabled: puedoEditar && usuario !== undefined,
   })
 
   const yo: Responsable | null = usuario
@@ -214,8 +221,10 @@ export default function PanelTareas({
     setError(null)
 
     try {
-      const { encolado } = await guardarComoPlantilla(proyecto.tipo, tareas)
-      if (!encolado) void cliente.invalidateQueries({ queryKey: queryKeys.cartera.plantillaTareas() })
+      const { encolado } = await guardarComoPlantilla(proyecto.tipo, tareas, esDev)
+      if (!encolado) {
+        void cliente.invalidateQueries({ queryKey: queryKeys.cartera.plantillaTareas(esDev) })
+      }
     } catch (problema) {
       setError(mensajeDeError(problema))
     } finally {

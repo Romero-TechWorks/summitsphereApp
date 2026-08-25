@@ -31,9 +31,11 @@ en [`../guias/`](../guias/00_INDICE_INFRAESTRUCTURA.md).
 └───────┘└────────┘└─────────┘└───────────┘└─────────────┘
                                 │
                                 ▼
-                    ┌─────────────────────────┐
-                    │ 09 · Tareas del dueño   │  Lo manual, sin jerga
-                    └─────────────────────────┘
+              ┌─────────────────────────┬─────────────────────────┐
+              │ 09 · Tareas del dueño   │ 11 · Tareas del cliente │
+              │  paneles, llaves y      │  lo que se captura      │
+              │  migraciones            │  DENTRO de la app       │
+              └─────────────────────────┴─────────────────────────┘
 ```
 
 ---
@@ -50,8 +52,9 @@ en [`../guias/`](../guias/00_INDICE_INFRAESTRUCTURA.md).
 | 06 | [Módulos funcionales](06_MODULOS_FUNCIONALES.md) | Cómo usa la app un consultor, un auditor y un cliente |
 | 07 | [Asistente y automatización](07_ASISTENTE_Y_AUTOMATIZACION.md) | Los Módulos A, B y C del plan de automatización, convertidos en trabajo ejecutable |
 | 08 | [Seguridad y RLS](08_SEGURIDAD_Y_RLS.md) | Roles, políticas por organización, portal público, secretos |
-| 09 | [Tareas del dueño](09_TAREAS_DEL_DUENO.md) | Los pasos que ningún programa puede hacer por ti |
+| 09 | [Tareas del dueño](09_TAREAS_DEL_DUENO.md) | Lo **técnico** que ningún programa puede hacer por ti: paneles, llaves, migraciones, buckets |
 | 10 | [Glosario](10_GLOSARIO.md) | Del vocabulario ISO al nombre de la columna |
+| 11 | [Tareas del cliente](11_TAREAS_DEL_CLIENTE.md) | Lo que se **captura dentro de la app** para poder empezar a usarla, paso a paso y con la navegación de cada pantalla |
 
 ---
 

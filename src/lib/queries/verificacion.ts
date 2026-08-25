@@ -14,6 +14,7 @@
  */
 
 import { createClient } from '@/lib/supabase/client'
+import { conPlantilla, ramaDePlantillas } from '@/lib/auth/particion'
 import { offlineWrite, type ResultadoEscritura } from '@/lib/offline/mutate'
 import { exigirFilas } from '@/lib/supabase/errores'
 import { normalizar } from '@/lib/utils/texto'
@@ -269,12 +270,16 @@ export function claveDeGiro(giro: string | null | undefined): string {
  * cualquiera con sesión y sólo la escribe un socio. Una tabla para esto sería
  * una tabla con una fila.
  *
+ * ⚠️ **`esDev` decide de qué rama del jsonb se lee.** `config_firma` es la única
+ * tabla que el RLS no puede partir por partición —tiene una sola fila—, así que
+ * la separación es por espacio de nombres: `src/lib/auth/particion.ts`.
+ *
  * ⚠️ Se lee **a la defensiva**. Ese jsonb lo puede haber escrito una versión
  * vieja de la app o una mano en el SQL Editor: si no tiene la forma esperada se
  * devuelve vacío, nunca se revienta la pantalla de la auditoría (CLAUDE.md ·
  * trampas heredadas).
  */
-export async function leerPlantillaVerificacion(): Promise<PlantillaVerificacion> {
+export async function leerPlantillaVerificacion(esDev: boolean): Promise<PlantillaVerificacion> {
   const { data, error } = await createClient()
     .from('config_firma')
     .select('plantillas')
@@ -282,7 +287,7 @@ export async function leerPlantillaVerificacion(): Promise<PlantillaVerificacion
     .maybeSingle()
 
   if (error) throw error
-  return normalizarPlantilla(data?.plantillas)
+  return normalizarPlantilla(ramaDePlantillas(data?.plantillas, esDev))
 }
 
 function normalizarPlantilla(crudo: unknown): PlantillaVerificacion {
@@ -358,13 +363,15 @@ export function puntosDeLaPlantilla(
  * alguien lo abra en el SQL Editor.
  *
  * ⚠️ Lee y reescribe el jsonb entero: sólo lo hace un socio, de uno en uno, así
- * que no se pierde lo que haya de otras normas ni la plantilla de tareas.
+ * que no se pierde lo que haya de otras normas, ni la plantilla de tareas, ni la
+ * de la otra partición — de eso se encarga `conPlantilla()`.
  */
 export async function guardarComoPlantilla(
   items: readonly ItemConContexto[],
   normaDeLaClausula: (clausulaId: string) => string | null,
   clavesDeNorma: readonly string[],
   giro: string | null | undefined,
+  esDev: boolean,
 ): Promise<ResultadoEscritura<PlantillaVerificacion>> {
   const supabase = createClient()
 
@@ -376,8 +383,8 @@ export async function guardarComoPlantilla(
 
   if (error) throw error
 
-  const previo = (actual?.plantillas ?? {}) as Record<string, unknown>
-  const plantilla = normalizarPlantilla(actual?.plantillas)
+  const previo = actual?.plantillas ?? {}
+  const plantilla = normalizarPlantilla(ramaDePlantillas(previo, esDev))
   const giroClave = claveDeGiro(giro)
 
   // Los puntos atados a una cláusula van con la norma de esa cláusula. Los
@@ -407,7 +414,7 @@ export async function guardarComoPlantilla(
     plantilla[clave] = { ...(plantilla[clave] ?? {}), [giroClave]: puntos }
   }
 
-  const plantillas = { ...previo, verificacion: plantilla }
+  const plantillas = conPlantilla(previo, esDev, 'verificacion', plantilla)
 
   return offlineWrite<PlantillaVerificacion>({
     tabla: 'config_firma',
@@ -422,7 +429,9 @@ export async function guardarComoPlantilla(
         .eq('id', 1)
         .select('plantillas')
       if (fallo) throw fallo
-      return normalizarPlantilla(exigirFilas(data, 'Plantilla de verificación')[0].plantillas)
+      return normalizarPlantilla(
+        ramaDePlantillas(exigirFilas(data, 'Plantilla de verificación')[0].plantillas, esDev),
+      )
     },
     offline: plantilla,
   })

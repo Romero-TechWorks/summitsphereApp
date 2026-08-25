@@ -51,8 +51,18 @@ export const queryKeys = {
     tareas: (proyectoId: string) => ['cartera', 'tareas', proyectoId] as const,
     /** La línea de tiempo de un proyecto. */
     bitacora: (proyectoId: string) => ['cartera', 'bitacora', proyectoId] as const,
-    /** La plantilla de tareas de la firma, por tipo de proyecto. */
-    plantillaTareas: () => ['cartera', 'plantilla-tareas'] as const,
+    /**
+     * La plantilla de tareas de la firma, por tipo de proyecto.
+     *
+     * ⚠️ **La partición va DENTRO de la clave.** Es la única de `config_firma`
+     * que la lleva, y hace falta: esa fila es una sola para las dos particiones
+     * y se separan por espacio de nombres dentro del jsonb
+     * (`src/lib/auth/particion.ts`). Con una clave común, la caché persistida
+     * serviría la plantilla de la otra partición al cambiar de cuenta en el
+     * mismo navegador — y el usuario la instanciaría en un proyecto sin
+     * enterarse.
+     */
+    plantillaTareas: (esDev: boolean) => ['cartera', 'plantilla-tareas', esDev] as const,
     /** El alcance: qué normas y qué sitios cubre un proyecto. */
     alcanceNormas: (proyectoId: string) => ['cartera', 'alcance', 'normas', proyectoId] as const,
     alcanceSitios: (proyectoId: string) => ['cartera', 'alcance', 'sitios', proyectoId] as const,
@@ -145,9 +155,11 @@ export const queryKeys = {
     /**
      * La plantilla de listas de verificación de la firma. Fuera de una auditoría
      * concreta porque es de todas: vive en `config_firma.plantillas`, igual que
-     * la plantilla de tareas.
+     * la plantilla de tareas — y como ella, lleva la partición dentro de la
+     * clave. Ver `cartera.plantillaTareas`.
      */
-    plantillaVerificacion: () => ['auditorias', 'plantilla-verificacion'] as const,
+    plantillaVerificacion: (esDev: boolean) =>
+      ['auditorias', 'plantilla-verificacion', esDev] as const,
     /**
      * Los hallazgos de una auditoría [F03·B4]. Es lo que se precarga antes de
      * entrar a planta: sin los previos, el auditor no puede comprobar si lo del

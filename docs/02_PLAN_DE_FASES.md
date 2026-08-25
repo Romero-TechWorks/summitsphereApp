@@ -17,7 +17,12 @@ estar aplazado con motivo.
   cerrada la fase. No "está implementado" — *"un auditor levanta 30 hallazgos en
   modo avión y al recuperar señal aparecen los 30"*.
 - **Tareas del dueño**: los pasos manuales que la fase requiere y que ningún
-  programa puede hacer solo. Se detallan en [`09_TAREAS_DEL_DUENO.md`](09_TAREAS_DEL_DUENO.md).
+  programa puede hacer solo. Lo **técnico** —paneles, llaves, migraciones,
+  buckets— se detalla en [`09_TAREAS_DEL_DUENO.md`](09_TAREAS_DEL_DUENO.md); lo
+  que se **captura dentro de la app** —cartera, proyectos, catálogo de normas,
+  alcance, equipo— vive desde el 25 ago 2026 en
+  [`11_TAREAS_DEL_CLIENTE.md`](11_TAREAS_DEL_CLIENTE.md), escrito paso a paso para
+  quien no programa. Las claves (`B01`, `C01`…) siguen resolviendo desde `09`.
 - Las estimaciones son **semanas de una persona a tiempo completo** apoyada por un
   agente de código. Con dos personas la ruta crítica no se divide a la mitad: las
   fases 01→02→03 son secuenciales porque cada una construye sobre el modelo de la
@@ -223,7 +228,9 @@ Ver CLAUDE.md · reglas del offline, 6.
 firma, no personal. `A02` Guardar la contraseña de la base de datos en el gestor
 de contraseñas. `A03` Enrolar su segundo factor. `A04` Dar de alta a los primeros
 usuarios del equipo. `A08` Encender Turnstile en Supabase. `A09` Redesplegar
-Vercel después de tocar las variables de entorno.
+Vercel después de tocar las variables de entorno. `A10` Aplicar la partición de
+pruebas y marcar la cuenta `dev` — a partir de ahí la cartera de demostración vive
+aparte y el cliente captura en limpio (docs/08 §2.1).
 
 ---
 

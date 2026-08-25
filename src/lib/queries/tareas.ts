@@ -10,6 +10,7 @@
  */
 
 import { createClient } from '@/lib/supabase/client'
+import { conPlantilla, ramaDePlantillas } from '@/lib/auth/particion'
 import { offlineWrite, type ResultadoEscritura } from '@/lib/offline/mutate'
 import { exigirFilas } from '@/lib/supabase/errores'
 import { uuid } from '@/lib/utils/uuid'
@@ -221,12 +222,18 @@ export type PlantillaTareas = Record<string, Record<string, { titulo: string; de
  * tabla**: es configuración de la firma, la lee cualquiera con sesión y sólo la
  * escribe un socio. Una tabla nueva para esto sería una tabla con una fila.
  *
+ * ⚠️ **`esDev` decide de qué rama del jsonb se lee**, porque `config_firma` es
+ * la única tabla que el RLS no puede partir: tiene una sola fila. Ver
+ * `src/lib/auth/particion.ts`. Y por eso la clave de caché lo lleva dentro
+ * (`queryKeys.cartera.plantillaTareas`): sin él, cambiar de cuenta serviría la
+ * plantilla de la otra partición desde la caché persistida.
+ *
  * ⚠️ Se lee a la defensiva. Ese jsonb lo puede haber escrito una versión vieja
  * de la app o una mano en el SQL Editor: si no tiene la forma esperada se
  * devuelve vacío, **nunca se revienta la pantalla del proyecto** (CLAUDE.md ·
  * trampas heredadas).
  */
-export async function leerPlantillaTareas(): Promise<PlantillaTareas> {
+export async function leerPlantillaTareas(esDev: boolean): Promise<PlantillaTareas> {
   const supabase = createClient()
 
   const { data, error } = await supabase
@@ -236,7 +243,7 @@ export async function leerPlantillaTareas(): Promise<PlantillaTareas> {
     .maybeSingle()
 
   if (error) throw error
-  return normalizarPlantilla(data?.plantillas)
+  return normalizarPlantilla(ramaDePlantillas(data?.plantillas, esDev))
 }
 
 function normalizarPlantilla(crudo: unknown): PlantillaTareas {
@@ -276,11 +283,13 @@ function normalizarPlantilla(crudo: unknown): PlantillaTareas {
  * Aceros»— y ahorra la pantalla de administración que no llega hasta la Fase 06.
  *
  * ⚠️ Lee y reescribe el jsonb entero: sólo lo hace un socio, de uno en uno, y
- * así no se pierde lo que haya de otros tipos de proyecto.
+ * así no se pierde lo que haya de otros tipos de proyecto **ni la plantilla de
+ * la otra partición** — de eso se encarga `conPlantilla()`.
  */
 export async function guardarComoPlantilla(
   tipoProyecto: string,
   tareas: Tarea[],
+  esDev: boolean,
 ): Promise<ResultadoEscritura<PlantillaTareas>> {
   const supabase = createClient()
 
@@ -292,8 +301,8 @@ export async function guardarComoPlantilla(
 
   if (error) throw error
 
-  const previo = (actual?.plantillas ?? {}) as Record<string, unknown>
-  const plantilla = normalizarPlantilla(actual?.plantillas)
+  const previo = actual?.plantillas ?? {}
+  const plantilla = normalizarPlantilla(ramaDePlantillas(previo, esDev))
 
   const porEtapa: Record<string, { titulo: string; detalle?: string }[]> = {}
   for (const tarea of [...tareas].sort((a, b) => a.orden - b.orden)) {
@@ -303,7 +312,7 @@ export async function guardarComoPlantilla(
   }
 
   plantilla[tipoProyecto] = porEtapa
-  const plantillas = { ...previo, tareas: plantilla }
+  const plantillas = conPlantilla(previo, esDev, 'tareas', plantilla)
 
   return offlineWrite<PlantillaTareas>({
     tabla: 'config_firma',
@@ -319,7 +328,9 @@ export async function guardarComoPlantilla(
         .eq('id', 1)
         .select('plantillas')
       if (fallo) throw fallo
-      return normalizarPlantilla(exigirFilas(data, 'Plantilla de tareas')[0].plantillas)
+      return normalizarPlantilla(
+        ramaDePlantillas(exigirFilas(data, 'Plantilla de tareas')[0].plantillas, esDev),
+      )
     },
     offline: plantilla,
   })

@@ -155,11 +155,15 @@ Tres reglas, sin excepciones:
 1. **Toda tabla de dominio lleva `org_id NOT NULL`** con FK a `organizaciones`.
 2. **Toda tabla de dominio tiene RLS activo** y sus políticas filtran por
    `mis_organizaciones()`.
-3. **El rol `socio` ve todo** — pero por una rama explícita de la política
-   (`OR es_socio()`), no por ausencia de política.
+3. **El rol `socio` ve todo** — pero por una rama explícita, nunca por ausencia
+   de política. ⚠️ **Desde `A10` esa rama vive DENTRO de `mis_organizaciones()`,
+   no suelta en cada política.** Una tabla nueva escribe
+   `USING (org_id IN (SELECT mis_organizaciones()))` y nada más: añadirle
+   `OR es_socio()` abre una puerta lateral que se salta la partición de pruebas.
 
 ⚠️ Una tabla nueva sin `org_id` y sin política **es una fuga, no un pendiente**.
-Detalle y plantillas de política en [`08_SEGURIDAD_Y_RLS.md`](08_SEGURIDAD_Y_RLS.md).
+Detalle y plantillas de política en [`08_SEGURIDAD_Y_RLS.md`](08_SEGURIDAD_Y_RLS.md);
+la partición de pruebas, en su §2.1.
 
 ---
 

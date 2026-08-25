@@ -9,6 +9,18 @@ contraseñas ni decidir tu criterio técnico. Esto es esa lista.
 > permiso — mira aquí antes de reportar un error.** Nueve de cada diez veces es
 > una tarea de esta lista que quedó pendiente.
 
+> ### 📋 Lo que se captura DENTRO de la app vive en otro archivo
+>
+> Desde el 25 de agosto de 2026, todo lo que es **meter información** —la
+> cartera, los proyectos, el catálogo de normas, el alcance, los documentos, las
+> auditorías— está en
+> [**`11_TAREAS_DEL_CLIENTE.md`**](11_TAREAS_DEL_CLIENTE.md), escrito paso a paso
+> y con la navegación de cada pantalla.
+>
+> **Este archivo se queda con lo técnico**: paneles, llaves, migraciones,
+> permisos y buckets. Las tareas que se mudaron dejaron aquí su renglón con el
+> enlace, para que las claves que usa `02_PLAN_DE_FASES.md` sigan resolviendo.
+
 ---
 
 ## Cómo usar esta lista
@@ -23,7 +35,7 @@ no está hecha.
 
 # FASE 00 · Cimientos
 
-### `A01` — Crear las cuentas · **Bloquea: todo**
+### `A01` — Crear las cuentas · **Bloquea: todo** 
 
 Cuatro cuentas, **todas con el correo de la firma**
 (`manuel.garcia@summit-sphere.com`), nunca con un correo personal. Si mañana
@@ -37,7 +49,7 @@ alguien cambia de puesto, la cuenta se queda con la empresa.
 ⚠️ **Activa el segundo factor (2FA) en las cuatro, el mismo día que las crees.**
 Quien entre a cualquiera de ellas tiene los datos de todos tus clientes.
 
-### `A02` — Guardar la contraseña de la base de datos · **Bloquea: los respaldos**
+### `A02` — Guardar la contraseña de la base de datos · **Bloquea: los respaldos** ✅ **HECHA** 
 
 Cuando crees el proyecto de Supabase te va a pedir una contraseña de base de
 datos. **Se muestra una sola vez.**
@@ -48,7 +60,7 @@ navegador). No en una nota del teléfono, no en un WhatsApp a ti mismo.
 Se puede regenerar si se pierde, pero hay que actualizarla en tres lugares y
 mientras tanto los respaldos dejan de correr en silencio.
 
-### `A03` — Enrolar tu segundo factor en la app · **Bloquea: tu propio acceso**
+### `A03` — Enrolar tu segundo factor en la app · **Bloquea: tu propio acceso** ✅ **HECHA** 
 
 Antes, una casilla en Supabase: *Authentication* → *Multi-Factor Authentication* →
 habilitar **TOTP**. Sin eso la pantalla del segundo factor no puede enrolar a
@@ -149,7 +161,7 @@ después la variable.
 
 ---
 
-### `A09` — Redesplegar Vercel después de tocar las variables · **Bloquea: que la app funcione**
+### `A09` — Redesplegar Vercel después de tocar las variables · **Bloquea: que la app funcione** ✅ **HECHA** 
 
 ⚠️ **Cargar una variable de entorno en Vercel no la aplica al despliegue que ya
 está en línea.** Las `NEXT_PUBLIC_*` se incrustan en el código **durante el
@@ -169,9 +181,108 @@ Vale para las tres: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` 
 
 ---
 
+### `A10` — Aplicar la partición de pruebas · **Bloquea: que el cliente empiece a capturar en limpio**
+
+⚠️ **Léela entera antes de correr nada. Al terminar el paso 1, la app se va a ver
+vacía — y es lo que tiene que pasar.**
+
+**El problema que resuelve.** Todo lo que hay hoy en la base es la cartera de
+demostración con la que se le enseñó el flujo al cliente. Borrarla pierde el único
+juego de datos completo que existe para probar; dejarla revuelta mete clientes
+inventados en el tablero de una firma que audita de verdad.
+
+**Lo que hace.** Parte la base en dos. A un lado la cartera real; al otro la de
+pruebas, que sólo ve una **cuenta marcada como `dev`**. Ninguna de las dos ve a la
+otra, y el candado vive en la base de datos, no en una pantalla.
+
+⚠️ **`dev` NO es un rol nuevo: es una marca encima del rol.** Tu cuenta de pruebas
+sigue siendo `socio` y conserva todos sus poderes —dar de alta clientes, importar
+el catálogo, borrar, repartir equipo— pero sólo dentro de su mitad. Con un sexto
+rol no habrías podido probar nada de eso.
+
+```bash
+# 1. Las dos migraciones de la partición.
+npx supabase db push
+
+# 2. Los tipos, en DOS pasos —el redireccionamiento directo trunca el archivo
+#    si el comando falla a media escritura.
+npx supabase gen types typescript --linked > /tmp/database.ts && mv /tmp/database.ts src/types/database.ts
+
+# 3. Comparar con lo que dice el repositorio. Si sale distinto, MANDA LO GENERADO.
+git diff --stat src/types/database.ts
+```
+
+**Son dos archivos y van separados a propósito**, por lo mismo que en `C00`:
+
+| Migración | Qué hace |
+|---|---|
+| `20260825120000_particion_de_pruebas.sql` | Las columnas, las funciones, los candados y las 41 políticas |
+| `20260825120100_storage_particion_de_pruebas.sql` | Las cuatro políticas de los buckets `documentos` y `evidencias` |
+
+**2. Marcar tu cuenta de pruebas.** *SQL Editor* de Supabase, con **el correo de
+la cuenta que vas a usar para probar** — no la que va a usar la firma:
+
+```sql
+update usuarios set es_dev = true where correo = 'tu-cuenta-de-pruebas@…';
+select correo, rol, es_dev from usuarios order by creado_en;
+```
+
+⚠️ **No va dentro de la migración a propósito**, igual que ascender al primer
+socio (`A04`): decidir qué cuenta vive del lado de pruebas es tuyo, y un `update`
+de una línea hecho por ti no tiene la ventana que tendría una regla automática.
+
+**Entre el paso 1 y el paso 2 la app se ve vacía para todo el mundo.** No está
+rota: la demostración ya está del otro lado y todavía no hay nadie que pueda
+verla. Son treinta segundos.
+
+**3. Comprobar que quedó.** Entra con la cuenta de pruebas: arriba a la derecha
+tiene que aparecer un distintivo **DEV · datos de prueba**, y la cartera de
+demostración completa. Entra con la cuenta de la firma: ese distintivo **no**
+aparece y la cartera está limpia.
+
+### Lo que hay que rehacer después, y sólo una vez
+
+| Qué | Por qué |
+|---|---|
+| **Subir otra vez el catálogo de normas** (`B03`) | El catálogo cargado se marcó como parte de la demostración. Se hizo así para que la cartera de prueba se quedara coherente: sus proyectos siguen viendo las normas de su alcance. El `.md` es tuyo y está fuera del repositorio, así que son diez minutos |
+| **Volver a guardar las plantillas** de tareas y de listas de verificación (`B04`) | Viven en la fila de configuración de la firma, que es una sola, y se separaron por partición dentro de ella |
+
+### Detalles que conviene tener escritos
+
+- **Los folios de auditoría se numeran por separado.** La partición de pruebas usa
+  `DEMO-2026-001`; la real, `AUD-2026-001`. Las auditorías de la demostración se
+  renumeraron a `DEMO-` al aplicar la migración, **para que la primera auditoría
+  real de la firma sea la 001 y no herede el hueco** — un folio que arranca en el
+  dos es lo primero que pregunta un organismo certificador.
+- **Lo que NO se parte:** la lista de cuentas de la firma, los datos de la firma y
+  los módulos encendidos. Lo que sí, además de la cartera entera: el catálogo de
+  normas, la bitácora y las dos plantillas.
+- **Una cuenta de pruebas no puede quitarse su propia marca**, ni ponérsela a
+  nadie. Eso lo hace un socio del lado real, y es lo que convierte la partición en
+  un candado en vez de una cortesía.
+- ⚠️ **La llave de servicio se salta la partición**, igual que se salta el
+  aislamiento entre clientes. El cron y las rutas de API ven las dos mitades. Es
+  el mismo reparto de siempre y no cambia con esto.
+
+**Las dos migraciones se probaron enteras antes de dártelas** (25 ago 2026), en un
+Postgres 17 desechable con las diez anteriores aplicadas en orden **y con datos
+sembrados antes** —que es el camino real, no una base vacía—. Pasaron **76
+comprobaciones de comportamiento**: que la cartera vieja quedara del lado de
+pruebas y las cláusulas siguieran a su norma; que la partición la selle la base
+aunque el navegador mande otra cosa; que ninguna de las dos mitades vea a la otra
+en las treinta y tantas tablas del dominio, en Storage y **en la bitácora**, que
+es donde más dolía porque guarda la fila entera; que el cliente pueda subir su
+propio `iso_9001` con el de pruebas ya puesto; que la cuenta de pruebas no se
+quite su marca; que la primera auditoría real sea `AUD-2026-001`; y **catorce
+comprobaciones de regresión** de que no se aflojó nada de lo de antes — el papel
+`lectura` sigue sin escribir, un cliente con documentos sigue sin borrarse, y un
+hallazgo sigue sin poder borrarse ni con la llave de servicio.
+
+---
+
 # FASE 01 · Cartera
 
-### `B00b` — Aplicar la migración de tareas y depuración · **Bloquea: B5 y B6**
+### `B00b` — Aplicar la migración de tareas y depuración · **Bloquea: B5 y B6** ✅ **HECHA** 
 
 La segunda migración de la fase (`20260821220000_tareas_y_depuracion.sql`): crea
 `tareas_etapa` y abre el borrado de organizaciones y proyectos para el socio.
@@ -274,40 +385,21 @@ Qué crea: `sitios`, `contactos`, `proyectos`, `proyecto_normas`,
 `proyecto_sitios`, `bitacora_proyecto`, `normas` y `norma_clausulas` — estas dos
 últimas **vacías**, que se llenan subiendo tu `.md` (ver `C01`).
 
-### `B01` — Cargar tu cartera real · **Bloquea: usar la app de verdad**
+### `B01` — Cargar tu cartera real · → **movida a [`11_TAREAS_DEL_CLIENTE.md`](11_TAREAS_DEL_CLIENTE.md) · Pasos 1 a 3** (25 ago 2026)
 
-Las organizaciones, sus plantas y sus contactos. Si hoy están en un Excel, se
-pueden importar; si están en la cabeza de los consultores, hay que sentarse a
-capturarlas.
+Las organizaciones, sus plantas, sus contactos y sus proyectos. Es captura dentro
+de la app, no un panel ni una llave, así que vive con el resto de lo que se captura
+— y allá está con la navegación pantalla por pantalla.
 
-**Empieza por los cinco clientes más activos.** No por los cincuenta históricos.
+### `B04` — Definir la plantilla de tareas · → **movida a [`11_TAREAS_DEL_CLIENTE.md`](11_TAREAS_DEL_CLIENTE.md) · Paso 7** ✅ **HECHA**
 
-### `B04` — Definir la plantilla de tareas · **Bloquea: nada, pero ahorra horas**
+### `B03` — Subir el catálogo de normas · → **movida a [`11_TAREAS_DEL_CLIENTE.md`](11_TAREAS_DEL_CLIENTE.md) · Paso 4** ✅ **HECHA**
 
-La metodología de Summit no se re-teclea en cada cliente. **La plantilla se
-define con el ejemplo**:
+⚠️ **Y hay que rehacerla después de aplicar `A10`.** El catálogo que está cargado
+hoy se marca como parte de la demostración y pasa al lado de pruebas, así que la
+partición del cliente arranca con `normas` vacía. Son diez minutos: el archivo
+`.md` es de la firma y vive fuera del repositorio. El porqué, en `A10`.
 
-1. Abre un proyecto y arma sus tareas etapa por etapa, como deberían ser.
-2. Pulsa **Guardar como plantilla** (sólo tú, como socio). Queda guardada para
-   ese **tipo de proyecto** — implementación, auditoría, capacitación…
-3. En el siguiente proyecto del mismo tipo aparece **Usar la plantilla**, y
-   entran todas de golpe. Después se ajustan: ningún cliente es igual a la
-   plantilla.
-
-⚠️ Guardar la plantilla **sustituye** la que hubiera de ese tipo. No borra ni
-toca las tareas de ningún proyecto ya creado.
-
----
-
-### `B03` — Subir el catálogo de normas · **Bloquea: el alcance de los proyectos**
-
-Sin catálogo no se puede decir qué norma cubre un contrato, y sin eso no hay
-matriz de requisitos [Fase 02] ni listas de verificación [Fase 03].
-
-Se escribe en un archivo `.md` **tuyo, que no va al repositorio**, y se sube en
-`/sistemas` → *Elegir archivo*. Ahí mismo puedes descargar la plantilla.
-
-```md
 # ISO 9001:2015 — Sistemas de gestión de la calidad
 
 ## 1 Objeto y campo de aplicación [no auditable]
@@ -332,35 +424,13 @@ El resumen de esta cláusula.
 
 ---
 
-### `B02` — Decidir quién ve qué · **Bloquea: el aislamiento entre clientes**
-
-Asignar cada consultor a sus organizaciones. Se hace **dentro del expediente del
-cliente**: `/cartera` → la organización → pestaña **Equipo** → *Asignar*.
-(`/admin?tab=usuarios` llega en la Fase 06 y enseñará lo mismo al revés, por
-persona.)
-
-Con qué papel:
-
-| Papel | Qué puede |
-|---|---|
-| **Líder** | Lleva el cliente. Ve y modifica todo su expediente |
-| **Apoyo** | Trabaja en el expediente: captura, edita, levanta hallazgos |
-| **Auditor** | Igual, pensado para quien audita ese cliente |
-| **Sólo lectura** | **Ve el expediente y no puede modificar nada** |
-
-⚠️ **Esto no es burocracia: es lo que impide que un consultor vea los hallazgos de
-un cliente que no le toca.** Si asignas a todos a todo, desactivas la protección
-más importante del sistema.
-
-⚠️ **Tú, como socio, ves toda la cartera sin estar asignado a nada.** Por eso una
-organización recién creada aparece vacía de equipo y sólo tú la ves: hasta que
-asignes a alguien, para el resto de la firma no existe.
+### `B02` — Decidir quién ve qué · → **movida a [`11_TAREAS_DEL_CLIENTE.md`](11_TAREAS_DEL_CLIENTE.md) · Paso 6**
 
 ---
 
 # FASE 02 · Sistemas de gestión
 
-### `C00` — Aplicar las dos migraciones de la fase · **Bloquea: TODA la Fase 02**
+### `C00` — Aplicar las dos migraciones de la fase · **Bloquea: TODA la Fase 02** ✅ **HECHA** 
 
 ⚠️ **Van en este orden, y `B00b` tiene que estar aplicada antes.** La segunda
 amplía funciones que nacen en la migración de tareas.
@@ -408,35 +478,16 @@ esquema salieron **idénticos** a los del repositorio. Eso no sustituye a aplica
 —tu base tiene datos y la mía estaba vacía—, pero sí quiere decir que no vas a
 encontrarte un error de sintaxis a media aplicación.
 
-### `C01` — Validar el árbol de cláusulas · **Bloquea: las Fases 02, 03 y 05**
+### `C01` — Validar el árbol de cláusulas · → **movida a [`11_TAREAS_DEL_CLIENTE.md`](11_TAREAS_DEL_CLIENTE.md) · Paso 4**
 
-⚠️ **La tarea más importante de toda la lista, y la única que no se puede delegar
-a nadie fuera de la firma.**
+Es la misma tarea que `B03` vista de cerca: subir el archivo, corregirlo y volver
+a subirlo hasta que el resumen de cada cláusula diga lo que la firma quiere
+defender. Sigue siendo **la tarea más importante de toda la lista** y la única que
+no se puede delegar fuera de la firma.
 
-El sistema trae cargada la estructura de cláusulas de las normas y el resumen de
-cada una. **Ese resumen es el criterio técnico de Summit-Sphere**, y va a aparecer
-en cada lista de verificación, en cada hallazgo y en cada informe que la firma
-entregue.
+### `C02` — Confirmar los estados de la matriz · → **movida a [`11_TAREAS_DEL_CLIENTE.md`](11_TAREAS_DEL_CLIENTE.md) · «Lo que tienes que decidirme»**
 
-Tienes que leerlo y corregirlo. No puede salir de un modelo de lenguaje sin que un
-auditor líder lo revise, porque el día que un cliente discuta un hallazgo, la
-defensa es ese texto.
-
-Empieza por **ISO 9001 y 45001**, que son las que más implementas. Las otras cinco
-pueden esperar a que entre el primer cliente que las pida.
-
-⚠️ **No pegues el texto de la norma.** Las normas ISO son obra protegida y las
-tienes bajo licencia. Lo que va en el sistema es **tu resumen**, con tus palabras.
-El PDF licenciado del cliente se sube a su carpeta privada.
-
-### `C02` — Confirmar los estados de la matriz · **Bloquea: nada, pero cámbialo antes de capturar**
-
-La matriz de requisitos propone cinco estados: *no iniciado*, *documentado*,
-*implementado*, *evidenciado*, *no aplica*. Si en la firma les dicen de otra
-manera, dilo **antes** de que se capturen mil requisitos — después es una
-migración.
-
-### `C03` — Verificar la carpeta de documentos · **Bloquea: subir documentos**
+### `C03` — Verificar la carpeta de documentos · **Bloquea: subir documentos** ✅ **HECHA** 
 
 **La crea la migración de `C00`**, ya privada. Lo tuyo es comprobarlo: Supabase →
 Storage → `documentos` → tiene que decir **Private**.
@@ -447,7 +498,7 @@ circuló, cerrarlo después no sirve de nada. La migración lo vuelve a poner en
 privado por si alguien lo creó a mano con la casilla equivocada, pero míralo. Paso
 a paso en [`../guias/02_SUPABASE.md`](../guias/02_SUPABASE.md).
 
-### `C04` — Verificar la carpeta de evidencias · **Bloquea: adjuntar evidencia**
+### `C04` — Verificar la carpeta de evidencias · **Bloquea: adjuntar evidencia** ✅ **HECHA** 
 
 Lo mismo con el bucket `evidencias`, que también crea la migración de `C00`.
 
@@ -465,7 +516,7 @@ pasada estando sin señal, no. La app lo dice en pantalla.
 
 # FASE 03 · Auditorías
 
-### `D00` — Aplicar la migración de la fase · **Bloquea: TODA la Fase 03**
+### `D00` — Aplicar la migración de la fase · **Bloquea: TODA la Fase 03** ✅ **HECHA** 
 
 ⚠️ **Va después de `C00`.** Amplía `puedo_borrar_org()`, `puedo_borrar_proyecto()`
 y `heredar_org_del_adjunto()`, y añade la columna `hallazgo_id` a `adjuntos` —
@@ -520,7 +571,7 @@ comprobaciones de comportamiento**. Las que más importan:
 Eso no sustituye a aplicarla —tu base tiene datos y la mía estaba vacía—, pero sí
 quiere decir que no vas a encontrarte un error de sintaxis a media aplicación.
 
-### `D04` — Aplicar la migración de la evidencia de campo · **Bloquea: el recorrido en planta**
+### `D04` — Aplicar la migración de la evidencia de campo · **Bloquea: el recorrido en planta** ✅ **HECHA** 
 
 ⚠️ **Va después de `D00`.** Le pone una clave foránea a `auditoria_items`, que
 nace ahí.
@@ -566,7 +617,7 @@ de la firma, en una página.
 Va a vivir dentro de la app como ayuda contextual cuando un auditor clasifique un
 hallazgo. Es lo que hace que dos auditores distintos clasifiquen igual.
 
-### `D03` — Crear la carpeta de evidencias · → **movida a `C04`** (22 ago 2026)
+### `D03` — Crear la carpeta de evidencias · → **movida a `C04`** (22 ago 2026) ✅ **HECHA** 
 
 El bucket `evidencias` se crea con la migración de la Fase 02: los adjuntos se
 adelantaron a F02·B2b. Ver `C04`.
