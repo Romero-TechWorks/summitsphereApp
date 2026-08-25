@@ -126,23 +126,57 @@ CREATE POLICY "hallazgos_update" ON hallazgos FOR UPDATE TO authenticated
 -- DELETE: deliberadamente ausente. Un hallazgo se anula, no se borra.
 ```
 
-### Dónde SÍ hay DELETE, y con qué candado  [Fases 01 y 02]
+### Dónde SÍ hay DELETE, y con qué candado  [Fases 01, 02 y 03]
 
 La regla 13 no es «nada se borra nunca»: es «no se borra la evidencia de
 auditoría». La línea vive **en una función por tabla**, para que ampliarla sea
 tocar un sitio:
 
-| Función | Qué exige hoy | Ampliar en |
+| Función | Qué exige | Ampliada en |
 |---|---|---|
-| `puedo_borrar_org()` | socio **y** sin `documentos` | F03: sin `auditorias` ni `hallazgos` |
-| `puedo_borrar_proyecto()` | socio **y** sin `documentos` | F03: sin `auditorias` |
+| `puedo_borrar_org()` | socio **y** sin `documentos`, `auditorias` ni `hallazgos` | F03 — completa |
+| `puedo_borrar_proyecto()` | socio **y** sin `documentos` ni `auditorias` | F03 — completa |
 | `puedo_borrar_documento()` | editor **y** sin ninguna versión `aprobado` u `obsoleto` | — |
 
-Y tres tablas con DELETE abierto al editor porque **no son evidencia**:
+Y las tablas con DELETE abierto al editor porque **no son evidencia**:
 `tareas_etapa` (trabajo interno de método), `procesos` (el mapa cambia con los
-años) y `riesgos` (un taller de análisis produce filas mal capturadas). En
-cambio, `adjuntos` sólo lo borra un **socio**, y `documento_versiones` sólo si
-está en `borrador`.
+años), `riesgos` (un taller de análisis produce filas mal capturadas) y el
+**alcance, el equipo y la agenda** de una auditoría, que son planeación y se
+reordenan hasta el día antes. En cambio, `adjuntos` sólo lo borra un **socio**, y
+`documento_versiones` sólo si está en `borrador`.
+
+`auditoria_items` lleva su condición **en la propia política**, sin función: el
+auditor «añade, quita y reordena antes de entrar», pero un ítem que ya produjo un
+hallazgo es la cita de ese hallazgo y se queda.
+
+### Lo que no se borra NUNCA, y por qué no bastaba con no poner la política  [F03]
+
+`hallazgos`, `auditorias` y `hallazgos_historial` **no tienen política de
+DELETE**. Eso detiene a `authenticated`… y a nadie más.
+
+⚠️ **`service_role` se salta el RLS.** Ausencia de política no es ausencia de
+permiso: cualquier API route con la llave de servicio podría borrar un hallazgo.
+Es el mismo problema que ya tenía `audit_logs`, y se cierra con los mismos **dos**
+candados, al final de la migración de la fase:
+
+1. **Revocar el permiso.** `revoke delete on hallazgos, auditorias` y
+   `revoke insert, update, delete on hallazgos_historial` a `anon`,
+   `authenticated` **y `service_role`**. El grant es la puerta; sin puerta no hay
+   intento.
+2. **Un trigger que grita.** `impedir_borrado_de_evidencia()` sobre `hallazgos` y
+   `auditorias`, e `impedir_cambios_historial()` sobre el historial. Porque el
+   candado 1 lo deshace sin querer el próximo `grant all on all tables in schema
+   public` —que es justo lo que hace `20260821041500_permisos_de_esquema.sql`— y
+   entonces el borrado volvería a ser posible sin que nadie lo note. El trigger
+   corre para todos y no depende de ningún grant.
+
+⚠️ Revocar el INSERT del historial **no rompe nada**: lo escribe
+`registrar_historial_hallazgo()`, que es `SECURITY DEFINER` y corre como dueño de
+la tabla. Está comprobado (prueba 42 de `D00`).
+
+Lo que sí se puede hacer con un hallazgo: **anularlo con motivo** —el CHECK exige
+que `motivo_anulacion` no venga vacío— o **reclasificarlo**, y las dos cosas dejan
+su renglón en `hallazgos_historial`.
 
 ⚠️ **Leer y escribir usan funciones distintas a propósito.** El `SELECT` va por
 `mis_organizaciones()` —el papel no cambia lo que se ve— y el `INSERT`/`UPDATE`
@@ -161,12 +195,23 @@ violar ninguna política. Hay cuatro de estos triggers:
 | `heredar_org_del_proyecto()` | alcance, bitácora, `tareas_etapa`, `requisitos` |
 | `heredar_org_del_documento()` | `documento_versiones`, `documento_clausulas` |
 | `heredar_org_del_indicador()` | `mediciones` |
-| `heredar_org_del_adjunto()` | `adjuntos`, **a partir del campo dominante** — y su `coalesce` lleva el mismo orden que `CAMPOS_DOMINANTES` en el cliente |
+| `heredar_org_del_adjunto()` | `adjuntos`, **a partir del campo dominante** — y su `coalesce` lleva el mismo orden que `CAMPOS_DOMINANTES` en el cliente. Desde F03 la rama de `hallazgo_id` va entre la de la tarea y la del documento |
+| `heredar_org_de_la_auditoria()` | alcance, equipo, agenda, `auditoria_items` y `hallazgos`  [F03] |
+| `heredar_org_del_hallazgo()` | `hallazgos_historial`  [F03] |
 
-Y dos guardas del mismo tipo, que comprueban que una fila referenciada sea **del
-mismo cliente**: `validar_sitio_del_proyecto()` y `validar_contacto_de_la_org()`
-(el dueño de un proceso). Ninguna de las dos la puede hacer una clave foránea ni
-un CHECK, porque tienen que mirar otra tabla.
+Y cuatro guardas del mismo tipo, que comprueban que una fila referenciada sea
+**del mismo cliente**: `validar_sitio_del_proyecto()`,
+`validar_contacto_de_la_org()` (el dueño de un proceso), y desde la Fase 03
+`validar_referencia_de_la_org()` —el sitio, el proceso o el contacto que toca una
+fila de auditoría— y `validar_contexto_de_la_auditoria()` —su proyecto y su
+programa—. Ninguna la puede hacer una clave foránea ni un CHECK, porque tienen que
+mirar otra tabla.
+
+⚠️ **El orden de los triggers `BEFORE` importa y Postgres los dispara en orden
+alfabético de nombre.** `auditoria_sitios_org` corre antes que
+`auditoria_sitios_valida`, que es lo que hace falta: primero se hereda la `org_id`
+y después se valida contra ella. Renombrar uno rompería la guarda **en silencio**,
+así que la dependencia va escrita en la migración.
 
 ⚠️ **`USING` y `WITH CHECK` en el UPDATE, las dos.** `USING` decide qué filas
 puedes tocar; `WITH CHECK` decide en qué se pueden convertir. Sólo con `USING`,

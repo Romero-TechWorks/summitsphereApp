@@ -97,11 +97,13 @@ src/
   lib/
     queries/            TODA consulta a Supabase vive aquí
     supabase/           client.ts (navegador) · server.ts (servidor)
-    offline/            idb · cola · mutate · sync · persistencia · adjuntos · dictados
+    offline/            idb · cola · mutate · sync · persistencia · adjuntos
+                        ⚠️ sin `dictados`: una nota de voz es un adjunto más [F03·B3]
     query/              keys.ts · QueryProvider.tsx
     normas/             importador del catálogo de normas
     documentos/         zip · docx · pdf · markdown · convertir   [F02·B2]
     sistemas/           catálogos de la Fase 02 (documentos, requisitos, riesgos…)
+    auditorias/         catálogos de la Fase 03 (tipos, estados, veredictos, papeles)
     asistente/          proveedor · esquemas · instrucciones · herramientas
     plantillas/         catálogo · datos · render
     utils/              helpers puros
@@ -343,12 +345,32 @@ En la base viven número, título, resumen propio y relaciones. **El texto ínte
 no.** El PDF licenciado del cliente entra a su bucket privado. Ver CLAUDE.md
 regla 12.
 
-### §8.7 · Hallazgos
+### §8.7 · Hallazgos y folios  [F03]
 
 Numeración estable y calculable **sin red** (`AUD-2026-014 / H-03`): se compone
 del folio de la auditoría, que ya existe en la caché, más un consecutivo local.
 Un hallazgo no se borra: se anula con motivo o se reclasifica, y queda su
 historial.
+
+Las **dos mitades del folio no funcionan igual**, y la diferencia es deliberada:
+
+| | Quién lo pone | Único | Por qué |
+|---|---|---|---|
+| `auditorias.folio` | La base (`asignar_folio_auditoria()`) | **Sí** | Es el consecutivo de la FIRMA. Un consultor sólo ve las auditorías de sus clientes: contarlas en la caché daría un número ya usado en un expediente que no puede mirar. La función es `SECURITY DEFINER` y lleva un `pg_advisory_xact_lock` por año |
+| `hallazgos.folio` | El teléfono, y la base renumera si choca | **No** | Se levanta en modo avión, donde no hay a quién preguntar |
+
+⚠️ **No hay `unique (auditoria_id, consecutivo)`, y ésa es la decisión que salva
+el criterio de cierre de la fase.** Dos auditores en la misma planta sin señal
+levantan los dos un `H-03`. Con índice único, el segundo en sincronizar recibiría
+un rechazo media hora después y sin nadie mirando. `sellar_folio_hallazgo()`
+**renumera al llegar**: el auditor vio un H-03 en el campo y en el informe sale un
+H-07. Un número corrido es un detalle de edición; un hallazgo perdido no se
+recupera.
+
+⚠️ **Y la fecha de un hallazgo la manda el teléfono.** `detectado_en` y
+`auditoria_items.evaluado_en` son el reloj del auditor, no `now()` del servidor:
+se evaluó a las 10:15 en la planta y la fila llegó a las 14:00. **El QUIÉN sí lo
+sella siempre la base.** Ver docs/04 · Fase 03 para la regla completa.
 
 ### §8.8 · Adjuntos — cinco reglas  [F02·B2b]
 
@@ -484,13 +506,42 @@ Los archivos, y qué hace cada uno:
 Todas en `src/lib/query/keys.ts`. Una clave inventada en un componente es un dato
 que no se invalida cuando debe.
 
-### §8.11 · Precarga de auditoría
+### §8.11 · Precarga de auditoría  [F03·B3]
 
-⚠️ Regla propia de este proyecto. Al abrir una auditoría **con señal**, se
-precargan en la caché: la auditoría, su agenda, sus ítems, las cláusulas de su
-alcance, los hallazgos previos del cliente y los documentos aprobados relevantes.
-Un aviso explícito confirma "lista para trabajar sin señal". Sin esto, el auditor
-llega a planta con una pantalla vacía y la Fase 03 no sirve.
+⚠️ Regla propia de este proyecto, y la que decide si la Fase 03 sirve. La caché
+sólo tiene **lo que alguien ya abrió**: si el auditor entra a la planta sin haber
+tocado la pestaña del recorrido, esa clave no está y en modo avión la pantalla
+sale vacía — no es que se hayan perdido los datos, es que nunca se bajaron. Y para
+cuando se nota, ya está en un sótano.
+
+Por eso se baja **todo de golpe y a propósito**, con un botón que se pulsa en el
+estacionamiento. Vive en `src/lib/auditorias/precarga.ts` y son diez piezas: el
+plan, la lista de verificación, la agenda, el alcance, el árbol de cláusulas, el
+equipo, los sitios y contactos del cliente, el mapa de procesos, sus documentos y
+**los hallazgos ya levantados**.
+Un aviso explícito confirma **«lista para trabajar sin señal»**.
+
+Cuatro cosas que no son obvias:
+
+- **El aviso sale de la CACHÉ, no de un `useState`** (`faltaPorPrecargar()`). Con
+  un booleano en el componente, salir de la pestaña y volver diría «descarga antes
+  de entrar» con todo bajado, y eso hace que alguien se dé la vuelta en la puerta.
+  Al revés también: si el navegador vació la caché entre visitas, se dice antes de
+  bajar al sótano.
+- **`ensureQueryData`, no `prefetchQuery`.** El primero propaga el error, así que
+  la pantalla puede decir *qué* falló. `prefetchQuery` se lo traga, y una precarga
+  que dice «listo» habiéndose dejado los ítems fuera es peor que no tenerla.
+- **Secuencial, y un fallo no aborta el resto.** Nueve consultas simultáneas por
+  media barra de señal se estorban; y si los documentos no bajan, la lista sí
+  tiene que bajar.
+- **Los desplegables cuentan como datos** (sitios, contactos, procesos,
+  cláusulas). Regla 3 del offline: sin ellos el guardado muere en la validación
+  antes de encolarse.
+
+⚠️ Los **hallazgos ya levantados** entraron con F03·B4, y son la pieza que más
+falta hace en el piso por partida doble: sin ellos el auditor no puede comprobar
+si lo de ayer sigue abierto, y el recorrido **no puede calcular el consecutivo del
+siguiente hallazgo** — que es lo único que hace que el folio salga sin red.
 
 ### §8.12 · Reglas del offline
 

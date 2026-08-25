@@ -45,7 +45,29 @@ de dominio cuelga de una `org_id`. Ver §Reglas críticas, regla 1.
   sin justificación, tarea con evidencia obligatoria sin adjunto, organización
   con documentos). Los tipos generados desde ese esquema salieron **idénticos**
   a `src/types/database.ts`.
-- ⚠️ **HAY TRES MIGRACIONES ESCRITAS Y SIN APLICAR, Y VAN EN ESTE ORDEN:**
+- **De la Fase 03 (24 ago 2026): el esquema entero y `B1`–`B4`.** Sólo falta
+  `B5`, el informe, que espera al formato de la firma (`D01`). `/auditorias` deja de
+  ser una pantalla pendiente y se vuelve el dominio, con dos pestañas —Auditorías
+  y Programa anual— y su ruta de detalle `/auditorias/[id]`, que dentro lleva
+  Plan · Alcance · Lista de verificación · Equipo · Agenda · Recorrido ·
+  **Hallazgos**, y el dominio tiene su tablero del lunes. `npm run lint` y
+  `npm run build` pasan limpios. **Lo que sí está probado es la migración**: se aplicó sobre un
+  Postgres 17 desechable con las siete anteriores en orden y pasó **42
+  comprobaciones de comportamiento** (folio de la firma que cruza organizaciones,
+  renumeración de un hallazgo en colisión, la lista de verificación sólo de hojas
+  e idempotente, hallazgo sin cláusula o con evidencia en blanco rechazado, el
+  historial escrito por la base, y que **ni el socio ni `service_role`** borren un
+  hallazgo o reescriban el historial). Los tipos se regeneraron desde ese esquema.
+- ⚠️ **HAY UNA MIGRACIÓN ESCRITA Y SIN APLICAR:**
+  `20260824180000_evidencia_de_campo.sql` — tarea `D04`, la de F03·B3. Le añade
+  `item_id` a `adjuntos` —la foto y la nota dictada de un punto de la lista— y
+  **cierra un agujero**: un `on delete cascade` se salta el RLS, así que quitar un
+  punto de la lista se habría llevado por delante fotos que sólo un socio puede
+  borrar. Ahora un punto con evidencia no se quita. Probada en Docker con las
+  nueve en orden: **53 comprobaciones**, las 42 de `D00` más 11 nuevas.
+  `src/types/database.ts` está regenerado desde ese esquema.
+- ✅ **LAS OCHO ANTERIORES ESTÁN APLICADAS** (24 ago 2026, por el dueño). Las
+  cuatro últimas fueron, en orden:
   1. `20260821220000_tareas_y_depuracion.sql` — tarea `B00b`. Crea `tareas_etapa`
      y abre el DELETE de organizaciones y proyectos al socio.
   2. `20260822120000_sistemas_de_gestion.sql` — tarea `C00`. **Todo** el esquema
@@ -54,20 +76,137 @@ de dominio cuelga de una `org_id`. Ver §Reglas críticas, regla 1.
      buckets `documentos` y `evidencias` y sus políticas. **Aparte a propósito**:
      toca `storage.objects`, que no es un esquema nuestro, y si falla por permisos
      no puede llevarse por delante el esquema del dominio.
+  4. `20260824120000_auditorias_y_hallazgos.sql` — tarea `D00`. **Todo** el
+     esquema de la Fase 03, la RPC `generar_lista_verificacion()`, y los dos
+     candados de la regla 13. Añade `hallazgo_id` a `adjuntos` y **termina** de
+     ampliar `puedo_borrar_org()` / `puedo_borrar_proyecto()`.
 
-  `src/types/database.ts` trae los tipos de las tres **escritos a mano** con la
-  forma del generador. Al aplicarlas se regenera y **manda lo generado**.
+  `src/types/database.ts` sale de ahí. Se regenera con
+  `npx supabase gen types typescript --linked` **en el mismo commit** que toque
+  el esquema.
+- **`C01` y `B03` están hechas** (24 ago 2026): el árbol de cláusulas validado y
+  el catálogo de normas subido. Es lo que destraba F03·B2 — sin cláusulas,
+  `generar_lista_verificacion()` devuelve cero.
 - **Quién cerró una tarea y cuándo lo escribe la base**, no el navegador
   (`sellar_tarea_hecha()`) — igual que el renglón de cambio de etapa. Una fecha
   que viaja desde el cliente es una fecha que se puede escribir a mano; está
   comprobado que mandar `hecha_por` de otro se sobrescribe.
 - **Se puede borrar, y sólo el socio**: organizaciones y proyectos, con
-  `puedo_borrar_org()` / `puedo_borrar_proyecto()`. **La ampliación de la Fase 02
-  ya está escrita**: una organización o un proyecto **con documentos ya no se
-  borra**. ⚠️ **Quedan las de la Fase 03** —auditorías y hallazgos—, y son dos
-  líneas comentadas dentro de esas mismas funciones. Se les sumó una tercera,
-  `puedo_borrar_documento()`: un documento con alguna versión aprobada u obsoleta
-  es evidencia y no se borra; un borrador capturado por error, sí.
+  `puedo_borrar_org()` / `puedo_borrar_proyecto()`. **Las dos están COMPLETAS
+  desde la Fase 03**: una organización con documentos, auditorías o hallazgos ya
+  no se borra, y un proyecto con documentos o auditorías tampoco. No quedan
+  líneas comentadas dentro. La tercera es `puedo_borrar_documento()`: un
+  documento con alguna versión aprobada u obsoleta es evidencia y no se borra; un
+  borrador capturado por error, sí.
+- ⚠️ **`hallazgos`, `auditorias` y `hallazgos_historial` no se borran NUNCA, y no
+  bastaba con no poner la política.** `service_role` **se salta el RLS**: sin
+  política de DELETE se detiene a `authenticated` y a nadie más. Van los mismos
+  dos candados que `audit_logs` —**revocar el permiso** a los tres roles y un
+  **trigger que grita** (`impedir_borrado_de_evidencia()`,
+  `impedir_cambios_historial()`)—, porque el primero lo deshace sin querer el
+  próximo `grant all on all tables`, que es justo lo que hace la migración de
+  permisos. §8.2 · docs/08.
+- ⚠️ **En la Fase 03 la regla de las fechas CAMBIA a medias, y no la deshagas.**
+  El **QUIÉN** lo sella siempre la base (`auth.uid()`). El **CUÁNDO** depende de
+  dónde pasó la cosa: una acción de **campo** —`auditoria_items.evaluado_en`,
+  `hallazgos.detectado_en`— la manda **el reloj del teléfono**, porque el auditor
+  evaluó a las 10:15 en modo avión y la fila llega a las 14:00: un `now()` del
+  servidor pondría en el informe la hora en que volvió el semáforo, no la hora en
+  que se vio el extintor descargado. Una acción de **oficina** —aprobar el
+  programa, cerrar un hallazgo o una auditoría— la sella el servidor. Y no se
+  pierde nada: `creado_en` y `actualizado_en` siguen siendo suyos, así que un
+  reloj mal puesto se nota. docs/04 · Fase 03.
+- **El folio de una auditoría lo asigna la BASE; el de un hallazgo lo compone el
+  teléfono y la base lo RENUMERA si choca.** `AUD-2026-014` es el consecutivo de
+  la firma y `asignar_folio_auditoria()` lo calcula fuera del RLS —un consultor no
+  ve las auditorías de los demás para poder contarlas—, así que una auditoría
+  encolada sin señal **aparece sin folio hasta sincronizar** y la pantalla lo
+  dice. En cambio **`hallazgos` NO tiene `unique (auditoria_id, consecutivo)`, a
+  propósito**: dos auditores en la misma planta sin señal levantan los dos un
+  `H-03`, y un índice único rechazaría al segundo media hora después y sin nadie
+  mirando. `sellar_folio_hallazgo()` renumera al llegar — un número corrido se
+  edita, un hallazgo perdido no se recupera. §8.7.
+- **`/auditorias` NO pide elegir cliente**, al revés que `/sistemas`. Allá cinco
+  de seis pestañas son el expediente de *una* organización; aquí la semana de un
+  auditor cruza la cartera —el lunes abre «qué tengo esta semana»—. Se descarga la
+  lista visible una vez y el filtro por cliente, estado y texto va **en memoria**.
+  La ruta de detalle sí existe: `/auditorias/[id]`, con Plan · Alcance · Equipo ·
+  Agenda.
+- **De las normas del ALCANCE sale la lista de verificación**, no del proyecto:
+  `generar_lista_verificacion()` toma sólo las cláusulas **hoja** auditables y
+  activas —poner también el capítulo «8» y sus hijas duplicaría el recorrido—, es
+  **idempotente** y **no pisa lo ya evaluado**. Es `SECURITY INVOKER` a propósito:
+  el INSERT pasa por la política, así que el papel `lectura` no genera nada.
+- **Un hallazgo NO se borra, y eso empieza en el código** [F03·B4].
+  `src/lib/queries/hallazgos.ts` **no tiene función de borrado** y la ficha no
+  tiene botón: se **anula con motivo** —lo exige el CHECK— o se reclasifica, y las
+  dos dejan su renglón en `hallazgos_historial`. Ofrecer un botón que termina en
+  42501 es peor que no ofrecerlo. Regla 13.
+- **El consecutivo de un hallazgo se calcula sobre la CACHÉ**
+  (`siguienteConsecutivo`), no preguntándole al servidor: en la planta no hay a
+  quién preguntar. Y por eso **los hallazgos ya levantados van en la precarga** —
+  sin ellos esa cuenta no se puede hacer y el folio no sale sin red.
+- **La ayuda de clasificación se pinta al elegir el tipo**, no en un manual: es lo
+  que hace que dos auditores clasifiquen igual. ⚠️ `CRITERIO_HALLAZGO` en
+  `src/lib/auditorias/catalogos.ts` es texto **de arranque**; el criterio real de
+  la firma llega con `D02` y **se reemplaza ahí**.
+- **El tablero del lunes NO tiene vista en la base**, igual que los widgets del
+  tablero: agrupa y calcula la antigüedad en memoria sobre la lista ya bajada. Una
+  vista sería otra clave que puede faltar en la caché, y esa pantalla se abre con
+  media barra de señal. docs/04 lo deja anotado como aplazado.
+- ⚠️ **Un embebido de PostgREST tiene que ser UN literal, no `'a' + 'b'`.** La
+  concatenación con `+` se ensancha a `string`, y con un `string` cualquiera
+  supabase-js ya no infiere la forma de la fila: devuelve `GenericStringError` y el
+  `as` deja de compilar. Un `${}` sobre constantes literales sí lo conserva.
+- **La precarga de una auditoría es lo que decide si la Fase 03 sirve** [F03·B3].
+  La caché sólo tiene lo que alguien ya abrió: sin pulsar «Descargar para trabajar
+  sin señal», en la planta la pantalla del recorrido sale **vacía** —no se
+  perdieron los datos, nunca se bajaron— y para cuando se nota el auditor ya está
+  en un sótano. Nueve piezas, en `src/lib/auditorias/precarga.ts`.
+  ⚠️ **El aviso «lista para trabajar sin señal» se calcula mirando la CACHÉ**
+  (`faltaPorPrecargar()`), no un `useState`: con un booleano en el componente,
+  salir de la pestaña y volver diría «descarga antes de entrar» con todo bajado, y
+  eso hace que alguien se dé la vuelta en la puerta. §8.11.
+- **El contador de pendientes del recorrido es PERMANENTE**, al revés que el de la
+  Navbar. Allá un indicador que siempre está se deja de mirar; aquí es la única
+  prueba de que las tres horas de trabajo siguen ahí, y el auditor lo mira cada
+  pocos minutos.
+- **Una nota de voz es un ADJUNTO, no un almacén propio** [F03·B3]. `docs/03` §2
+  anunciaba un `src/lib/offline/dictados.ts` y resultó ser una capa de más: un
+  dictado es justo lo que ya sabe hacer la cola de adjuntos, y darle almacén
+  propio obligaba a subir `VERSION_BD` de `idb.ts` otra vez — un número que, si se
+  olvida, **falla sólo en el teléfono del consultor** y nunca en desarrollo.
+  ⚠️ `MediaRecorder` **no existe fuera de contexto seguro**, igual que el service
+  worker y `crypto.randomUUID()`. Desde `http://192.168.x.x:3000` no hay
+  grabadora; la pantalla lo comprueba y lo dice.
+- ⚠️ **Un `on delete cascade` SE SALTA EL RLS.** Se pagó al añadir
+  `adjuntos.item_id`: la política de `adjuntos` sólo deja borrar evidencia a un
+  socio, pero quitar un punto de la lista lo hace cualquier editor — y el cascade
+  se habría llevado sus fotos en silencio, sin pasar por esa política y sin nadie
+  a quien preguntarle. La condición se puso en la política del punto: uno con
+  hallazgo **o con adjuntos** no se quita. Vale para toda FK nueva que apunte a
+  algo con política de borrado más estricta que su padre.
+- **Las columnas de campo dominante de `adjuntar()` salen de `CAMPOS_DOMINANTES`,
+  no escritas a mano.** Estaban a mano, y por eso `hallazgo_id` se quedó fuera al
+  añadirlo: la lista y el trigger se actualizaron y ese objeto no, así que la foto
+  de un hallazgo habría viajado sin su campo dominante y habría acabado colgada
+  del cliente entero.
+- **La plantilla de listas de verificación NO es una tabla** [F03·B2]: vive en
+  `config_firma.plantillas` bajo la llave `verificacion`, exactamente como la de
+  tareas vive bajo `tareas`. Es configuración de la firma —una tabla para esto
+  sería una tabla con una fila— y **se define con el ejemplo**: el auditor deja
+  bien la lista de un cliente y un socio la guarda para los siguientes.
+  ⚠️ Se guarda por **clave de norma** y por **giro normalizado** (`giro` es texto
+  libre en `organizaciones`, y sin normalizar la firma acaba con tres plantillas
+  que son la misma), con `general` de respaldo — y el respaldo **no se mezcla**
+  con el del giro. Y se guarda el **`numero`** de la cláusula, no su `id`: es lo
+  que un auditor reconoce y lo que hace legible el jsonb.
+  ⚠️ **El reparto que no hay que romper: la BASE decide QUÉ se audita y la
+  plantilla CÓMO se pregunta.** Al aplicarla, una cláusula que la plantilla
+  nombra y que **no está en el alcance se omite y se avisa** —meterla sería
+  auditar fuera de alcance—, y un punto **ya evaluado no se toca**, porque
+  reescribir la pregunta debajo de un «conforme» ya dado deja el veredicto
+  contestando algo que nadie preguntó.
 - **El catálogo de normas se SUBE, no se siembra.** `normas` y `norma_clausulas`
   nacen vacías y las llena un socio con un `.md` propio desde `/sistemas`
   (`src/lib/normas/importador.ts`). Es lo que mantiene el criterio técnico de la
@@ -375,7 +514,7 @@ tenía WiFi malo; aquí el auditor está en un sótano de una planta industrial.
    caché al abrir la auditoría con señal. Si esto no pasa, el auditor llega al
    piso con una pantalla vacía. §8.11.
 
-**Excepciones conscientes, y son cuatro:**
+**Excepciones conscientes, y son cinco:**
 
 1. **Los adjuntos**, sólo en su mitad binaria: la **fila** de `adjuntos` sí pasa
    por `offlineWrite` —y tiene que pasar, para conservar el orden—; lo que va por
@@ -390,8 +529,15 @@ tenía WiFi malo; aquí el auditor está en un sótano de una planta industrial.
    un auditor en un sótano. **Sólo esa mitad**: crear el documento, escribir una
    versión a mano, mandarla a revisión, aprobarla y vincular cláusulas pasan por
    la cola como todo lo demás.
+5. **Generar la lista de verificación** [F03·B2]: es una RPC —la cola sabe
+   reproducir `insert`/`update`/`delete` sobre una tabla, no una llamada a una
+   función—, escribe cientos de filas de golpe (una ISO 9001 son ~60 puntos), y
+   sobre todo **es lo que se hace en la oficina antes de salir**. El día que
+   haga falta sin señal, ya es tarde: la lista tenía que estar hecha.
+   **Sólo generar**: añadir un punto, editarlo, reordenarlo y quitarlo pasan por
+   la cola.
 
-En las cuatro, sin conexión la pantalla **lo dice y no deja empezar**.
+En las cinco, sin conexión la pantalla **lo dice y no deja empezar**.
 
 ---
 
@@ -484,7 +630,7 @@ src/
   app/(dashboard)/     → todo lo protegido por sesión
     cartera/           → organizaciones + proyectos + contactos
     sistemas/          → documentos + requisitos + procesos + riesgos + indicadores
-    auditorias/        → programa + auditorías + hallazgos
+    auditorias/        → programa + auditorías + hallazgos  [B1 ✅]
     cumplimiento/      → matriz NOM + vencimientos + dictámenes
     capacitacion/      → cursos + programa + sesiones + constancias
     acciones/          → planes de acción y su seguimiento
@@ -500,6 +646,7 @@ src/
   lib/normas/          → importador del catálogo de normas
   lib/documentos/      → zip · docx · pdf · markdown · convertir  [F02·B2]
   lib/sistemas/        → catálogos de la Fase 02
+  lib/auditorias/      → catálogos de la Fase 03  [F03·B1]
   lib/asistente/       → proveedor, esquemas Zod, instrucciones, herramientas
   lib/plantillas/      → informes y documentos imprimibles
   lib/utils/           → helpers puros

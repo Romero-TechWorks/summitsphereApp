@@ -5,9 +5,12 @@
  * hace a través de aquí, y así una escritura sin señal no se pierde ni explota,
  * se encola (CLAUDE.md · reglas del offline, 4).
  *
- * Excepciones conscientes, y son sólo dos: los adjuntos, que tienen cola propia
- * porque pesan megabytes y van en dos fases, y crear o revocar el link del
- * portal, que no tiene sentido sin red.
+ * Excepciones conscientes, y están enumeradas en CLAUDE.md: los adjuntos (cola
+ * propia, pesan megabytes y van en dos fases), crear o revocar el link del portal
+ * (no tiene sentido sin red), importar el catálogo de normas, subir el archivo de
+ * una versión de documento, y generar la lista de verificación (es una RPC, y la
+ * cola sabe reproducir escrituras de tabla, no llamadas a función). En las cinco,
+ * sin conexión la pantalla lo dice y no deja empezar.
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js'

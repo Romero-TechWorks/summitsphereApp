@@ -465,6 +465,93 @@ pasada estando sin señal, no. La app lo dice en pantalla.
 
 # FASE 03 · Auditorías
 
+### `D00` — Aplicar la migración de la fase · **Bloquea: TODA la Fase 03**
+
+⚠️ **Va después de `C00`.** Amplía `puedo_borrar_org()`, `puedo_borrar_proyecto()`
+y `heredar_org_del_adjunto()`, y añade la columna `hallazgo_id` a `adjuntos` —
+las cuatro nacen en la migración de la Fase 02.
+
+```bash
+# 1. El esquema completo de la fase: programa, auditorías, alcance, equipo,
+#    agenda, lista de verificación, hallazgos y su historial. Más la RPC
+#    generar_lista_verificacion() y los dos candados de la regla 13.
+npx supabase db push
+
+# 2. Los tipos, en DOS pasos —el redireccionamiento directo trunca el archivo
+#    si el comando falla a media escritura.
+npx supabase gen types typescript --linked > /tmp/database.ts && mv /tmp/database.ts src/types/database.ts
+
+# 3. Comparar con lo que dice el repositorio. Si sale distinto, MANDA LO GENERADO.
+git diff --stat src/types/database.ts
+```
+
+**Es un solo archivo**: `20260824120000_auditorias_y_hallazgos.sql`. No hay una
+segunda de Storage — el bucket `evidencias` ya se creó con los adjuntos en `C00`,
+y las fotos de campo van ahí.
+
+⚠️ **Esta migración QUITA permisos, y es a propósito.** Al final revoca el DELETE
+de `hallazgos` y `auditorias`, y el INSERT/UPDATE/DELETE de `hallazgos_historial`,
+a `anon`, `authenticated` **y `service_role`**. No es una restricción de más: sin
+política de DELETE se detiene a `authenticated` y a nadie más, porque
+`service_role` **se salta el RLS**. Es el mismo par de candados que ya protege a
+`audit_logs` —quitar el permiso y un trigger que grita—, y por el mismo motivo:
+en una firma de auditoría que un hallazgo no se pueda destruir no es higiene, es
+el producto (CLAUDE.md regla 13).
+
+**La migración se probó entera antes de dártela** (24 ago 2026), en un Postgres 17
+desechable con las siete anteriores aplicadas en orden. Pasaron **42
+comprobaciones de comportamiento**. Las que más importan:
+
+- El folio `AUD-2026-001` lo asigna la base, el consecutivo avanza y **cruza
+  organizaciones** —es el consecutivo de la firma—, y un folio ya puesto no se
+  recalcula.
+- **Dos auditores sin señal levantan el mismo `H-01` y la base RENUMERA en vez de
+  rechazar.** Ésta es la que salva los 30 hallazgos del criterio de cierre.
+- `generar_lista_verificacion()` toma sólo las cláusulas **hoja** auditables y
+  activas, es idempotente y **no pisa lo ya evaluado**.
+- Un hallazgo sin cláusula, con la evidencia en blanco o anulado sin motivo se
+  rechaza.
+- El historial lo escribe la base, una fila por campo que cambió, con su motivo y
+  con quién lo hizo.
+- **Ni `authenticated` ni el socio ni `service_role` borran un hallazgo o una
+  auditoría, ni reescriben el historial.**
+- Una organización o un proyecto con auditorías ya no se borra.
+
+Eso no sustituye a aplicarla —tu base tiene datos y la mía estaba vacía—, pero sí
+quiere decir que no vas a encontrarte un error de sintaxis a media aplicación.
+
+### `D04` — Aplicar la migración de la evidencia de campo · **Bloquea: el recorrido en planta**
+
+⚠️ **Va después de `D00`.** Le pone una clave foránea a `auditoria_items`, que
+nace ahí.
+
+```bash
+npx supabase db push
+npx supabase gen types typescript --linked > /tmp/database.ts && mv /tmp/database.ts src/types/database.ts
+git diff --stat src/types/database.ts
+```
+
+Un solo archivo: `20260824180000_evidencia_de_campo.sql`. Es corta y hace dos
+cosas:
+
+1. **`adjuntos.item_id`** — la foto y la nota dictada de un punto de la lista de
+   verificación. Sin ella, la pantalla de recorrido no puede guardar una foto
+   tomada antes de decidir el veredicto, ni la de un `conforme`, ni el audio de
+   una nota.
+2. **Un punto con evidencia ya no se quita de la lista.** ⚠️ Esto cierra un
+   agujero: un `on delete cascade` **se salta el RLS**. La política de `adjuntos`
+   sólo deja borrar evidencia a un socio, pero quitar un punto lo puede hacer
+   cualquier editor — y el cascade se habría llevado sus fotos por delante en
+   silencio, sin pasar por esa política.
+
+**Se probó entera antes de dártela** (24 ago 2026), aplicando las nueve en orden
+sobre un Postgres 17 desechable: **53 comprobaciones**, las 42 de `D00` más 11
+nuevas. Las que importan: la foto de un punto hereda la organización del punto y
+no la que manda el cliente; con hallazgo y punto a la vez **manda el hallazgo**
+—es el campo más específico—; un punto con evidencia devuelve **cero filas** al
+intentar borrarlo y sus fotos siguen ahí; uno en blanco sí se quita; y el
+recorrido guarda **la hora del auditor**, no la del servidor.
+
 ### `D01` — Entregar el formato de informe de auditoría · **Bloquea: emitir informes**
 
 El Word o el PDF que la firma usa hoy. Lo necesitamos tal cual para reproducirlo:

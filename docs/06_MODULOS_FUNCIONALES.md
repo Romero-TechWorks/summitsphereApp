@@ -199,47 +199,145 @@ por la dirección**, que es un entregable obligatorio de todas las normas.
 
 ## Auditorías `[Fase 03]` — el núcleo
 
+`/auditorias` tiene dos pestañas —**Auditorías** y **Programa anual**— y una sola
+ruta propia, `/auditorias/[id]`, el expediente de una auditoría.
+
+### Cómo se elige el cliente: no se elige
+
+⚠️ **A diferencia de `/sistemas`, aquí no hay selector de cliente.** Allá cinco de
+seis pestañas son el expediente de *una* organización; aquí la semana de un
+auditor cruza la cartera: el lunes abre «qué tengo esta semana», no «qué tiene
+Planta Norte». Se descarga la lista visible una vez y el filtro por cliente, por
+estado y por texto se aplica **en memoria** — que es además lo único que sobrevive
+a una planta sin señal.
+
 ### Programa
 El programa anual por cliente: qué se audita, cuándo, con qué frecuencia y bajo
-qué criterio. Aprobado y con fecha.
+qué criterio. ISO 9001 §9.2.2 lo exige por escrito y aprobado.
+
+Aprobarlo **sella quién y cuándo en la base**, no en la pantalla; devolverlo a
+borrador borra esa firma. Un cliente puede tener más de un programa el mismo año
+—9001 y 45001 con organismos distintos— y eso es válido.
 
 ### Planear una auditoría
 Tipo (interna, preauditoría, seguimiento, acompañamiento a certificación, a
-proveedor), alcance (normas + sitios + procesos), criterios, equipo auditor con
-sus certificaciones, y la **agenda hora por hora** que se le manda al cliente
-antes de la visita.
+proveedor), fechas, auditor líder, programa y proyecto de los que cuelga, y el
+alcance y los criterios en palabras para el informe.
+
+⚠️ **El folio no se captura.** `AUD-2026-014` lo asigna el servidor: es el
+consecutivo de la firma entera, y un consultor no ve las auditorías de los demás
+para poder contarlo. Una auditoría creada sin señal **aparece sin folio hasta que
+sincroniza**, y la pantalla lo dice en vez de enseñar un número que después cambia
+solo.
+
+⚠️ **El cliente no se cambia después del alta.** Una auditoría con hallazgos que
+cambiara de organización se llevaría su evidencia al expediente equivocado.
+
+### El expediente: Plan · Alcance · Equipo · Agenda
+
+- **Alcance.** Normas, sitios y procesos, marcados de una lista. De las **normas**
+  sale la lista de verificación: un punto por cada cláusula hoja auditable. Sin
+  alcance no hay lista, y sin lista el auditor entra a planta con la pantalla
+  vacía.
+- **Equipo.** Quién audita y con qué papel (líder, auditor, experto técnico,
+  observador). Sus certificaciones se imprimen en el informe y salen de su ficha
+  de usuario — si se pudieran escribir por auditoría, dos informes del mismo
+  auditor dirían cosas distintas sobre él.
+  ⚠️ No es el equipo del expediente del cliente: aquél decide permisos, éste dice
+  quién hizo *esta* auditoría.
+- **Agenda.** El plan hora por hora, agrupado por día. Es lo que se le manda al
+  cliente antes de ir, y después se marca lo que se cumplió — eso va al informe.
+  El «auditado» admite un puesto («Jefe de Almacén»): la agenda se manda semanas
+  antes de saber quién estará.
 
 ### Lista de verificación
-**Se genera desde el alcance.** Elegidas las normas y los procesos, la lista sale
-con una entrada por cláusula auditable. El auditor la edita: añade, quita,
-reordena y escribe sus propias preguntas antes de entrar.
+**Se genera desde el alcance.** Elegidas las normas, la lista sale con una entrada
+por cláusula **hoja** auditable —el capítulo «8» y sus hijas juntos duplicarían el
+recorrido sin comprobar nada nuevo—. El auditor la edita: añade, quita, reordena y
+escribe sus propias preguntas antes de entrar.
 
-Hay plantillas por norma y por giro, para no rearmarla desde cero cada vez.
+Es una pestaña del expediente de la auditoría, entre **Alcance** —de donde sale— y
+**Equipo**. Tres gestos, en este orden:
 
-### Ejecutar — en planta, sin señal ⚠️
+1. **Generar del alcance.** Idempotente: ampliar el alcance y volver a generar
+   añade lo que falta y no toca lo ya evaluado.
+   ⚠️ **Pide señal, y la pantalla lo dice.** Lo hace el servidor recorriendo las
+   cláusulas, y es lo que se prepara en la oficina antes de salir. Añadir, editar
+   y reordenar sí funcionan sin conexión.
+2. **Usar la plantilla.** La firma le pone su redacción a esos puntos y suma sus
+   preguntas propias. Lo que la plantilla nombra y no está en el alcance **se
+   omite y se avisa**: auditarlo sería auditar fuera de alcance. Y un punto ya
+   evaluado se deja como está.
+3. **Guardar como plantilla** (sólo un socio). Se define **con el ejemplo**, no en
+   una pantalla de configuración: el auditor deja bien la lista de un cliente y la
+   guarda para los siguientes —«hazla como la de Aceros»—. Se guarda por norma y
+   por giro del cliente.
 
-Este es el momento para el que existe toda la arquitectura offline.
+⚠️ Un punto que **ya produjo un hallazgo no se quita**: es la cita de ese
+hallazgo, y lo impide la base.
 
-1. **En la oficina, con señal**, el auditor abre la auditoría. La app descarga
-   todo: agenda, ítems, cláusulas, hallazgos previos, documentos aprobados. Un
-   aviso dice **"lista para trabajar sin señal"**.
-2. **En planta**, la pantalla es una lista densa que se recorre con el pulgar:
-   ítem → veredicto → nota → foto. La cámara abre y cierra sin salir de la
-   pantalla.
-3. Cada foto se **encola**; el contador de la Navbar dice cuántos cambios están
-   esperando.
+⚠️ La cláusula de un punto es **opcional**; la de un hallazgo, no. El auditor
+añade preguntas propias («¿el extintor del pasillo 3 tiene carga vigente?») y eso
+es trabajo legítimo — pero lo que salga de ahí, si es hallazgo, cita una cláusula.
+
+### Recorrido — en planta, sin señal ⚠️
+
+Este es el momento para el que existe toda la arquitectura offline. Es la última
+pestaña del expediente de la auditoría, y está al final a propósito: las otras
+cinco se preparan una vez en la oficina, ésta se abre en la planta.
+
+1. **En la oficina, con señal**, el auditor pulsa **«Descargar para trabajar sin
+   señal»**. Bajan nueve piezas —el plan, la lista, la agenda, el alcance, las
+   cláusulas, el equipo, sitios y contactos, procesos y documentos— y el aviso
+   cambia a **«lista para trabajar sin señal»**.
+   ⚠️ Si algo no bajó, lo dice **por su nombre** y pide no entrar todavía.
+2. **En planta**, cada punto es una fila que se abre al tocarla. Dentro: los
+   cuatro veredictos como botones grandes en una fila —no un desplegable, que en
+   un teléfono abre la rueda del sistema y pide la segunda mano—, la nota, el
+   botón de **dictar** y el de **tomar foto**, que abre la cámara trasera
+   directamente.
+   Tres filtros para no perderse: *me faltan · con hallazgo · todos*.
+3. Cada foto y cada nota de voz se **encolan**. Arriba, un contador **permanente**
+   dice cuántos cambios esperan señal y cuántos archivos faltan por subir — es la
+   única prueba de que las tres horas de trabajo siguen ahí.
 4. Al salir y recuperar señal, todo sube: **primero los datos, después los
    adjuntos**, en orden y sin duplicar.
+
+⚠️ **La hora que se guarda es la del teléfono**, no la del servidor: se evaluó a
+las 10:15 en modo avión y la fila llega a las 14:00. Quién lo evaluó sí lo sella
+la base.
+
+⚠️ **Lo ya subido no se ve sin señal.** El bucket es privado y la URL se firma en
+el servidor. Tomar la foto y adjuntarla, sí. La pantalla lo dice en vez de ofrecer
+un botón que no haría nada.
 
 ### Hallazgos
 - Cinco tipos: **NC mayor**, **NC menor**, **observación**, **oportunidad de
   mejora**, **conformidad**.
+  ⚠️ Una **conformidad** es un hallazgo de verdad, no un relleno: un informe que
+  sólo enumera lo que está mal no es una auditoría, es una lista de quejas.
+  Al elegir el tipo, la pantalla enseña **el criterio de clasificación** — es lo
+  que hace que dos auditores clasifiquen igual.
 - **La cláusula citada es obligatoria.** Un hallazgo sin cláusula no es un
-  hallazgo, es una opinión.
+  hallazgo, es una opinión. Sólo se ofrecen las normas del **alcance**.
 - **La evidencia objetiva es obligatoria**: qué se vio, dónde y cuándo.
-- ⚠️ **No se borran.** Se anulan con motivo o se reclasifican, y queda el
-  historial. Es exactamente lo que un organismo certificador viene a revisar.
+- ⚠️ **No se borran.** No hay botón, y no falta: se **anulan con motivo** —la base
+  lo exige— o se reclasifican, y queda el historial. Es exactamente lo que un
+  organismo certificador viene a revisar, y la ficha lo enseña entero: qué campo
+  cambió, qué decía antes, qué dice ahora, por qué y quién.
 - Folio estable y calculable sin red: `AUD-2026-014/H-03`.
+  ⚠️ Si dos auditores en modo avión levantan el mismo número, **el servidor
+  renumera al llegar** en vez de rechazar el segundo. El auditor vio un H-03 y en
+  el informe sale un H-07: un número corrido se edita, un hallazgo perdido no se
+  recupera.
+- **Se levantan desde el recorrido**, con un botón en cada punto de la lista: el
+  hallazgo nace con la cláusula y el proceso de ese punto puestos, y al guardar el
+  auditor se queda donde estaba.
+
+### El tablero del lunes
+Pestaña **Hallazgos** de `/auditorias`: los de **toda la cartera**, agrupados por
+cliente, por norma o por antigüedad, con los vencidos contados aparte. No es la
+lista de una auditoría — es «qué le debo a quién». Cada fila lleva a su auditoría.
 
 ### Informe
 Se genera **el mismo día, en el sitio, con lo que hay en la caché**: alcance,

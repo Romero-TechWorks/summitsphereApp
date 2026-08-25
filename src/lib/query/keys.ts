@@ -106,6 +106,67 @@ export const queryKeys = {
     de: (campo: string, id: string) => ['adjuntos', campo, id] as const,
   },
   /**
+   * Las auditorías [Fase 03] — el núcleo.
+   *
+   * ⚠️ **No hay clave por cliente en los listados, y es deliberado.** A
+   * diferencia de `/sistemas`, la semana de un auditor cruza clientes: el lunes
+   * abre «qué auditorías tengo» de toda la cartera, no de una organización. Se
+   * descarga la lista visible una vez y el filtro por cliente, por año y por
+   * estado se aplica **en memoria** (CLAUDE.md · reglas del offline, 7).
+   *
+   * ⚠️ Y lo de una auditoría concreta SÍ cuelga de su id, porque es lo que la
+   * precarga de campo mete en la caché antes de entrar a planta (§8.11).
+   */
+  auditorias: {
+    todo: () => ['auditorias'] as const,
+    /** El programa anual, de toda la cartera visible. */
+    programas: () => ['auditorias', 'programas'] as const,
+    /** Todas las auditorías visibles, para el listado del dominio. */
+    lista: () => ['auditorias', 'lista'] as const,
+    /** Una auditoría concreta, con su cliente y su auditor líder. */
+    auditoria: (id: string) => ['auditorias', 'auditoria', id] as const,
+    /** El alcance: qué normas, qué sitios y qué procesos cubre. */
+    alcanceNormas: (auditoriaId: string) => ['auditorias', 'alcance', 'normas', auditoriaId] as const,
+    alcanceSitios: (auditoriaId: string) => ['auditorias', 'alcance', 'sitios', auditoriaId] as const,
+    alcanceProcesos: (auditoriaId: string) => ['auditorias', 'alcance', 'procesos', auditoriaId] as const,
+    /** El equipo auditor, con sus certificaciones para el informe. */
+    equipo: (auditoriaId: string) => ['auditorias', 'equipo', auditoriaId] as const,
+    /** El plan hora por hora que se le manda al cliente. */
+    agenda: (auditoriaId: string) => ['auditorias', 'agenda', auditoriaId] as const,
+    /**
+     * La lista de verificación de una auditoría [F03·B2].
+     *
+     * ⚠️ **El veredicto NO entra en la clave.** El filtro «sólo lo que me falta»
+     * de la pantalla de recorrido se aplica en memoria: con una clave por
+     * filtro, en la planta la lista se vaciaría al tocarlo —esa clave no está en
+     * la caché— y el auditor concluiría que perdió su trabajo.
+     */
+    items: (auditoriaId: string) => ['auditorias', 'items', auditoriaId] as const,
+    /**
+     * La plantilla de listas de verificación de la firma. Fuera de una auditoría
+     * concreta porque es de todas: vive en `config_firma.plantillas`, igual que
+     * la plantilla de tareas.
+     */
+    plantillaVerificacion: () => ['auditorias', 'plantilla-verificacion'] as const,
+    /**
+     * Los hallazgos de una auditoría [F03·B4]. Es lo que se precarga antes de
+     * entrar a planta: sin los previos, el auditor no puede comprobar si lo del
+     * año pasado se cerró.
+     */
+    hallazgos: (auditoriaId: string) => ['auditorias', 'hallazgos', auditoriaId] as const,
+    /**
+     * **El tablero del lunes**: todos los hallazgos visibles de la cartera.
+     *
+     * ⚠️ Ni el estado, ni el cliente, ni la norma, ni la antigüedad entran en la
+     * clave. Se descarga la lista una vez y se agrupa y filtra **en memoria** —
+     * es la misma decisión que la de `cartera.organizaciones()` y la que evita
+     * que la pantalla se vacíe al tocar un filtro sin señal.
+     */
+    hallazgosDeLaCartera: () => ['auditorias', 'hallazgos', 'cartera'] as const,
+    /** El historial de un hallazgo: lo que un certificador viene a revisar. */
+    historial: (hallazgoId: string) => ['auditorias', 'historial', hallazgoId] as const,
+  },
+  /**
    * El catálogo de normas. Fuera de `cartera` porque no es de nadie: lo usan
    * también los sistemas de gestión [Fase 02] y las auditorías [Fase 03].
    */

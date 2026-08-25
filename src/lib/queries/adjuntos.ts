@@ -13,6 +13,7 @@ import { exigirFilas } from '@/lib/supabase/errores'
 import { uuid } from '@/lib/utils/uuid'
 import {
   BUCKET_EVIDENCIAS,
+  CAMPOS_DOMINANTES,
   campoDominante,
   encolarSubida,
   quitarSubida,
@@ -80,8 +81,13 @@ export async function adjuntar({
     // La reemplaza `heredar_org_del_adjunto()` cuando hay campo dominante; con
     // un adjunto suelto de la organización, ésta es la que vale.
     org_id: orgId,
-    tarea_etapa_id: destino.tarea_etapa_id ?? null,
-    documento_id: destino.documento_id ?? null,
+    // ⚠️ **Las columnas salen de `CAMPOS_DOMINANTES`, no escritas a mano.** Así
+    // estaban antes, y por eso `hallazgo_id` se quedó fuera al añadirlo en
+    // F03·B0: la lista y el trigger se actualizaron y este objeto no, así que la
+    // foto de un hallazgo habría viajado sin su campo dominante y habría acabado
+    // colgada del cliente entero. Cada fase que sume una columna la suma en un
+    // sitio y aquí llega sola.
+    ...Object.fromEntries(CAMPOS_DOMINANTES.map((campo) => [campo, destino[campo] ?? null])),
     ruta,
     nombre: archivo.name,
     tipo_mime: archivo.type || null,

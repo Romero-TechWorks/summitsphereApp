@@ -413,7 +413,9 @@ está escrito ya en `CAMPOS_DOMINANTES` (`src/lib/offline/adjuntos.ts`) y en el
 | Columna | Tipo | Nota |
 |---|---|---|
 | `tarea_etapa_id`, `documento_id` | uuid FK NULL | ⚠️ Se filtra con `campoDominante()`, **nunca con un OR** (§8.8) |
-| `tarea_id`, `accion_id`, `hallazgo_id`, `obligacion_id` | | ⚠️ **Todavía no existen**: las añaden las Fases 03, 04 y 05 |
+| `hallazgo_id` | uuid FK | [F03·B0] La evidencia de un hallazgo |
+| `item_id` | uuid FK | [F03·B3] La foto o la nota dictada de un punto de la lista de verificación |
+| `tarea_id`, `accion_id`, `obligacion_id` | | ⚠️ **Todavía no existen**: las añaden las Fases 04 y 05 |
 | `ruta` | text | Ruta en Storage |
 | `nombre`, `tipo_mime`, `tamano` | | |
 | `titulo` | text | Lo que el usuario escribe |
@@ -504,38 +506,88 @@ semáforo se calcula comparando contra la meta según el sentido.
 
 # FASE 03 · Auditorías
 
+> **Aplicada por el dueño con `D00`.** El esquema entero vive en
+> `20260824120000_auditorias_y_hallazgos.sql`, y las 42 comprobaciones de
+> comportamiento que lo respaldan están listadas en esa tarea.
+
+⚠️ **La regla de las fechas cambia en esta fase, y hay que leerla antes de tocar
+nada.** En las fases 01 y 02 la base sella toda fecha, porque una que viaja desde
+el navegador se puede escribir a mano. Aquí eso vale sólo a medias:
+
+| | Quién lo escribe | Por qué |
+|---|---|---|
+| **Quién** (`auth.uid()`) | **Siempre la base** | No se falsifica ni en campo ni en oficina |
+| **Cuándo**, acción de CAMPO (`auditoria_items.evaluado_en`, `hallazgos.detectado_en`) | **El reloj del teléfono** | El auditor evaluó a las 10:15 en modo avión y la fila llega a las 14:00. Un `now()` del servidor pondría en el informe la hora en que volvió el semáforo, no la hora en que se vio el extintor descargado |
+| **Cuándo**, acción de OFICINA (`aprobado_en`, `cerrada_en`, `cerrado_en`) | **La base** | Es un acto administrativo y pasa con señal |
+
+Y no se pierde nada: `creado_en` y `actualizado_en` siguen siendo del servidor, así
+que si el reloj del teléfono estaba mal las dos fechas discrepan y se ve.
+
 ## `programa_auditorias`
-El programa anual por cliente.
+El programa anual por cliente. ISO 9001 §9.2.2 lo exige por escrito y aprobado.
 
 | Columna | Tipo | Nota |
 |---|---|---|
-| `anio` | int | |
+| `anio` | int CHECK 2000–2100 | |
+| `nombre` | text NOT NULL | «Programa anual de auditorías 2026» |
 | `objetivo`, `criterios` | text | |
-| `aprobado_por_id`, `aprobado_en` | | |
+| `estado` | text CHECK | `borrador` · `aprobado` · `cerrado` |
+| `aprobado_por_id`, `aprobado_en` | | Los sella `sellar_programa_aprobado()`. Devolverlo a borrador **borra la firma** |
+
+⚠️ **Sin `unique (org_id, anio)`, a propósito.** Un cliente certificado en 9001 y
+en 45001 por organismos distintos lleva dos programas el mismo año. Un índice
+único rechazaría el segundo, y como toda escritura pasa por la cola, el rechazo
+llegaría tarde y sin nadie mirando.
 
 ## `auditorias`
 
 | Columna | Tipo | Nota |
 |---|---|---|
-| `folio` | text UNIQUE | `AUD-2026-014`. **Se calcula sin red** (§8.7) |
-| `programa_id`, `proyecto_id` | uuid FK | |
+| `folio` | text UNIQUE | `AUD-2026-014`. **Lo asigna la base**, ver abajo |
+| `titulo` | text NOT NULL | El folio identifica; esto es lo que se lee en una lista |
+| `programa_id`, `proyecto_id` | uuid FK NULL | Los dos ON DELETE SET NULL. Una auditoría sobrevive al contrato que la pagó |
 | `tipo` | text CHECK | `interna` · `preauditoria` · `seguimiento` · `certificacion_acompanamiento` · `proveedor` |
 | `estado` | text CHECK | `planeada` · `en_curso` · `cerrada` · `cancelada` |
-| `fecha_inicio`, `fecha_fin` | date | |
+| `fecha_inicio`, `fecha_fin` | date | CHECK: no termina antes de empezar |
 | `auditor_lider_id` | uuid FK | |
-| `alcance`, `criterios`, `metodologia`, `conclusiones` | text | |
+| `alcance`, `criterios`, `metodologia`, `conclusiones` | text | El alcance **en palabras**, para el informe. El concreto son las tres tablas de abajo |
 | `informe_emitido_en` | timestamptz | |
+| `cerrada_en`, `cerrada_por_id` | | Los sella `sellar_cierre_auditoria()` |
+
+⚠️ **El folio NO lo calcula el navegador**, y no es comodidad: con el RLS de este
+proyecto un consultor sólo ve las auditorías de sus clientes, así que contar las
+que tiene en la caché daría un consecutivo **ya usado en un expediente que no
+puede mirar**. `asignar_folio_auditoria()` es `SECURITY DEFINER` y se sale del RLS
+una vez, con un `pg_advisory_xact_lock` por año para que dos altas simultáneas no
+choquen contra el UNIQUE. Una auditoría encolada sin señal aparece **sin folio
+hasta que sincroniza**, y la pantalla lo dice en vez de inventarse uno.
 
 ## `auditoria_normas` · `auditoria_sitios` · `auditoria_procesos`
-El alcance concreto. De aquí se **genera** la lista de verificación.
+El alcance concreto, en tablas. De `auditoria_normas` **se genera** la lista de
+verificación. Clave primaria compuesta, `org_id` por trigger.
+
+⚠️ El sitio y el proceso tienen que ser **del mismo cliente**: lo comprueba
+`validar_referencia_de_la_org()`, que no lo puede hacer una FK ni un CHECK.
 
 ## `auditoria_equipo`
-Auditores participantes, con su papel (`lider` · `auditor` · `experto_tecnico` ·
-`observador`).
+Auditores participantes con su papel (`lider` · `auditor` · `experto_tecnico` ·
+`observador`). Clave primaria `(auditoria_id, usuario_id)`.
+
+⚠️ **No es `usuarios_organizaciones`.** Aquél decide quién puede escribir en el
+expediente del cliente; éste dice quién hizo *esta* auditoría, y se imprime en el
+informe junto a sus `certificaciones` — que salen de la ficha del usuario, no se
+capturan por auditoría.
 
 ## `auditoria_agenda`
-El plan hora por hora: fecha, hora inicio/fin, proceso, auditado, auditor. Es lo
-que se envía al cliente antes de la visita.
+El plan hora por hora: fecha, `hora_inicio`/`hora_fin`, tema, proceso, sitio,
+auditado, contacto, auditor, orden. Es lo que se le envía al cliente antes de la
+visita. Lleva `cumplido boolean` y `nota` para el apartado «agenda cumplida» del
+informe.
+
+⚠️ `auditado` es **texto libre**: la agenda se manda semanas antes, cuando aún no
+se sabe quién estará, y dice «Jefe de Almacén». `contacto_id` se ata después si se
+sabe. ⚠️ Las horas son `time` sin zona: es un horario de pared, no un instante —
+un `timestamptz` se movería solo según la zona del navegador que lo pinta.
 
 ## `auditoria_items`
 La lista de verificación.
@@ -543,35 +595,121 @@ La lista de verificación.
 | Columna | Tipo | Nota |
 |---|---|---|
 | `auditoria_id` | uuid FK | |
-| `clausula_id` | uuid FK | |
-| `pregunta` | text | |
+| `clausula_id` | uuid FK **NULL** | ON DELETE RESTRICT. Nullable: el auditor añade preguntas propias que no cuelgan de ninguna cláusula |
+| `proceso_id` | uuid FK NULL | |
+| `pregunta` | text NOT NULL | |
 | `orden` | int | |
-| `veredicto` | text CHECK NULL | `conforme` · `no_conforme` · `observacion` · `no_aplica` · `pendiente` |
+| `veredicto` | text CHECK **NOT NULL** default `pendiente` | `pendiente` · `conforme` · `no_conforme` · `observacion` · `no_aplica` |
 | `nota` | text | |
-| `evaluado_en` | timestamptz | |
+| `evaluado_en` | timestamptz | ⚠️ **El reloj del auditor** |
+| `evaluado_por` | uuid FK | Lo sella la base |
+
+⚠️ `veredicto` es NOT NULL con `pendiente` en la lista, **no nullable**: dos
+maneras de decir «todavía no lo miré» son dos maneras de contar mal el avance del
+recorrido, que es el número que el auditor mira para saber si le da tiempo. Volver
+a `pendiente` **borra** `evaluado_en` y `evaluado_por`.
+
+### La plantilla de listas de verificación  [F03·B2]
+
+**No es una tabla.** Vive en `config_firma.plantillas` (jsonb) bajo la llave
+`verificacion`, igual que la plantilla de tareas vive bajo `tareas`: es
+configuración de la firma, la lee cualquiera con sesión y sólo la escribe un
+socio. Una tabla para esto sería una tabla con una fila.
+
+```jsonc
+{
+  "tareas":      { "<tipo_proyecto>": { "<etapa>": [ { "titulo", "detalle" } ] } },
+  "verificacion":{ "<norma_clave>":   { "<giro>":  [ { "numero", "pregunta" } ] } }
+}
+```
+
+- **`norma_clave`** es `normas.clave` (`iso_9001`), no el `id`.
+- **`giro`** sale de `organizaciones.giro`, **normalizado** —sin acentos, en
+  minúsculas— porque esa columna es texto libre y la firma acabaría con
+  «Manufactura», «manufactura» y «Manufactura ligera» como tres plantillas que son
+  la misma. `general` es el bucket de respaldo, y **no se mezcla** con el del giro:
+  si hay lista para manufactura, ésa manda. Sumar las dos daría preguntas
+  repetidas con distinta redacción.
+- **`numero`** es el de la cláusula (`8.5.1`), no su `id`: es lo que un auditor
+  reconoce, lo que sobrevive a reimportar el catálogo y lo que hace legible el
+  jsonb el día que alguien lo abra en el SQL Editor. Un punto **sin** `numero` es
+  una pregunta propia del auditor, sin cláusula.
+- Se lee **a la defensiva**: ese jsonb lo puede haber escrito una versión vieja de
+  la app o una mano en el SQL Editor. Si no tiene la forma esperada se devuelve
+  vacío, nunca se revienta la pantalla de la auditoría.
+
+⚠️ **El reparto de responsabilidades, que es lo que hay que no romper:** la base
+decide **qué** se audita —las cláusulas hoja del alcance, vía
+`generar_lista_verificacion()`— y la plantilla decide **cómo** se pregunta. Al
+aplicarla, una cláusula que la plantilla nombra y que no está en el alcance **se
+omite y se informa**; y un punto **ya evaluado no se toca**, porque reescribir la
+pregunta debajo de un «conforme» ya dado deja el veredicto contestando algo que
+nadie preguntó.
 
 ## `hallazgos`
-⚠️ **No se borran.** CLAUDE.md regla 13.
+⚠️ **No se borran.** CLAUDE.md regla 13, y aquí es donde muerde.
 
 | Columna | Tipo | Nota |
 |---|---|---|
-| `folio` | text | `AUD-2026-014/H-03` |
-| `auditoria_id`, `item_id` | uuid FK | |
+| `auditoria_id` | uuid FK NOT NULL | ON DELETE **RESTRICT** |
+| `item_id` | uuid FK NULL | ON DELETE SET NULL |
 | `clausula_id` | uuid FK **NOT NULL** | **La cita es obligatoria.** Un hallazgo sin cláusula no es un hallazgo |
+| `consecutivo` | int NOT NULL | El `03` de `H-03` |
+| `folio` | text NOT NULL | `AUD-2026-014/H-03` |
 | `tipo` | text CHECK | `nc_mayor` · `nc_menor` · `observacion` · `oportunidad_mejora` · `conformidad` |
-| `descripcion` | text NOT NULL | |
-| `evidencia_objetiva` | text NOT NULL | Qué se vio, dónde y cuándo |
+| `descripcion` | text NOT NULL + CHECK no vacío | |
+| `evidencia_objetiva` | text NOT NULL + CHECK no vacío | Qué se vio, dónde y cuándo |
 | `requisito_incumplido` | text | |
-| `proceso_id`, `sitio_id` | uuid FK | |
-| `responsable_contacto_id` | uuid FK | Del lado del cliente |
+| `proceso_id`, `sitio_id`, `responsable_contacto_id` | uuid FK NULL | Todos validados contra la org |
 | `estado` | text CHECK | `abierto` · `en_accion` · `verificado` · `cerrado` · `anulado` |
 | `fecha_compromiso` | date | |
-| `cerrado_en`, `cerrado_por_id` | | |
-| `motivo_anulacion` | text | **Obligatorio si `estado = 'anulado'`** |
+| `detectado_en` | timestamptz | ⚠️ **El reloj del auditor**: cuándo se vio en planta |
+| `cerrado_en`, `cerrado_por_id` | | Los sella `sellar_cierre_hallazgo()` |
+| `motivo_anulacion` | text | **CHECK: obligatorio y no vacío si `estado = 'anulado'`** |
+| `motivo_cambio` | text | El porqué del último cambio. Lo copia el historial a cada renglón |
+
+⚠️ **`descripcion` y `evidencia_objetiva` llevan CHECK además de NOT NULL**: la
+cadena vacía pasa un NOT NULL, y un hallazgo con la evidencia en blanco es un
+hallazgo que no se puede defender delante del cliente.
+
+⚠️ **`motivo_cambio` vive en `hallazgos` y no en el historial**, para que el
+cambio y su motivo sean **una sola escritura** de la cola. Sin señal, dos podrían
+llegar desparejadas y el renglón quedaría sin explicación.
+
+⚠️ **NO hay `unique (auditoria_id, consecutivo)`, y es la decisión que salva el
+criterio de cierre.** Dos auditores recorriendo la misma planta en modo avión
+levantan los dos un `H-03`; ninguno ve el hallazgo del otro. Con un índice único,
+el segundo en sincronizar recibiría un rechazo **media hora después y con nadie
+mirando** — el hallazgo perdido que esta fase existe para impedir. En su lugar,
+`sellar_folio_hallazgo()` **renumera al llegar** y recompone el folio: el auditor
+vio un H-03 en el campo y en el informe sale un H-07. Un número corrido es un
+detalle de edición; un hallazgo perdido no se recupera.
 
 ## `hallazgos_historial`
-Cada cambio de tipo, estado o descripción, con quién y cuándo. Es lo que un
-organismo certificador viene a revisar.
+Cada cambio de un hallazgo, **campo por campo**: `campo`, `antes`, `despues`,
+`motivo`, `hecho_por`, `hecho_en`. Es lo que un organismo certificador viene a
+revisar.
+
+⚠️ **Inmutable como `audit_logs`, y con los mismos dos candados.** Lo escribe
+`registrar_historial_hallazgo()` (`SECURITY DEFINER`); la RLS sólo tiene SELECT, y
+además la migración **revoca INSERT/UPDATE/DELETE a `service_role`** — que se
+salta el RLS. Ver docs/08 §2.
+
+## RPC `generar_lista_verificacion(p_auditoria uuid) → int`
+Crea un `auditoria_items` por cada cláusula del alcance y devuelve cuántos creó.
+
+⚠️ **Sólo las HOJAS auditables y activas.** Un capítulo como «8 · Operación» tiene
+debajo 8.1, 8.2, 8.3…; poner los dos niveles duplicaría cada punto y haría el
+recorrido el doble de largo sin comprobar nada nuevo.
+
+⚠️ **Idempotente**, como el importador de normas: correrla otra vez tras ampliar
+el alcance añade lo que falta y **no toca lo ya evaluado**. Un auditor que agrega
+la 45001 a media planeación no puede perder los veredictos que ya capturó.
+
+⚠️ **`SECURITY INVOKER`** —el de por defecto—, a propósito: el INSERT pasa por la
+política de `auditoria_items`, así que el papel `lectura` no genera nada. Una
+`security definer` aquí sería una puerta trasera a la multi-tenencia con forma de
+comodidad.
 
 ---
 
@@ -707,7 +845,7 @@ Todas con **`security_invoker = true`** (§4.4):
 | Vista | Qué resuelve |
 |---|---|
 | `avance_proyecto` | % de requisitos por proyecto y por norma |
-| `hallazgos_abiertos` | Hallazgos abiertos con su antigüedad y su vencimiento |
+| `hallazgos_abiertos` | ⚠️ **Aplazada en F03·B4.** El tablero del lunes agrupa y calcula la antigüedad **en memoria**, sobre la lista ya bajada — una vista es otra clave que puede faltar en la caché, y esa pantalla se abre con media barra de señal. Es la misma decisión que la de los widgets del tablero [F01·B3] |
 | `obligaciones_semaforo` | Qué vence en 7 / 30 / 90 días |
 | `carga_consultor` | Proyectos y acciones abiertas por consultor |
 | `indice_busqueda_global` | Las seis fuentes del buscador |

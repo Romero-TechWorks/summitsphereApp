@@ -656,51 +656,191 @@ F02·B2b—.
 > **3 semanas. El núcleo del producto.** Es la fase que justifica que esto sea una
 > PWA offline y no una hoja de cálculo compartida.
 
-## F03·B1 — Programa y plan de auditoría
+## F03·B0 — El esquema de la fase  ✅ *migración escrita y probada, 24 ago 2026*
+
+`20260824120000_auditorias_y_hallazgos.sql` trae **todo** el esquema de la Fase 03
+de una vez —igual que se hizo con la Fase 02—, porque las tablas se sostienen
+entre sí: `hallazgos` cita a `auditoria_items`, `adjuntos` estrena `hallazgo_id` y
+`puedo_borrar_org()` sólo queda bien ampliada si las dos tablas ya existen.
+
+Se validó en un Postgres 17 desechable con las siete anteriores aplicadas en
+orden: **42 comprobaciones de comportamiento**, listadas en la tarea del dueño
+`D00`. Falta aplicarla contra la base real — eso lo hace el dueño.
+
+## F03·B1 — Programa y plan de auditoría  ✅ *código listo, 24 ago 2026*
 
 - `programa_auditorias`: el programa anual por cliente — qué se audita, cuándo, con
-  qué frecuencia, bajo qué criterio.
+  qué frecuencia, bajo qué criterio. Aprobarlo sella quién y cuándo **en la base**.
 - `auditorias`: la auditoría concreta. Tipo (`interna`, `preauditoria`,
-  `seguimiento`, `certificacion_acompanamiento`), alcance (normas + sitios +
-  procesos), criterios, equipo auditor, fechas, estado.
+  `seguimiento`, `certificacion_acompanamiento`, `proveedor`), criterios, fechas,
+  estado, auditor líder.
+- `auditoria_normas` · `_sitios` · `_procesos`: el alcance en tablas. De las
+  normas sale la lista de verificación.
+- `auditoria_equipo`: quién audita y con qué papel, con sus certificaciones para
+  el informe.
 - `auditoria_agenda`: el plan hora por hora — proceso, auditado, auditor. Es lo
-  que se envía al cliente antes de la visita.
+  que se envía al cliente antes de la visita, y después lleva su `cumplido`.
+- ⚠️ **El folio lo asigna la base, no el navegador.** `AUD-2026-014` es el
+  consecutivo de la firma, y con el RLS de este proyecto un consultor no ve las
+  auditorías de los demás para poder contarlo. Una auditoría encolada sin señal
+  aparece **sin folio hasta que sincroniza**, y la pantalla lo dice.
+- ⚠️ **`/auditorias` NO pide elegir cliente**, al revés que `/sistemas`: la semana
+  de un auditor cruza la cartera. Se descarga la lista una vez y se filtra en
+  memoria.
 
-## F03·B2 — Lista de verificación
+## F03·B2 — Lista de verificación  ✅ *código listo, 24 ago 2026*
 
-- Se **genera** desde las cláusulas del alcance: elegido el proyecto, las normas y
-  los procesos, la lista sale sola.
-- `auditoria_items`: cada punto a verificar, con su cláusula, su pregunta y el
-  espacio para la respuesta.
+**Sin migración**: `auditoria_items` y `config_firma.plantillas` ya existían.
+
+- Se **genera** desde las cláusulas del alcance con `generar_lista_verificacion()`
+  —escrita en B0—: toma sólo las cláusulas **hoja** auditables y activas, es
+  idempotente y **no pisa lo ya evaluado**. Ampliar el alcance y volver a generar
+  añade lo que falta.
+- `auditoria_items`: cada punto a verificar, con su cláusula, su pregunta, su
+  proceso y el espacio para la respuesta.
 - Editable: el auditor añade, quita y reordena antes de entrar.
-- Plantillas reutilizables por norma y por giro, para no rearmarla cada vez.
+  ⚠️ Reordenar **intercambia el `orden` de dos puntos**, no reescribe la lista:
+  con sesenta puntos, lo segundo serían sesenta operaciones en la cola por cada
+  flechita. ⚠️ Un punto que ya produjo un hallazgo no se quita — es la cita de
+  ese hallazgo, y lo impide la política, no la pantalla.
+- **Plantillas por norma y por giro**, en `config_firma.plantillas` (jsonb) bajo
+  la llave `verificacion`, **mismo patrón que la plantilla de tareas** de la
+  Fase 01: es configuración de la firma, la lee cualquiera con sesión y sólo la
+  escribe un socio; una tabla para esto sería una tabla con una fila.
+  - **La plantilla se define con el ejemplo**, no en una pantalla de
+    configuración: el auditor deja bien la lista de un cliente y la guarda para
+    los siguientes. Es el mismo gesto que «Guardar como plantilla» de las tareas,
+    y ahorra la pantalla de administración que no llega hasta la Fase 06.
+  - ⚠️ **El reparto: la BASE decide QUÉ se audita, la plantilla CÓMO se
+    pregunta.** Aplicarla reescribe la redacción de los puntos generados y suma
+    las preguntas propias de la firma; una cláusula que la plantilla nombra y que
+    **no está en el alcance se omite y se dice**. Al revés, una plantilla vieja
+    metería en el recorrido cláusulas fuera del alcance de este cliente, y de ahí
+    saldrían hallazgos fuera de alcance.
+  - ⚠️ **Tampoco toca un punto ya evaluado.** Si el auditor marcó «conforme» y
+    después la plantilla le cambiara la redacción, ese veredicto quedaría
+    contestando algo que nadie preguntó.
+  - ⚠️ Se guarda el **`numero`** de la cláusula, no su `id`: es lo que un auditor
+    reconoce, lo que sobrevive a reimportar el catálogo y lo que hace legible el
+    jsonb. Y el **giro se normaliza** —`organizaciones.giro` es texto libre—, con
+    `general` de respaldo.
+- ⚠️ **Generar pide señal, y la pantalla lo dice y no deja empezar.** Es la quinta
+  excepción consciente a `offlineWrite`: es una RPC —la cola sabe reproducir
+  insert/update/delete sobre una tabla, no una llamada a función—, escribe
+  cientos de filas de golpe, y sobre todo **es lo que se hace en la oficina antes
+  de salir**. Editar, añadir y reordenar sí pasan por la cola.
 
-## F03·B3 — Ejecución en campo ⚠️ **offline obligatorio**
+## F03·B3 — Ejecución en campo ⚠️ **offline obligatorio**  ✅ *código listo, 24 ago 2026*
 
-Este es el bloque donde el proyecto se gana o se pierde.
+Este es el bloque donde el proyecto se gana o se pierde. Vive en la pestaña
+**Recorrido** del expediente de la auditoría, la última de las seis: las otras
+cinco se preparan una vez en la oficina, ésta se abre en la planta y no se sale de
+ella en tres horas.
 
-- **Precarga**: al abrir la auditoría **con señal**, se descarga todo a la caché —
-  agenda, ítems, cláusulas, hallazgos previos, documentos del cliente relevantes.
-  Un aviso claro dice "lista para trabajar sin señal" antes de que el auditor
-  salga del estacionamiento.
-- Pantalla de recorrido optimizada para **una mano y un pulgar**: ítem, veredicto,
-  nota, foto.
-- **Foto con la cámara → adjunto encolado**, sin salir de la pantalla. La cola de
-  adjuntos es propia y se vacía **después** de los datos.
-- Dictado de nota por voz, guardado como audio local; se transcribe al recuperar
-  señal (Fase 07) o se lee tal cual.
-- Indicador permanente de cuántos cambios están esperando señal.
+**Migración:** `20260824180000_evidencia_de_campo.sql`, tarea del dueño `D04`.
 
-## F03·B4 — Hallazgos
+- **Precarga**: un botón que se pulsa en el estacionamiento baja **nueve piezas** a
+  la caché —el plan, la lista, la agenda, el alcance, el árbol de cláusulas, el
+  equipo, los sitios y contactos, los procesos y los documentos del cliente— y un
+  aviso dice **«lista para trabajar sin señal»**.
+  - ⚠️ **El aviso se calcula mirando la CACHÉ, no un booleano del componente.**
+    Con un `useState`, salir de la pestaña y volver diría «descarga antes de
+    entrar» con todo bajado, y en la puerta de una planta eso hace que alguien se
+    dé la vuelta. Al revés también: si el navegador vació la caché entre una
+    visita y otra, se dice **antes** de bajar al sótano.
+  - ⚠️ Es secuencial y **un fallo no aborta el resto**: si los documentos no
+    bajan, la lista sí tiene que bajar. Lo que falló se nombra, no se resume en
+    «hubo un error».
+  - ⚠️ Los **desplegables también se bajan** (sitios, contactos, procesos,
+    cláusulas). Regla 3 del offline: sin ellos el guardado muere en la validación
+    *antes* de encolarse, y el dato no se encola — se pierde.
+  - ⚠️ **Faltan los hallazgos previos del cliente**, que entran con B4: su
+    consulta todavía no existe. Es una línea más en `piezasDeLaPrecarga()`.
+- Pantalla de recorrido para **una mano y un pulgar**: filas de 56px que se abren
+  al tocarlas, y dentro los cuatro veredictos como **botones de 44px en fila**, no
+  un desplegable — un `<select>` en un teléfono abre la rueda del sistema y pide
+  la segunda mano. Tres filtros grandes: *me faltan · con hallazgo · todos*.
+- **Foto con la cámara → adjunto encolado**, sin salir de la pantalla
+  (`capture="environment"` abre la cámara trasera directamente). Y **se espera** a
+  `sincronizarAdjuntos()`: refrescar sin esperar es el «hay que subirla dos veces»
+  de JDM Built.
+- **Dictado de nota por voz** con `MediaRecorder`, guardado **como un adjunto
+  más**, no en un almacén propio — ver el cambio de plan abajo.
+- **Indicador permanente** de cuántos cambios esperan señal, cuántos archivos
+  faltan por subir y cuántos fueron rechazados.
+  ⚠️ Aquí es **permanente**, al revés que en la Navbar: allá un indicador que
+  siempre está se deja de mirar, pero en el recorrido es la única prueba de que
+  las tres horas de trabajo siguen ahí.
+
+### Cambio de plan · el audio NO tiene almacén propio
+
+`docs/03` §2 anunciaba un `src/lib/offline/dictados.ts`. Al implementarlo resultó
+ser una capa de más: **un dictado es exactamente lo que ya sabe hacer la cola de
+adjuntos** —un binario que se encola en IndexedDB, sube *después* de los datos y
+hereda su `org_id` del campo dominante—. Darle almacén propio obligaba además a
+subir `VERSION_BD` en `idb.ts` otra vez, y ese número, cuando se olvida, **falla
+sólo en el teléfono del consultor** —donde la base ya existía— y nunca en un
+equipo de desarrollo. La grabadora es un componente; el almacenamiento es el que
+ya estaba probado.
+
+### Por qué `adjuntos` necesitó `item_id`
+
+El modelo de datos no lo tenía previsto —la lista de FK saltaba de `hallazgo_id` a
+`accion_id`—, y colgar la foto del hallazgo no alcanza. Tres casos que se pierden,
+y los tres pasan en una planta:
+
+1. **La foto se toma ANTES de decidir el veredicto.** El auditor fotografía el
+   tablero y después piensa si eso es NC menor u observación.
+2. **Un `conforme` también se fotografía.** «Sí tenían el registro, aquí está» es
+   evidencia de que se verificó, y de un conforme no nace ningún hallazgo.
+3. **La nota dictada** es del punto que se está mirando, y muchas veces se dicta
+   justo para decidir si hay hallazgo.
+
+⚠️ Y con la columna vino un agujero que hubo que cerrar: **un `on delete cascade`
+se salta el RLS**. La política de `adjuntos` sólo deja borrar evidencia a un
+socio, pero quitar un punto de la lista lo puede hacer cualquier editor — y el
+cascade se habría llevado sus fotos por delante en silencio. La política de
+`auditoria_items` ahora exige, además de que no haya hallazgo, que **no haya
+adjuntos**.
+
+## F03·B4 — Hallazgos  ✅ *código listo, 24 ago 2026*
+
+**Sin migración**: `hallazgos` y `hallazgos_historial` nacieron en B0, y
+`adjuntos.hallazgo_id` en la misma. Esto es sólo código.
 
 - `hallazgos`: tipo (`nc_mayor`, `nc_menor`, `observacion`, `oportunidad_mejora`,
   `conformidad`), **cláusula citada obligatoria**, descripción, evidencia objetiva,
   requisito incumplido, proceso, sitio, responsable del cliente, estado.
-- ⚠️ **Un hallazgo no se borra.** Se anula con motivo o se reclasifica, y queda el
-  histórico en `hallazgos_historial`. CLAUDE.md regla 13.
-- Numeración por auditoría, estable y offline (`AUD-2026-014 / H-03`).
-- Vista de hallazgos abiertos por cliente, por norma y por antigüedad — el tablero
-  que el consultor abre cada lunes.
+  ⚠️ El selector de cláusula ofrece **sólo las normas del alcance**: citar una que
+  este cliente no está auditando es levantar un hallazgo fuera de alcance.
+- ⚠️ **Un hallazgo no se borra.** Se anula **con motivo** —lo exige el CHECK de la
+  base— o se reclasifica, y queda el histórico. **No hay función de borrado en
+  `lib/queries/hallazgos.ts` ni botón en la pantalla**, y no es un olvido: la base
+  tampoco lo deja, ni a `service_role`.
+- **La ayuda de clasificación se pinta al elegir el tipo**, en el momento de
+  decidir — es lo que hace que dos auditores clasifiquen igual.
+  ⚠️ El texto de arranque es un criterio general y defendible; **el de la firma
+  llega con `D02` y se reemplaza en `CRITERIO_HALLAZGO`**. Un campo de ayuda vacío
+  esperando a `D02` habría sido peor.
+- Numeración por auditoría, estable y offline (`AUD-2026-014 / H-03`): el
+  consecutivo se calcula **sobre la caché** —en la planta no hay a quién
+  preguntar— y la base **renumera al llegar** si otro auditor se adelantó.
+- **Levantar desde el recorrido**: cada punto de la lista tiene su botón, y el
+  hallazgo nace con la cláusula y el proceso de ese punto ya puestos. Al guardar,
+  el auditor **se queda donde estaba** y se le dice el folio — mandarlo a otra
+  pestaña le haría perder el sitio entre sesenta puntos.
+- **El tablero del lunes**: pestaña *Hallazgos* de `/auditorias`, con los de toda
+  la cartera agrupados **por cliente, por norma o por antigüedad**, y los
+  vencidos contados aparte.
+
+### Sobre la vista `hallazgos_abiertos` del modelo de datos
+
+**Se aplaza, y por el mismo motivo que los widgets del tablero** [F01·B3] no
+tienen vista: **una vista es otra clave que puede faltar en la caché**, y esta
+pantalla se abre el lunes por la mañana con media barra de señal. La antigüedad y
+el vencimiento se calculan en memoria (`diasAbierto`) sobre la lista que ya está
+bajada. Se moverá a una vista con `security_invoker` el día que una firma tenga
+decenas de miles de hallazgos.
 
 ## F03·B5 — Informe de auditoría
 
@@ -720,10 +860,20 @@ Este es el bloque donde el proyecto se gana o se pierde.
 
 ### Tareas del dueño — Fase 03
 
-`D01` Aportar el formato oficial del informe de auditoría de la firma. `D02`
-Validar la clasificación de hallazgos y sus criterios (qué hace mayor a una NC).
-`D03` → **movido a `C04`** (22 ago 2026): el bucket `evidencias` se creó con los
-adjuntos, que se adelantaron a F02·B2b.
+`D04` **Aplicar la migración de B3**, `20260824180000_evidencia_de_campo.sql` —
+`adjuntos.item_id` y la política de borrado del punto—. Requiere `D00`.
+`D00` **Aplicar la migración de la fase**, `20260824120000_auditorias_y_hallazgos.sql`.
+Requiere que `C00` esté aplicada: amplía funciones y una columna que nacen ahí. Es
+un solo archivo —no hay una segunda de Storage, porque el bucket `evidencias` ya
+se creó con los adjuntos—. ⚠️ **Quita permisos a propósito**: revoca el DELETE de
+`hallazgos` y `auditorias` y el INSERT/UPDATE/DELETE del historial **también a
+`service_role`**, que se salta el RLS. `D01` Aportar el formato oficial del
+informe de auditoría de la firma. `D02` Validar la clasificación de hallazgos y
+sus criterios (qué hace mayor a una NC). `D03` → **movido a `C04`** (22 ago 2026):
+el bucket `evidencias` se creó con los adjuntos, que se adelantaron a F02·B2b.
+
+⚠️ **`C01` bloquea a B2.** La lista de verificación se genera de `norma_clausulas`;
+con el catálogo vacío (`B03`), `generar_lista_verificacion()` devuelve cero.
 
 ---
 

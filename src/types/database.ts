@@ -19,7 +19,9 @@ export type Database = {
           creado_en: string
           creado_por: string | null
           documento_id: string | null
+          hallazgo_id: string | null
           id: string
+          item_id: string | null
           nombre: string
           org_id: string
           ruta: string
@@ -33,7 +35,9 @@ export type Database = {
           creado_en?: string
           creado_por?: string | null
           documento_id?: string | null
+          hallazgo_id?: string | null
           id?: string
+          item_id?: string | null
           nombre: string
           org_id: string
           ruta: string
@@ -47,7 +51,9 @@ export type Database = {
           creado_en?: string
           creado_por?: string | null
           documento_id?: string | null
+          hallazgo_id?: string | null
           id?: string
+          item_id?: string | null
           nombre?: string
           org_id?: string
           ruta?: string
@@ -70,6 +76,20 @@ export type Database = {
             columns: ["documento_id"]
             isOneToOne: false
             referencedRelation: "documentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "adjuntos_hallazgo_id_fkey"
+            columns: ["hallazgo_id"]
+            isOneToOne: false
+            referencedRelation: "hallazgos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "adjuntos_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "auditoria_items"
             referencedColumns: ["id"]
           },
           {
@@ -126,6 +146,543 @@ export type Database = {
           usuario_id?: string | null
         }
         Relationships: []
+      }
+      auditoria_agenda: {
+        Row: {
+          actualizado_en: string
+          auditado: string | null
+          auditor_id: string | null
+          auditoria_id: string
+          contacto_id: string | null
+          creado_en: string
+          creado_por: string | null
+          cumplido: boolean
+          fecha: string
+          hora_fin: string | null
+          hora_inicio: string | null
+          id: string
+          nota: string | null
+          orden: number
+          org_id: string
+          proceso_id: string | null
+          sitio_id: string | null
+          tema: string
+        }
+        Insert: {
+          actualizado_en?: string
+          auditado?: string | null
+          auditor_id?: string | null
+          auditoria_id: string
+          contacto_id?: string | null
+          creado_en?: string
+          creado_por?: string | null
+          cumplido?: boolean
+          fecha: string
+          hora_fin?: string | null
+          hora_inicio?: string | null
+          id?: string
+          nota?: string | null
+          orden?: number
+          org_id: string
+          proceso_id?: string | null
+          sitio_id?: string | null
+          tema: string
+        }
+        Update: {
+          actualizado_en?: string
+          auditado?: string | null
+          auditor_id?: string | null
+          auditoria_id?: string
+          contacto_id?: string | null
+          creado_en?: string
+          creado_por?: string | null
+          cumplido?: boolean
+          fecha?: string
+          hora_fin?: string | null
+          hora_inicio?: string | null
+          id?: string
+          nota?: string | null
+          orden?: number
+          org_id?: string
+          proceso_id?: string | null
+          sitio_id?: string | null
+          tema?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auditoria_agenda_auditor_id_fkey"
+            columns: ["auditor_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auditoria_agenda_auditoria_id_fkey"
+            columns: ["auditoria_id"]
+            isOneToOne: false
+            referencedRelation: "auditorias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auditoria_agenda_contacto_id_fkey"
+            columns: ["contacto_id"]
+            isOneToOne: false
+            referencedRelation: "contactos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auditoria_agenda_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auditoria_agenda_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizaciones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auditoria_agenda_proceso_id_fkey"
+            columns: ["proceso_id"]
+            isOneToOne: false
+            referencedRelation: "procesos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auditoria_agenda_sitio_id_fkey"
+            columns: ["sitio_id"]
+            isOneToOne: false
+            referencedRelation: "sitios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      auditoria_equipo: {
+        Row: {
+          auditoria_id: string
+          creado_en: string
+          creado_por: string | null
+          org_id: string
+          papel: string
+          usuario_id: string
+        }
+        Insert: {
+          auditoria_id: string
+          creado_en?: string
+          creado_por?: string | null
+          org_id: string
+          papel?: string
+          usuario_id: string
+        }
+        Update: {
+          auditoria_id?: string
+          creado_en?: string
+          creado_por?: string | null
+          org_id?: string
+          papel?: string
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auditoria_equipo_auditoria_id_fkey"
+            columns: ["auditoria_id"]
+            isOneToOne: false
+            referencedRelation: "auditorias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auditoria_equipo_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auditoria_equipo_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizaciones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auditoria_equipo_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      auditoria_items: {
+        Row: {
+          actualizado_en: string
+          auditoria_id: string
+          clausula_id: string | null
+          creado_en: string
+          creado_por: string | null
+          evaluado_en: string | null
+          evaluado_por: string | null
+          id: string
+          nota: string | null
+          orden: number
+          org_id: string
+          pregunta: string
+          proceso_id: string | null
+          veredicto: string
+        }
+        Insert: {
+          actualizado_en?: string
+          auditoria_id: string
+          clausula_id?: string | null
+          creado_en?: string
+          creado_por?: string | null
+          evaluado_en?: string | null
+          evaluado_por?: string | null
+          id?: string
+          nota?: string | null
+          orden?: number
+          org_id: string
+          pregunta: string
+          proceso_id?: string | null
+          veredicto?: string
+        }
+        Update: {
+          actualizado_en?: string
+          auditoria_id?: string
+          clausula_id?: string | null
+          creado_en?: string
+          creado_por?: string | null
+          evaluado_en?: string | null
+          evaluado_por?: string | null
+          id?: string
+          nota?: string | null
+          orden?: number
+          org_id?: string
+          pregunta?: string
+          proceso_id?: string | null
+          veredicto?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auditoria_items_auditoria_id_fkey"
+            columns: ["auditoria_id"]
+            isOneToOne: false
+            referencedRelation: "auditorias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auditoria_items_clausula_id_fkey"
+            columns: ["clausula_id"]
+            isOneToOne: false
+            referencedRelation: "norma_clausulas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auditoria_items_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auditoria_items_evaluado_por_fkey"
+            columns: ["evaluado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auditoria_items_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizaciones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auditoria_items_proceso_id_fkey"
+            columns: ["proceso_id"]
+            isOneToOne: false
+            referencedRelation: "procesos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      auditoria_normas: {
+        Row: {
+          auditoria_id: string
+          creado_en: string
+          creado_por: string | null
+          norma_id: string
+          org_id: string
+        }
+        Insert: {
+          auditoria_id: string
+          creado_en?: string
+          creado_por?: string | null
+          norma_id: string
+          org_id: string
+        }
+        Update: {
+          auditoria_id?: string
+          creado_en?: string
+          creado_por?: string | null
+          norma_id?: string
+          org_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auditoria_normas_auditoria_id_fkey"
+            columns: ["auditoria_id"]
+            isOneToOne: false
+            referencedRelation: "auditorias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auditoria_normas_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auditoria_normas_norma_id_fkey"
+            columns: ["norma_id"]
+            isOneToOne: false
+            referencedRelation: "normas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auditoria_normas_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizaciones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      auditoria_procesos: {
+        Row: {
+          auditoria_id: string
+          creado_en: string
+          creado_por: string | null
+          org_id: string
+          proceso_id: string
+        }
+        Insert: {
+          auditoria_id: string
+          creado_en?: string
+          creado_por?: string | null
+          org_id: string
+          proceso_id: string
+        }
+        Update: {
+          auditoria_id?: string
+          creado_en?: string
+          creado_por?: string | null
+          org_id?: string
+          proceso_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auditoria_procesos_auditoria_id_fkey"
+            columns: ["auditoria_id"]
+            isOneToOne: false
+            referencedRelation: "auditorias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auditoria_procesos_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auditoria_procesos_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizaciones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auditoria_procesos_proceso_id_fkey"
+            columns: ["proceso_id"]
+            isOneToOne: false
+            referencedRelation: "procesos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      auditoria_sitios: {
+        Row: {
+          auditoria_id: string
+          creado_en: string
+          creado_por: string | null
+          org_id: string
+          sitio_id: string
+        }
+        Insert: {
+          auditoria_id: string
+          creado_en?: string
+          creado_por?: string | null
+          org_id: string
+          sitio_id: string
+        }
+        Update: {
+          auditoria_id?: string
+          creado_en?: string
+          creado_por?: string | null
+          org_id?: string
+          sitio_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auditoria_sitios_auditoria_id_fkey"
+            columns: ["auditoria_id"]
+            isOneToOne: false
+            referencedRelation: "auditorias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auditoria_sitios_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auditoria_sitios_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizaciones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auditoria_sitios_sitio_id_fkey"
+            columns: ["sitio_id"]
+            isOneToOne: false
+            referencedRelation: "sitios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      auditorias: {
+        Row: {
+          actualizado_en: string
+          alcance: string | null
+          auditor_lider_id: string | null
+          cerrada_en: string | null
+          cerrada_por_id: string | null
+          conclusiones: string | null
+          creado_en: string
+          creado_por: string | null
+          criterios: string | null
+          estado: string
+          fecha_fin: string | null
+          fecha_inicio: string | null
+          folio: string | null
+          id: string
+          informe_emitido_en: string | null
+          metodologia: string | null
+          org_id: string
+          programa_id: string | null
+          proyecto_id: string | null
+          tipo: string
+          titulo: string
+        }
+        Insert: {
+          actualizado_en?: string
+          alcance?: string | null
+          auditor_lider_id?: string | null
+          cerrada_en?: string | null
+          cerrada_por_id?: string | null
+          conclusiones?: string | null
+          creado_en?: string
+          creado_por?: string | null
+          criterios?: string | null
+          estado?: string
+          fecha_fin?: string | null
+          fecha_inicio?: string | null
+          folio?: string | null
+          id?: string
+          informe_emitido_en?: string | null
+          metodologia?: string | null
+          org_id: string
+          programa_id?: string | null
+          proyecto_id?: string | null
+          tipo?: string
+          titulo: string
+        }
+        Update: {
+          actualizado_en?: string
+          alcance?: string | null
+          auditor_lider_id?: string | null
+          cerrada_en?: string | null
+          cerrada_por_id?: string | null
+          conclusiones?: string | null
+          creado_en?: string
+          creado_por?: string | null
+          criterios?: string | null
+          estado?: string
+          fecha_fin?: string | null
+          fecha_inicio?: string | null
+          folio?: string | null
+          id?: string
+          informe_emitido_en?: string | null
+          metodologia?: string | null
+          org_id?: string
+          programa_id?: string | null
+          proyecto_id?: string | null
+          tipo?: string
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auditorias_auditor_lider_id_fkey"
+            columns: ["auditor_lider_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auditorias_cerrada_por_id_fkey"
+            columns: ["cerrada_por_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auditorias_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auditorias_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizaciones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auditorias_programa_id_fkey"
+            columns: ["programa_id"]
+            isOneToOne: false
+            referencedRelation: "programa_auditorias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auditorias_proyecto_id_fkey"
+            columns: ["proyecto_id"]
+            isOneToOne: false
+            referencedRelation: "proyectos"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       bitacora_proyecto: {
         Row: {
@@ -566,6 +1123,209 @@ export type Database = {
           },
         ]
       }
+      hallazgos: {
+        Row: {
+          actualizado_en: string
+          auditoria_id: string
+          cerrado_en: string | null
+          cerrado_por_id: string | null
+          clausula_id: string
+          consecutivo: number
+          creado_en: string
+          creado_por: string | null
+          descripcion: string
+          detectado_en: string | null
+          estado: string
+          evidencia_objetiva: string
+          fecha_compromiso: string | null
+          folio: string
+          id: string
+          item_id: string | null
+          motivo_anulacion: string | null
+          motivo_cambio: string | null
+          org_id: string
+          proceso_id: string | null
+          requisito_incumplido: string | null
+          responsable_contacto_id: string | null
+          sitio_id: string | null
+          tipo: string
+        }
+        Insert: {
+          actualizado_en?: string
+          auditoria_id: string
+          cerrado_en?: string | null
+          cerrado_por_id?: string | null
+          clausula_id: string
+          consecutivo: number
+          creado_en?: string
+          creado_por?: string | null
+          descripcion: string
+          detectado_en?: string | null
+          estado?: string
+          evidencia_objetiva: string
+          fecha_compromiso?: string | null
+          folio: string
+          id?: string
+          item_id?: string | null
+          motivo_anulacion?: string | null
+          motivo_cambio?: string | null
+          org_id: string
+          proceso_id?: string | null
+          requisito_incumplido?: string | null
+          responsable_contacto_id?: string | null
+          sitio_id?: string | null
+          tipo?: string
+        }
+        Update: {
+          actualizado_en?: string
+          auditoria_id?: string
+          cerrado_en?: string | null
+          cerrado_por_id?: string | null
+          clausula_id?: string
+          consecutivo?: number
+          creado_en?: string
+          creado_por?: string | null
+          descripcion?: string
+          detectado_en?: string | null
+          estado?: string
+          evidencia_objetiva?: string
+          fecha_compromiso?: string | null
+          folio?: string
+          id?: string
+          item_id?: string | null
+          motivo_anulacion?: string | null
+          motivo_cambio?: string | null
+          org_id?: string
+          proceso_id?: string | null
+          requisito_incumplido?: string | null
+          responsable_contacto_id?: string | null
+          sitio_id?: string | null
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hallazgos_auditoria_id_fkey"
+            columns: ["auditoria_id"]
+            isOneToOne: false
+            referencedRelation: "auditorias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hallazgos_cerrado_por_id_fkey"
+            columns: ["cerrado_por_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hallazgos_clausula_id_fkey"
+            columns: ["clausula_id"]
+            isOneToOne: false
+            referencedRelation: "norma_clausulas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hallazgos_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hallazgos_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "auditoria_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hallazgos_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizaciones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hallazgos_proceso_id_fkey"
+            columns: ["proceso_id"]
+            isOneToOne: false
+            referencedRelation: "procesos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hallazgos_responsable_contacto_id_fkey"
+            columns: ["responsable_contacto_id"]
+            isOneToOne: false
+            referencedRelation: "contactos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hallazgos_sitio_id_fkey"
+            columns: ["sitio_id"]
+            isOneToOne: false
+            referencedRelation: "sitios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hallazgos_historial: {
+        Row: {
+          antes: string | null
+          campo: string
+          despues: string | null
+          hallazgo_id: string
+          hecho_en: string
+          hecho_por: string | null
+          id: string
+          motivo: string | null
+          org_id: string
+        }
+        Insert: {
+          antes?: string | null
+          campo: string
+          despues?: string | null
+          hallazgo_id: string
+          hecho_en?: string
+          hecho_por?: string | null
+          id?: string
+          motivo?: string | null
+          org_id: string
+        }
+        Update: {
+          antes?: string | null
+          campo?: string
+          despues?: string | null
+          hallazgo_id?: string
+          hecho_en?: string
+          hecho_por?: string | null
+          id?: string
+          motivo?: string | null
+          org_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hallazgos_historial_hallazgo_id_fkey"
+            columns: ["hallazgo_id"]
+            isOneToOne: false
+            referencedRelation: "hallazgos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hallazgos_historial_hecho_por_fkey"
+            columns: ["hecho_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hallazgos_historial_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizaciones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       indicadores: {
         Row: {
           activo: boolean
@@ -987,6 +1747,73 @@ export type Database = {
           },
           {
             foreignKeyName: "procesos_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizaciones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      programa_auditorias: {
+        Row: {
+          actualizado_en: string
+          anio: number
+          aprobado_en: string | null
+          aprobado_por_id: string | null
+          creado_en: string
+          creado_por: string | null
+          criterios: string | null
+          estado: string
+          id: string
+          nombre: string
+          objetivo: string | null
+          org_id: string
+        }
+        Insert: {
+          actualizado_en?: string
+          anio: number
+          aprobado_en?: string | null
+          aprobado_por_id?: string | null
+          creado_en?: string
+          creado_por?: string | null
+          criterios?: string | null
+          estado?: string
+          id?: string
+          nombre: string
+          objetivo?: string | null
+          org_id: string
+        }
+        Update: {
+          actualizado_en?: string
+          anio?: number
+          aprobado_en?: string | null
+          aprobado_por_id?: string | null
+          creado_en?: string
+          creado_por?: string | null
+          criterios?: string | null
+          estado?: string
+          id?: string
+          nombre?: string
+          objetivo?: string | null
+          org_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "programa_auditorias_aprobado_por_id_fkey"
+            columns: ["aprobado_por_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "programa_auditorias_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "programa_auditorias_org_id_fkey"
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizaciones"
@@ -1609,8 +2436,16 @@ export type Database = {
     }
     Functions: {
       es_socio: { Args: never; Returns: boolean }
+      generar_lista_verificacion: {
+        Args: { p_auditoria: string }
+        Returns: number
+      }
       mis_organizaciones: { Args: never; Returns: string[] }
       org_de_la_ruta: { Args: { p_ruta: string }; Returns: string }
+      pgp_armor_headers: {
+        Args: { "": string }
+        Returns: Record<string, unknown>[]
+      }
       puedo_borrar_documento: {
         Args: { p_documento: string }
         Returns: boolean
@@ -1751,3 +2586,4 @@ export const Constants = {
     Enums: {},
   },
 } as const
+

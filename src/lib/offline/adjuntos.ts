@@ -39,17 +39,28 @@ export const BUCKET_EVIDENCIAS = 'evidencias'
  * no usa índice, y peor: devuelve adjuntos de otro sitio en cuanto dos ids
  * coinciden. Se filtra por el campo que manda, y ya.
  *
- * ⚠️ Cuatro de estos campos **todavía no existen en la tabla**: `hallazgo_id`
- * llega en la Fase 03 y `accion_id`, `tarea_id` y `obligacion_id` en la 04 y la
- * 05. El orden se escribe entero desde ahora para que añadirlos sea descomentar
- * una línea aquí y otra en `heredar_org_del_adjunto()`, en vez de reconstruir el
- * criterio a partir de cómo quedó el código.
+ * ⚠️ Tres de estos campos **todavía no existen en la tabla**: `accion_id`,
+ * `tarea_id` y `obligacion_id` llegan en la Fase 04 y la 05. El orden se escribe
+ * entero desde ahora para que añadirlos sea descomentar una línea aquí y otra en
+ * `heredar_org_del_adjunto()`, en vez de reconstruir el criterio a partir de cómo
+ * quedó el código.
+ *
+ * ⚠️ `hallazgo_id` e `item_id` **ya están** —los añadieron las migraciones de
+ * F03·B0 y F03·B3— y van entre la tarea y el documento. Esta lista y el `if` del
+ * trigger `heredar_org_del_adjunto()` se mueven juntos: si divergen, un adjunto
+ * hereda la organización equivocada.
+ *
+ * ⚠️ **El hallazgo va ANTES que el punto de verificación**, y no es arbitrario:
+ * un hallazgo *cita* a un punto, así que es más específico. Una foto que llegue
+ * con los dos campos puestos es evidencia del hallazgo, y bajo él tiene que
+ * aparecer.
  */
 export const CAMPOS_DOMINANTES = [
   'tarea_etapa_id',
   // 'tarea_id',      → Fase 04
   // 'accion_id',     → Fase 04
-  // 'hallazgo_id',   → Fase 03
+  'hallazgo_id',
+  'item_id',
   'documento_id',
   // 'obligacion_id', → Fase 05
 ] as const
