@@ -204,6 +204,7 @@ export type DatosAuditoria = {
   auditor_lider_id: string | null
   fecha_inicio: string | null
   fecha_fin: string | null
+  objetivo: string | null
   alcance: string | null
   criterios: string | null
   metodologia: string | null
@@ -305,6 +306,50 @@ export async function cambiarEstadoAuditoria(
     offline: { ...auditoria, estado },
   })
 }
+
+/**
+ * Marcar el informe como emitido, o retractar la emisión [F03·B5].
+ *
+ * ⚠️ **La fecha la pone la BASE**, no esto: `sellar_emision_informe()` descarta
+ * lo que llegue y escribe su `now()`. Aquí se manda un instante sólo porque la
+ * columna no admite un booleano — cualquier valor no nulo significa «emitido» y
+ * el servidor lo reemplaza. Emitir es una acción de **oficina** y por la regla
+ * de las fechas de la Fase 03 la sella el servidor: el plazo de una semana de
+ * P-SG-03 §5.4.5 se mide contra ella, y una fecha que viaja desde el navegador
+ * es una fecha que se puede escribir a mano.
+ *
+ * ⚠️ **Sí pasa por la cola**, y no hace falta que sea una excepción más: es un
+ * `update` normal sobre una fila, la cola sabe reproducirlo, y si se encola sin
+ * señal el servidor sella al llegar — que es justo lo que se quiere. Enseñar el
+ * preliminar en la reunión de cierre **no llama a esto**: eso no escribe nada.
+ */
+export async function marcarInformeEmitido(
+  auditoria: AuditoriaEnLista,
+  emitido: boolean,
+): Promise<ResultadoEscritura<AuditoriaEnLista>> {
+  const valores = { informe_emitido_en: emitido ? new Date().toISOString() : null }
+
+  return offlineWrite<AuditoriaEnLista>({
+    tabla: 'auditorias',
+    operacion: 'update',
+    etiqueta: emitido
+      ? `Emisión del informe de ${auditoria.folio ?? auditoria.titulo}`
+      : `Retractación del informe de ${auditoria.folio ?? auditoria.titulo}`,
+    valores,
+    filtro: { id: auditoria.id },
+    online: async () => {
+      const { data, error } = await createClient()
+        .from('auditorias')
+        .update(valores)
+        .eq('id', auditoria.id)
+        .select(EMBEBIDO_AUDITORIA)
+      if (error) throw error
+      return exigirFilas(data, 'Emisión del informe')[0] as AuditoriaEnLista
+    },
+    offline: { ...auditoria, ...valores },
+  })
+}
+
 
 // ═════════════════════════════════════════════════════════ el alcance ════════
 

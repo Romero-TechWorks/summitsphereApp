@@ -23,6 +23,7 @@ const esquema = z
     auditor_lider_id: z.string(),
     fecha_inicio: z.string(),
     fecha_fin: z.string(),
+    objetivo: z.string().trim(),
     alcance: z.string().trim(),
     criterios: z.string().trim(),
     metodologia: z.string().trim(),
@@ -69,6 +70,7 @@ export default function FormularioAuditoria({
     auditor_lider_id: inicial?.auditor_lider_id ?? '',
     fecha_inicio: inicial?.fecha_inicio ?? '',
     fecha_fin: inicial?.fecha_fin ?? '',
+    objetivo: inicial?.objetivo ?? '',
     alcance: inicial?.alcance ?? '',
     criterios: inicial?.criterios ?? '',
     metodologia: inicial?.metodologia ?? '',
@@ -137,6 +139,7 @@ export default function FormularioAuditoria({
       auditor_lider_id: v.auditor_lider_id || null,
       fecha_inicio: v.fecha_inicio || null,
       fecha_fin: v.fecha_fin || null,
+      objetivo: v.objetivo || null,
       alcance: v.alcance || null,
       criterios: v.criterios || null,
       metodologia: v.metodologia || null,
@@ -259,6 +262,19 @@ export default function FormularioAuditoria({
           <option key={proyecto.id} value={proyecto.id}>{proyecto.nombre}</option>
         ))}
       </Select>
+
+      {/* ⚠️ El objetivo va ANTES del alcance porque así lo piden los dos formatos
+          de la firma (F-SG-11 y F-SG-12), y porque son cosas distintas: el
+          objetivo dice para qué se audita y el alcance qué se audita. Juntos en
+          un campo, la plantilla del informe tendría que partir un texto libre
+          por la mitad para imprimirlos bajo sus dos subtítulos. */}
+      <Textarea
+        etiqueta="Objetivo"
+        rows={2}
+        value={campos.objetivo}
+        ayuda="Para qué se hace esta auditoría. «Evaluar el grado de cumplimiento contra lo establecido en el sistema de gestión». Encabeza el informe."
+        onChange={(e) => escribir('objetivo', e.target.value)}
+      />
 
       <Textarea
         etiqueta="Alcance"

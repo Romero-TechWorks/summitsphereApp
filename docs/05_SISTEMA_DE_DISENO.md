@@ -123,8 +123,12 @@ por el color antes que por la palabra.
 en texto (*NC mayor*), y las listas se pueden ordenar y filtrar por tipo. Un
 auditor daltónico es un auditor perfectamente capaz.
 
-⚠️ Este catálogo vive **en un solo archivo**, `src/lib/normas/tiposHallazgo.ts`, y
-su lectura **nunca devuelve `undefined`**: degrada enseñando el valor crudo. En
+⚠️ Este catálogo vive **en un solo archivo**, `src/lib/auditorias/catalogos.ts`
+(`TIPOS_HALLAZGO`), y su lectura **nunca devuelve `undefined`**: degrada enseñando
+el valor crudo. Para el papel hay una segunda copia **en hexadecimal**, en
+`src/lib/plantillas/impresion.ts`, y no es una duplicación por descuido: la
+ventana de impresión no hereda `globals.css`, así que allá un `var(--error)` no
+existe. Las dos se mueven juntas. En
 JDM Built, un catálogo copiado en tres archivos que devolvía `undefined` tumbaba
 la pantalla entera — y como las tarjetas se pintan en bucle, **un solo hallazgo
 raro se llevaba los cuarenta**.
@@ -325,3 +329,28 @@ negro sin estilos al imprimir.
 Para papel: fondo blanco, texto navy, verde sólo en encabezados y líneas de
 sección. Nada de tintes de fondo — se comen el tóner y se ven sucios en una
 impresora láser de oficina de cliente.
+
+⚠️ **Única excepción al «nada de tintes»: las barras de un gráfico**, que *son* el
+dato — una barra sin relleno no es una barra. Se mantienen delgadas (9px) y cada
+una lleva **su número absoluto al lado**: un porcentaje sobre cuatro hallazgos
+dice «25%» y suena a mucho.
+
+**Lo que se fijó al construir el primero** (el informe de auditoría, F03·B5), y
+vale para los ocho que llegan con F06·B2:
+
+- La plantilla devuelve **una cadena de HTML**, y la misma cadena se enseña en
+  pantalla en un `<iframe sandbox>` vacío. Un solo renderizador: lo que el auditor
+  ve antes de imprimir es exactamente lo que sale.
+- **Ventana aparte, no `window.print()` sobre la app**: el armazón es un marco
+  fijo que recorta (CLAUDE.md regla 4), así que imprimir la pantalla sale cortado
+  por la primera página. Si el navegador bloquea la emergente, **se dice** — quien
+  está en una reunión de cierre necesita saber que le falta un permiso, no ver que
+  el botón no hizo nada.
+- `break-inside: avoid` en cada hallazgo y cada gráfico: uno partido entre dos
+  páginas se lee como dos.
+- **En el teléfono, imprimir es compartir.** Un auditor en una planta no tiene
+  impresora: enseña la pantalla y manda el PDF. La plantilla tiene que leerse en
+  vertical, no sólo en A4.
+- **Sin librería de gráficas.** El aplazamiento de `docs/02` se revisó con este
+  informe delante y se confirma: se generan en una planta sin señal, y un chunk
+  que se carga bajo demanda es un chunk que no está.

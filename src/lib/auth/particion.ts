@@ -34,12 +34,25 @@
  * significaría que la cuenta de pruebas nunca prueba lo que el cliente usa.
  */
 
+import type { Json } from '@/types/database'
+
 /** La llave del espacio de nombres de pruebas dentro de `config_firma.plantillas`. */
 export const RAIZ_DEV = 'dev'
 
-function objeto(valor: unknown): Record<string, unknown> {
+/**
+ * Un objeto dentro del jsonb.
+ *
+ * ⚠️ **`Json` y no `Record<string, unknown>`, y no es cosmético.** Lo que
+ * devuelve `conPlantilla()` va derecho a `.update({ plantillas })`, y esa columna
+ * es `jsonb`: con `unknown` dentro, TypeScript no puede comprobar que lo que se
+ * escribe sea serializable y **rechaza la asignación**. `Json` sale de
+ * `src/types/database.ts`, que es de donde salen todos los tipos (regla 9).
+ */
+type ObjetoJson = { [clave: string]: Json | undefined }
+
+function objeto(valor: unknown): ObjetoJson {
   return valor && typeof valor === 'object' && !Array.isArray(valor)
-    ? (valor as Record<string, unknown>)
+    ? (valor as ObjetoJson)
     : {}
 }
 
@@ -66,8 +79,8 @@ export function conPlantilla(
   previo: unknown,
   esDev: boolean,
   llave: 'tareas' | 'verificacion',
-  valor: unknown,
-): Record<string, unknown> {
+  valor: Json,
+): ObjetoJson {
   const raiz = objeto(previo)
   if (!esDev) return { ...raiz, [llave]: valor }
   return { ...raiz, [RAIZ_DEV]: { ...objeto(raiz[RAIZ_DEV]), [llave]: valor } }

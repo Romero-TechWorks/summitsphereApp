@@ -541,7 +541,13 @@ semáforo se calcula comparando contra la meta según el sentido.
 
 > **Aplicada por el dueño con `D00`.** El esquema entero vive en
 > `20260824120000_auditorias_y_hallazgos.sql`, y las 42 comprobaciones de
-> comportamiento que lo respaldan están listadas en esa tarea.
+> comportamiento que lo respaldan están listadas en esa tarea. `D04` le sumó
+> `adjuntos.item_id` (`20260824180000_evidencia_de_campo.sql`).
+>
+> ⚠️ **`D05` está escrita y pendiente de aplicar**:
+> `20260830120000_informe_de_auditoria.sql`, la del informe [F03·B5]. Añade
+> `auditorias.objetivo` y `sellar_emision_informe()`. **18 comprobaciones**, 11 de
+> ellas de regresión.
 
 ⚠️ **La regla de las fechas cambia en esta fase, y hay que leerla antes de tocar
 nada.** En las fases 01 y 02 la base sella toda fecha, porque una que viaja desde
@@ -551,7 +557,7 @@ el navegador se puede escribir a mano. Aquí eso vale sólo a medias:
 |---|---|---|
 | **Quién** (`auth.uid()`) | **Siempre la base** | No se falsifica ni en campo ni en oficina |
 | **Cuándo**, acción de CAMPO (`auditoria_items.evaluado_en`, `hallazgos.detectado_en`) | **El reloj del teléfono** | El auditor evaluó a las 10:15 en modo avión y la fila llega a las 14:00. Un `now()` del servidor pondría en el informe la hora en que volvió el semáforo, no la hora en que se vio el extintor descargado |
-| **Cuándo**, acción de OFICINA (`aprobado_en`, `cerrada_en`, `cerrado_en`) | **La base** | Es un acto administrativo y pasa con señal |
+| **Cuándo**, acción de OFICINA (`aprobado_en`, `cerrada_en`, `cerrado_en`, `informe_emitido_en`) | **La base** | Es un acto administrativo y pasa con señal |
 
 Y no se pierde nada: `creado_en` y `actualizado_en` siguen siendo del servidor, así
 que si el reloj del teléfono estaba mal las dos fechas discrepan y se ve.
@@ -583,9 +589,28 @@ llegaría tarde y sin nadie mirando.
 | `estado` | text CHECK | `planeada` · `en_curso` · `cerrada` · `cancelada` |
 | `fecha_inicio`, `fecha_fin` | date | CHECK: no termina antes de empezar |
 | `auditor_lider_id` | uuid FK | |
+| `objetivo` | text | **Para qué** se hace esta auditoría [F03·B5]. Ver abajo |
 | `alcance`, `criterios`, `metodologia`, `conclusiones` | text | El alcance **en palabras**, para el informe. El concreto son las tres tablas de abajo |
-| `informe_emitido_en` | timestamptz | |
+| `informe_emitido_en` | timestamptz | Lo sella `sellar_emision_informe()` [F03·B5]. Ver abajo |
 | `cerrada_en`, `cerrada_por_id` | | Los sella `sellar_cierre_auditoria()` |
+
+⚠️ **`objetivo` y `alcance` son columnas distintas a propósito.** El objetivo dice
+*para qué* se audita («evaluar el grado de cumplimiento contra lo establecido en
+el sistema de gestión») y el alcance *qué* se audita («las tres plantas del
+grupo»). Los formatos de la firma —`F-SG-11` y `F-SG-12`— abren los dos con
+«Objetivo», y el informe los imprime bajo subtítulos separados: en un solo campo,
+la plantilla tendría que partir un texto libre por la mitad. Y no basta con el
+`objetivo` de `programa_auditorias`, porque `programa_id` es NULLABLE — una
+preauditoría o una de seguimiento no cuelgan de ningún programa anual.
+
+⚠️ **`informe_emitido_en` lo sella el servidor**, y **cualquier valor no nulo que
+mande el cliente se descarta**: emitir el informe es una acción de oficina, y el
+plazo de una semana que da el procedimiento de la firma (`P-SG-03` §5.4.5) se mide
+contra esa fecha. Reemitir —el auditor corrige y vuelve a entregar— **vuelve a
+sellar**, porque la fecha que vale es la de la última entrega; ponerla en null
+retracta la emisión y no la re-sella. ⚠️ Enseñar el informe **preliminar** en la
+reunión de cierre no toca esta columna: eso no escribe nada, se arma desde la
+caché y por eso funciona sin señal.
 
 ⚠️ **El folio NO lo calcula el navegador**, y no es comodidad: con el RLS de este
 proyecto un consultor sólo ve las auditorías de sus clientes, así que contar las

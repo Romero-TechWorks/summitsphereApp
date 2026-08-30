@@ -181,7 +181,7 @@ Vale para las tres: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` 
 
 ---
 
-### `A10` — Aplicar la partición de pruebas · **Bloquea: que el cliente empiece a capturar en limpio**
+### `A10` — Aplicar la partición de pruebas · **Bloquea: que el cliente empiece a capturar en limpio** ✅ **HECHA** (30 ago 2026)
 
 ⚠️ **Léela entera antes de correr nada. Al terminar el paso 1, la app se va a ver
 vacía — y es lo que tiene que pasar.**
@@ -235,10 +235,83 @@ de una línea hecho por ti no tiene la ventana que tendría una regla automátic
 rota: la demostración ya está del otro lado y todavía no hay nadie que pueda
 verla. Son treinta segundos.
 
-**3. Comprobar que quedó.** Entra con la cuenta de pruebas: arriba a la derecha
-tiene que aparecer un distintivo **DEV · datos de prueba**, y la cartera de
-demostración completa. Entra con la cuenta de la firma: ese distintivo **no**
-aparece y la cartera está limpia.
+**3. Comprobar que quedó.** Entra con la cuenta de pruebas y tiene que salir la
+cartera de demostración completa; con la cuenta de la firma, limpia.
+
+⚠️ **El distintivo `DEV · datos de prueba` de la barra superior NO aparece hasta
+que despliegues el código.** Vive en `src/components/layout/Navbar.tsx`, que va en
+el mismo commit que las migraciones. Si aplicaste las migraciones antes de subir
+el código —que es perfectamente válido, el aislamiento es de la base y no del
+navegador—, **no uses el distintivo como comprobación**: usa el diagnóstico de
+aquí abajo.
+
+### Si después de marcar la cuenta la app SIGUE vacía
+
+**Redesplegar Vercel no es la respuesta**, y conviene tenerlo claro para no perder
+media hora: `A09` existe porque las `NEXT_PUBLIC_*` se incrustan durante el build.
+La partición no es una variable de entorno — vive entera en la base, y el
+navegador la ve en la siguiente consulta.
+
+Son dos causas, y esta consulta distingue cuál. **Cambia el correo en la segunda
+línea** y córrela en el *SQL Editor* de Supabase:
+
+```sql
+do $$
+declare
+  v_id     uuid;
+  v_correo text := 'TU-CORREO-AQUI';          -- ⚠️ cámbialo
+begin
+  select id into v_id from public.usuarios where correo = v_correo;
+
+  if v_id is null then
+    raise notice '❌ NO hay ninguna fila en usuarios con el correo %', v_correo;
+    raise notice '   El update afectó CERO filas. Correos que sí existen: %',
+      (select string_agg(correo, ', ') from public.usuarios);
+    return;
+  end if;
+
+  perform set_config('request.jwt.claims',
+    json_build_object('sub', v_id::text, 'role', 'authenticated')::text, true);
+
+  raise notice 'rol % · activo % · es_dev %',
+    (select rol from public.usuarios where id = v_id),
+    (select activo from public.usuarios where id = v_id),
+    (select es_dev from public.usuarios where id = v_id);
+  raise notice 'es_socio() %  ·  soy_dev() %  ·  clientes que vería %',
+    public.es_socio(), public.soy_dev(),
+    (select count(*) from public.mis_organizaciones());
+  raise notice 'organizaciones % · de ellas es_demo %',
+    (select count(*) from public.organizaciones),
+    (select count(*) from public.organizaciones where es_demo);
+end $$;
+```
+
+Simula tu sesión dentro de la transacción y le pregunta a la base lo mismo que le
+pregunta la app. Cómo leer lo que salga:
+
+| Lo que dice | Qué pasó | Qué hacer |
+|---|---|---|
+| «NO hay ninguna fila con el correo…» | **El `update` afectó cero filas.** Es la causa más común, y casi siempre es una mayúscula: `public.usuarios.correo` se copia tal cual de `auth.users.email`, y `where correo = '…'` distingue mayúsculas | Copia el correo de la lista que imprime el propio aviso y vuelve a correr el `update` |
+| `es_dev f` | El `update` no llegó a esa fila, o fue contra otra base | Vuelve a correrlo y comprueba con `select correo, es_dev from usuarios` |
+| `activo f` | `soy_dev()` exige `activo`. Una cuenta desactivada no ve nada, dev o no | `update usuarios set activo = true where …` |
+| `es_socio() f` | La cuenta no es socio. La partición está bien, pero sin clientes asignados no ve nada | Revísalo con `A04` |
+| `soy_dev() t` y **clientes que vería 0** | La partición está bien y **la de pruebas está de verdad vacía** | ¿Se aplicó `§5` de la migración? Mira la última columna: si `es_demo` es 0, la cartera se quedó del lado real |
+| `soy_dev() t` y **clientes que vería > 0** | ⚠️ **La base está bien: el problema es el navegador** | Ver abajo |
+
+**Si la base contesta bien y la app sigue vacía, es la caché del navegador.** Esta
+app guarda su caché en el disco del navegador para poder abrir sin señal
+(`src/lib/offline/persistencia.ts`), y una consulta se considera fresca **cinco
+minutos**. Si abriste la app entre el paso 1 y el paso 2, se guardó una lista
+vacía —que en ese momento era la respuesta correcta— y se sigue sirviendo desde
+ahí.
+
+Se cura solo a los cinco minutos con una recarga. Para no esperar: recarga
+forzada (`Ctrl`+`Shift`+`R`), o **Borrar datos del sitio** en las herramientas del
+navegador, o simplemente cierra sesión y vuelve a entrar.
+
+⚠️ **Esto NO pasa con las cuentas de la firma**, que empiezan de cero y nunca
+llegaron a guardar una caché con la cartera vieja. Sólo le pasa a quien tenía la
+app abierta mientras se aplicaba la migración — es decir, a ti.
 
 ### Lo que hay que rehacer después, y sólo una vez
 
@@ -603,19 +676,58 @@ no la que manda el cliente; con hallazgo y punto a la vez **manda el hallazgo**
 intentar borrarlo y sus fotos siguen ahí; uno en blanco sí se quita; y el
 recorrido guarda **la hora del auditor**, no la del servidor.
 
-### `D01` — Entregar el formato de informe de auditoría · **Bloquea: emitir informes**
+### `D01` — Entregar el formato de informe de auditoría · ✅ **HECHA** (30 ago 2026)
 
-El Word o el PDF que la firma usa hoy. Lo necesitamos tal cual para reproducirlo:
-secciones, orden, textos fijos, dónde van las firmas.
+Llegó el **`F-SG-12 Reporte Final de Auditoría Interna`**, junto con el
+procedimiento `P-SG-03` y los formatos `F-SG-11` y `F-SG-06`. Está transcrito, con
+su mapeo campo por campo, en
+[`formatos_informeAuditorias/`](formatos_informeAuditorias/README.md) — **los
+`.docx` y `.xlsx` originales no se commitean**, esos Markdown son su sustituto.
 
-### `D02` — Definir los criterios de clasificación · **Bloquea: capacitar al equipo**
+Con eso se construyó F03·B5: la pestaña **Informe** del expediente de cada
+auditoría.
 
-Por escrito: **qué hace mayor a una no conformidad**. Ausencia total de un
-proceso, falla sistémica, incumplimiento legal, riesgo a la seguridad… El criterio
-de la firma, en una página.
+### `D02` — Definir los criterios de clasificación · ✅ **HECHA** (30 ago 2026)
 
-Va a vivir dentro de la app como ayuda contextual cuando un auditor clasifique un
-hallazgo. Es lo que hace que dos auditores distintos clasifiquen igual.
+Llegó dentro del mismo paquete, y mejor de lo que se pidió: el **`P-SG-03` §3**
+define por escrito **NC mayor**, **NC menor** y **observación**, con la frontera
+explícita. Ya está dentro de la app, en `CRITERIO_HALLAZGO`
+(`src/lib/auditorias/catalogos.ts`), que es la ayuda que se pinta cuando un
+auditor elige el tipo de un hallazgo.
+
+⚠️ **Falta la mitad, y es tuya.** El procedimiento **no define
+`oportunidad de mejora` ni `conformidad`**, porque el cliente para el que se
+escribió no los usa. Nuestro catálogo tiene cinco tipos y el informe necesita los
+cinco —la sección «Fortalezas del SGC» sale de `conformidad`—, así que esos dos
+siguen con un texto general de arranque. Si la firma tiene criterio propio para
+ellos, mándalo y se reemplaza.
+
+### `D05` — Aplicar la migración del informe · **Bloquea: el objetivo y la fecha de emisión**
+
+`20260830120000_informe_de_auditoria.sql`. Es la más pequeña de todas: añade la
+columna `auditorias.objetivo` y un trigger que fecha la emisión del informe en el
+servidor.
+
+**Por qué hacía falta.** Los dos formatos de la firma abren con «Objetivo», y
+hasta ahora el objetivo sólo vivía en el programa anual — que puede no existir:
+una preauditoría o una de seguimiento no cuelgan de ningún programa. Y
+`informe_emitido_en` existía desde la Fase 03 sin que nadie la escribiera nunca,
+así que la pestaña Plan llevaba desde entonces diciendo «Sin emitir» sin manera de
+cambiarlo.
+
+**Cómo se aplica.** Igual que las anteriores: pégala en el editor SQL de Supabase
+y ejecútala, o `npx supabase db push` si trabajas con la CLI.
+
+⚠️ **La app funciona sin ella, a medias y sin romperse.** El informe se imprime
+igual; lo que pasa es que la sección «Objetivo» sale vacía y el botón «Marcar como
+emitido» falla al guardar. No hay prisa, pero tampoco motivo para esperar.
+
+**Comprobado antes de mandártela:** se aplicó en un Postgres 17 desechable con las
+doce anteriores en orden y pasó **18 comprobaciones de comportamiento** — que el
+servidor descarta la fecha de emisión que mande el navegador, que reemitir vuelve
+a sellar, que retractar no re-sella, que editar cualquier otra cosa no toca esa
+fecha, y **once de regresión**: el folio, el sello de cierre, la partición de
+pruebas y que ni `authenticated` ni `service_role` puedan borrar evidencia.
 
 ### `D03` — Crear la carpeta de evidencias · → **movida a `C04`** (22 ago 2026) ✅ **HECHA** 
 

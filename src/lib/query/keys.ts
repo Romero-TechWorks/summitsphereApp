@@ -15,6 +15,17 @@ export const queryKeys = {
     /** El perfil de quien tiene la sesión abierta: su nombre y su rol. */
     actual: () => ['usuario', 'actual'] as const,
   },
+  /**
+   * La identidad de la firma: el membrete de todo lo imprimible [F03·B5].
+   *
+   * ⚠️ Fuera de `cartera` porque no es de ningún cliente, y **sin la partición
+   * dentro de la clave** al revés que las dos plantillas de `config_firma`:
+   * aquéllas leen un jsonb partido por espacio de nombres, y esto es la misma
+   * razón social para las dos particiones. Ver `src/lib/queries/firma.ts`.
+   */
+  firma: {
+    identidad: () => ['firma', 'identidad'] as const,
+  },
   tablero: {
     todo: () => ['tablero'] as const,
     /** El orden en que esta persona acomodó sus widgets. */

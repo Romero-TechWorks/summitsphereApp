@@ -103,9 +103,10 @@ src/
     normas/             importador del catálogo de normas
     documentos/         zip · docx · pdf · markdown · convertir   [F02·B2]
     sistemas/           catálogos de la Fase 02 (documentos, requisitos, riesgos…)
-    auditorias/         catálogos de la Fase 03 (tipos, estados, veredictos, papeles)
+    auditorias/         catálogos de la Fase 03 · precarga.ts · informe.ts [F03·B5]
     asistente/          proveedor · esquemas · instrucciones · herramientas
-    plantillas/         catálogo · datos · render
+    plantillas/         impresion.ts (paleta literal · escapado · ventana)
+                        informeAuditoria.ts  [F03·B5] · el resto llega en F06·B2
     utils/              helpers puros
     validation/         esquemas Zod compartidos
   types/database.ts     todos los tipos, generados desde el esquema
@@ -519,10 +520,10 @@ sale vacía — no es que se hayan perdido los datos, es que nunca se bajaron. Y
 cuando se nota, ya está en un sótano.
 
 Por eso se baja **todo de golpe y a propósito**, con un botón que se pulsa en el
-estacionamiento. Vive en `src/lib/auditorias/precarga.ts` y son diez piezas: el
-plan, la lista de verificación, la agenda, el alcance, el árbol de cláusulas, el
-equipo, los sitios y contactos del cliente, el mapa de procesos, sus documentos y
-**los hallazgos ya levantados**.
+estacionamiento. Vive en `src/lib/auditorias/precarga.ts` y son **once** piezas:
+el plan, la lista de verificación, la agenda, el alcance, el árbol de cláusulas,
+el equipo, los sitios y contactos del cliente, el mapa de procesos, sus
+documentos, **los hallazgos ya levantados** y **el membrete de la firma**.
 Un aviso explícito confirma **«lista para trabajar sin señal»**.
 
 Cuatro cosas que no son obvias:
@@ -585,11 +586,27 @@ con `CRON_SECRET`.
 
 ### §8.15 · Plantillas y reportes
 
-Catálogo en código (`src/lib/plantillas/catalogo.ts`) + configuración en
-`config_firma.plantillas jsonb` + render **sin dependencias con colores
-literales** — la ventana de impresión no hereda `globals.css`. Los recolectores de
-`datos.ts` sólo consultan los campos encendidos: al agregar un campo al catálogo
-hay que sumar su rama ahí, o saldrá siempre como "sin registros".
+Render **sin dependencias y con colores literales** — la ventana de impresión no
+hereda `globals.css` (docs/05 §6). Los cimientos están en
+`src/lib/plantillas/impresion.ts`: la paleta en hexadecimal, `esc()` para escapar
+**cada** interpolación, el armazón `@page` con sus reglas de salto y la apertura
+de la ventana. El primer entregable es el informe de auditoría
+(`informeAuditoria.ts`, F03·B5); los otros ocho llegan con F06·B2, más el catálogo
+en código y su configuración en `config_firma`.
+
+Tres reglas que ya se pagaron al escribir el primero:
+
+- ⚠️ **Una plantilla devuelve una CADENA, no JSX**, y esa misma cadena se enseña
+  en pantalla dentro de un `<iframe sandbox>` vacío. Así hay **un solo
+  renderizador** —lo que se ve es lo que sale por la impresora— y el documento
+  queda sin permisos, que es lo que corresponde a un texto que escribieron
+  personas. Es la misma cautela que el visor de documentos de F02·B2.
+- ⚠️ **Cada interpolación pasa por `esc()`.** Aquí no protege React: el HTML se
+  arma concatenando, y la descripción de un hallazgo o la razón social de un
+  cliente son texto de una persona.
+- ⚠️ **Una plantilla no consulta.** Todo entra por parámetro, desde la caché. El
+  informe se genera en una planta sin señal; una consulta dentro de la plantilla
+  sería un documento en blanco en la reunión de cierre.
 
 ### §8.16 · Buscador global
 

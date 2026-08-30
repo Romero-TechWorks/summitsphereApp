@@ -740,9 +740,9 @@ orden: **42 comprobaciones de comportamiento**, listadas en la tarea del dueño
 ## F03·B3 — Ejecución en campo ⚠️ **offline obligatorio**  ✅ *código listo, 24 ago 2026*
 
 Este es el bloque donde el proyecto se gana o se pierde. Vive en la pestaña
-**Recorrido** del expediente de la auditoría, la última de las seis: las otras
-cinco se preparan una vez en la oficina, ésta se abre en la planta y no se sale de
-ella en tres horas.
+**Recorrido** del expediente de la auditoría: las cinco pestañas anteriores se
+preparan una vez en la oficina, ésta se abre en la planta y no se sale de ella en
+tres horas. (Las de después —Hallazgos e Informe— salen de lo que pasa aquí.)
 
 **Migración:** `20260824180000_evidencia_de_campo.sql`, tarea del dueño `D04`.
 
@@ -849,13 +849,61 @@ el vencimiento se calculan en memoria (`diasAbierto`) sobre la lista que ya est�
 bajada. Se moverá a una vista con `security_invoker` el día que una firma tenga
 decenas de miles de hallazgos.
 
-## F03·B5 — Informe de auditoría
+## F03·B5 — Informe de auditoría  ✅ *código listo, 30 ago 2026*
 
-- Plantilla imprimible sin dependencias, con colores literales (la ventana de
-  impresión no hereda `globals.css`).
-- Contenido: alcance, criterios, equipo, agenda cumplida, resumen de hallazgos por
-  tipo y cláusula, conclusiones, firmas.
-- Se genera **el mismo día**, en el sitio, con lo que hay en la caché.
+**Migración:** `20260830120000_informe_de_auditoria.sql`, tarea del dueño `D05`.
+Es la más pequeña de la fase: una columna y un trigger.
+
+Reproduce el **`F-SG-12 Reporte Final de Auditoría Interna`** de la firma, que
+llegó con `D01` el 30 ago 2026 junto con el procedimiento `P-SG-03` y otros dos
+formatos. Todo está transcrito en
+[`docs/formatos_informeAuditorias/`](formatos_informeAuditorias/README.md) — los
+originales `.docx`/`.xlsx` no se commitean.
+
+- **Pestaña «Informe»** en `/auditorias/[id]`, la séptima y última. Plantilla
+  imprimible sin dependencias, con colores literales (`src/lib/plantillas/`).
+- Nueve secciones **en el orden del formato original, que no se cambia**: es el
+  documento que el cliente ya sabe leer. Objetivo y alcance · reunión de apertura ·
+  resumen con la agenda cumplida · fortalezas del SGC · observaciones · no
+  conformidades (mayores y menores por separado) · gráficos · conclusión · equipo
+  auditor y firma.
+- ⚠️ **La misma cadena de HTML se enseña en pantalla y se imprime.** Va en un
+  `<iframe sandbox>` sin permisos: lo que se ve es exactamente lo que sale, con un
+  solo renderizador, y ni un `<script>` colado en la descripción de un hallazgo
+  podría correr. Imprimir abre una **ventana aparte**, que es lo que exige
+  docs/05 §6 — la de la app está dentro de un armazón que recorta.
+- ⚠️ **Los hallazgos `anulado` NO se imprimen.** Siguen en la base con su motivo y
+  su historial —regla 13—, pero no son un resultado de la auditoría: meterlos en
+  el documento que ve el cliente convertiría un error del auditor en una acusación
+  contra su empresa. Lo que un certificador revisa es el historial, no el informe.
+- ⚠️ **Emitir el informe lo fecha el SERVIDOR** (`sellar_emision_informe()`).
+  Es una acción de oficina, y el plazo de **una semana** que da P-SG-03 §5.4.5 se
+  mide contra esa fecha. Reemitir vuelve a sellar; retractar la deja en null.
+  Enseñar el preliminar en la reunión de cierre **no escribe nada**.
+- ⚠️ **Se genera el mismo día, en el sitio, con lo que hay en la caché** — y eso
+  impone la regla dura del bloque: **el informe no introduce ni una clave de
+  consulta nueva**. Sus nueve consultas son literalmente las que baja
+  `piezasDeLaPrecarga()`.
+
+### Lo que faltaba en la precarga, y se vio al escribir esto
+
+`config_firma` sólo se leía para su columna `plantillas`, sin clave de caché. Su
+**identidad** —razón social y logotipo— no estaba en ningún sitio, así que el
+informe que se enseña en la reunión de cierre habría salido **sin membrete**: un
+documento anónimo, en el único momento en que el entregable se mira delante de
+quien lo paga. Es `src/lib/queries/firma.ts`, su clave `firma.identidad()` y la
+**undécima pieza** de la precarga. Se comparte con los ocho entregables
+imprimibles que llegan en F06·B2.
+
+### Los «Gráficos de resultados» NO traen librería de gráficas
+
+El formato de la firma tiene una sección con ese nombre, que es exactamente la
+condición con la que el aplazamiento del final de este documento las dejaba entrar
+(*«si un informe lo exige de verdad»*). Se revisó y **sigue sin aplicar**, por tres
+razones y la tercera decide: no romper el bundle; un `canvas` no imprime bien; y
+**esto se genera en una planta sin señal**, donde un chunk que se carga bajo
+demanda es un chunk que no está. Son barras nativas con su número absoluto al
+lado — un porcentaje sobre cuatro hallazgos dice «25%» y suena a mucho.
 
 ### Criterio de cierre — Fase 03
 
@@ -874,9 +922,13 @@ Requiere que `C00` esté aplicada: amplía funciones y una columna que nacen ah�
 un solo archivo —no hay una segunda de Storage, porque el bucket `evidencias` ya
 se creó con los adjuntos—. ⚠️ **Quita permisos a propósito**: revoca el DELETE de
 `hallazgos` y `auditorias` y el INSERT/UPDATE/DELETE del historial **también a
-`service_role`**, que se salta el RLS. `D01` Aportar el formato oficial del
-informe de auditoría de la firma. `D02` Validar la clasificación de hallazgos y
-sus criterios (qué hace mayor a una NC). `D03` → **movido a `C04`** (22 ago 2026):
+`service_role`**, que se salta el RLS. `D01` ✅ **HECHA** (30 ago 2026): llegó el `F-SG-12`, con el procedimiento y otros
+dos formatos. `D02` ✅ **HECHA** (30 ago 2026): `P-SG-03` §3 define NC mayor, NC
+menor y observación, y ya está en `CRITERIO_HALLAZGO`. ⚠️ **Falta la mitad**: el
+procedimiento no define `oportunidad de mejora` ni `conformidad`, y el informe
+necesita los cinco tipos. `D05` **Aplicar la migración de B5**,
+`20260830120000_informe_de_auditoria.sql` — `auditorias.objetivo` y el sello de
+emisión del informe. `D03` → **movido a `C04`** (22 ago 2026):
 el bucket `evidencias` se creó con los adjuntos, que se adelantaron a F02·B2b.
 
 ⚠️ **`C01` bloquea a B2.** La lista de verificación se genera de `norma_clausulas`;
@@ -1256,7 +1308,7 @@ Registrar esto evita que alguien lo "arregle" dentro de seis meses:
 | **Firma electrónica avanzada (e.firma) en informes** | La firma con nombre + bitácora inmutable basta para auditoría interna | Si un organismo certificador la exige |
 | **Integración con la Academia (LMS)** | Es otro producto, con su propio ciclo | Fase 09, si el LMS existe |
 | **Facturación encendida de fábrica** | La firma factura hoy por otro medio y funciona | Cuando el dueño lo pida (F06·B3) |
-| **Gráficas de librería (Recharts y similares)** | Barras nativas y números absolutos cargan más rápido y no rompen el bundle | Si un informe lo exige de verdad |
+| **Gráficas de librería (Recharts y similares)** | Barras nativas y números absolutos cargan más rápido y no rompen el bundle | ⚠️ **Revisado y confirmado** (30 ago 2026): el informe de F03·B5 tiene su sección «Gráficos de resultados» y aun así no entran — se generan en una planta sin señal, donde un chunk bajo demanda no está |
 | **Modo desatendido general del Módulo C** | Un correo automático a un cliente es un riesgo comercial | Por organización, con acuerdo firmado |
 
 ---

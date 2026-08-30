@@ -518,10 +518,22 @@ cada auditoría concreta.
 3. **El folio no se captura**: lo pone el sistema al guardar (`AUD-2026-014`). Es
    el consecutivo de la firma, no del cliente.
 4. Pulsa la auditoría para abrirla. Dentro: **Plan · Alcance · Lista de
-   verificación · Equipo · Agenda · Recorrido · Hallazgos**.
-5. Pestaña **Alcance**: qué normas, qué sitios y qué procesos entran.
-6. Pestaña **Equipo**: quién audita y con qué papel en *esta* auditoría.
-7. Pestaña **Agenda**: **Añadir un punto** por cada bloque del día.
+   verificación · Equipo · Agenda · Recorrido · Hallazgos · Informe**.
+5. Pestaña **Plan** → **Editar el plan**: ahí van el **objetivo**, el **alcance**,
+   los **criterios** y la **metodología**, en palabras. Los cuatro se imprimen en
+   el informe (Paso 13), así que lo que escribas ahí es lo que va a leer tu
+   cliente.
+   ⚠️ **El objetivo y el alcance son campos distintos**, igual que en tu `F-SG-11`:
+   el objetivo dice *para qué* auditas («evaluar el grado de cumplimiento contra lo
+   establecido en el SGC») y el alcance dice *qué* auditas («las tres plantas del
+   grupo»). El informe los imprime por separado.
+6. Pestaña **Alcance**: qué normas, qué sitios y qué procesos entran.
+7. Pestaña **Equipo**: quién audita y con qué papel en *esta* auditoría. Sus
+   certificaciones se imprimen en el informe.
+8. Pestaña **Agenda**: **Añadir un punto** por cada bloque del día — incluidas la
+   **reunión de apertura** y la **de cierre**, que en tu `F-SG-11` son el primer y
+   el último renglón. El informe saca de ahí su sección de apertura y la lista de
+   auditores por proceso.
 
 ### Cosas que conviene saber
 
@@ -607,9 +619,12 @@ el auditor ya está en un sótano.
    hallazgo, la app te enseña ahí mismo el criterio para clasificarlo — es lo que
    hace que dos auditores clasifiquen igual, y por eso no está en un manual
    aparte.
-   ⚠️ **Hoy ese texto es un borrador de arranque, no el criterio de Summit.**
-   Se sustituye por el tuyo en cuanto me lo entregues; es el pendiente `D02` de
-   la tabla de abajo, y es de los que conviene no dejar correr.
+   ✅ **Ese texto ya es el criterio de Summit** para *NC mayor*, *NC menor* y
+   *observación*: salió del procedimiento `P-SG-03` que me entregaste.
+   ⚠️ **Faltan dos**: *oportunidad de mejora* y *conformidad* siguen con el texto
+   de arranque, porque tu procedimiento no los define —el cliente para el que lo
+   escribiste no los usa— y el informe sí necesita los cinco. Está en la tabla de
+   abajo.
 4. Abajo hay un **contador de pendientes** que no se esconde nunca. Es la prueba
    de que tus tres horas de trabajo siguen ahí.
 
@@ -637,6 +652,70 @@ dice cuántas cosas quedan por enviar y, si algo se rechazó, **por qué**.
 
 ---
 
+# Paso 13 · El informe de la auditoría
+
+> La última pestaña del expediente de una auditoría. Es el entregable que ve tu
+> cliente, así que es donde se nota si los doce pasos anteriores estaban bien.
+
+Abre la auditoría → pestaña **Informe**. No hay nada que llenar aquí: el documento
+se arma solo con lo que ya capturaste.
+
+**Reproduce tu `F-SG-12 Reporte Final de Auditoría Interna`**, con sus mismas
+secciones y en el mismo orden. De dónde sale cada una:
+
+| Sección del informe | De dónde la saca |
+|---|---|
+| Objetivo y alcance, criterios | La pestaña **Plan** y la pestaña **Alcance** |
+| Reunión de apertura | El renglón de la **Agenda** que se llame «Reunión de apertura», con su nota |
+| Resumen y agenda cumplida | Las casillas de *cumplido* que fuiste marcando en la **Agenda** |
+| Fortalezas del sistema | Los hallazgos de tipo **conformidad** |
+| Observaciones | Los de tipo **observación** y **oportunidad de mejora** |
+| No conformidades | Los de tipo **NC mayor** y **NC menor**, separados |
+| Gráficos de resultados | Se calculan solos |
+| Conclusión | El campo *Conclusiones* de la pestaña **Plan** |
+| Equipo y firma | La pestaña **Equipo**, con las certificaciones de cada quien |
+
+### Lo que se ve en pantalla es lo que sale impreso
+
+La vista previa **no es una aproximación**: es exactamente el mismo documento. El
+botón **Imprimir o guardar PDF** lo abre en una ventana aparte.
+
+⚠️ **En el teléfono no hay impresora, y no hace falta.** En la reunión de cierre
+enseñas la pantalla, y si el cliente quiere copia, «imprimir» guarda un PDF que se
+manda por correo o WhatsApp.
+
+⚠️ **Funciona sin señal**, si descargaste la auditoría en el Paso 12. Es a
+propósito: el informe preliminar se enseña en la reunión de cierre, en la planta.
+
+### Antes de imprimir, la app te dice qué falta
+
+Si te falta el objetivo, la conclusión o el equipo, sale un aviso nombrándolo — y
+**te deja imprimir igual**. Un preliminar incompleto en la reunión de cierre sigue
+siendo mejor que ningún documento; quien decide eres tú.
+
+### Marcar el informe como emitido
+
+Enseñar el preliminar **no marca nada**. Cuando entregues el informe formalmente,
+pulsa **Marcar como emitido**: la fecha la pone el servidor, no tu computadora,
+porque tu propio procedimiento da **una semana de plazo** desde la auditoría y esa
+fecha es la que un organismo certificador contrasta. Si corriges el informe y lo
+vuelves a entregar, vuelve a pulsarlo: vale la fecha de la última entrega.
+
+### Cosas que conviene saber
+
+- ⚠️ **Los hallazgos que anulaste NO salen en el informe.** Siguen guardados con su
+  motivo y su historial —eso no se borra nunca—, pero no son un resultado de la
+  auditoría: imprimir un error tuyo en el documento que ve el cliente lo
+  convertiría en una acusación contra su empresa.
+- **«Fortalezas del sistema» se imprime aunque esté vacía**, con una línea que lo
+  dice. Es a propósito: un informe que sólo enumera lo que está mal es una lista
+  de quejas, y verlo en el papel es lo que recuerda registrar también lo que sí
+  cumple.
+- El **membrete** —tu razón social y tu logotipo— sale de la configuración de la
+  firma. Si el informe sale sin él, es que esa configuración está vacía.
+
+---
+
 # Lo que tienes que decidirme o entregarme
 
 Esto no se captura en la app: son documentos o decisiones tuyas que yo tengo que
@@ -644,8 +723,8 @@ meter en el sistema.
 
 | Qué | Para qué | Estado |
 |---|---|---|
-| **El formato de informe de auditoría** | El Word o el PDF que la firma usa hoy, tal cual: secciones, orden, textos fijos y dónde van las firmas. Sin él no se pueden emitir informes | Pendiente (`D01`) |
-| **Los criterios de clasificación de hallazgos** | Por escrito y en una página: **qué hace mayor a una no conformidad**. Ausencia total de un proceso, falla sistémica, incumplimiento legal, riesgo a la seguridad… Hoy la app trae un texto de arranque que hay que sustituir por el tuyo | Pendiente (`D02`) |
+| ~~**El formato de informe de auditoría**~~ | Entregado el 30 ago 2026: el `F-SG-12`, con el procedimiento `P-SG-03` y dos formatos más. Ya está construido — es el Paso 13 | ✅ **Hecho** (`D01`) |
+| **Los criterios de *oportunidad de mejora* y *conformidad*** | Los de **NC mayor, NC menor y observación** ya llegaron en tu `P-SG-03` y están en la app. Esos dos no los define tu procedimiento, y el informe necesita los cinco. Si no tienes criterio propio, dilo y se deja el texto general | A medias (`D02`) |
 | **Los nombres de los estados de la matriz** | La app propone *no iniciado · documentado · implementado · evidenciado · no aplica*. Si en la firma les dicen de otra manera, **dilo antes de capturar mil requisitos**: después es un cambio de base de datos | Pendiente (`C02`) |
 | **Los plazos por defecto** | Cuántos días tiene un cliente para responder. Propuesta: NC mayor 15 · NC menor 30 · Observación 60 · Oportunidad de mejora 90 | Pendiente (`E03`) |
 | **Las cuentas del equipo** | Nombre, correo y rol de cada persona de la firma. Las creo yo; el reparto por cliente lo haces tú en el Paso 6 | Pendiente (`A04`) |

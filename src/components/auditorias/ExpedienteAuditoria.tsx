@@ -32,13 +32,16 @@ import PanelRecorrido from './PanelRecorrido'
 import PanelHallazgos from './PanelHallazgos'
 import PanelEquipoAuditor from './PanelEquipoAuditor'
 import PanelAgenda from './PanelAgenda'
+import PanelInforme from './PanelInforme'
 
 /**
- * ⚠️ «Informe» entra en F03·B5. No se declara todavía: una pestaña que no puede
- * enseñar nada es un interruptor muerto (CLAUDE.md regla 11).
- *
  * El orden es el de la vida de una auditoría: se planea, se acota el alcance, de
- * ahí sale la lista, se reparte el equipo, se manda la agenda… y **se recorre**.
+ * ahí sale la lista, se reparte el equipo, se manda la agenda, **se recorre**, se
+ * levantan los hallazgos y sale el informe.
+ *
+ * ⚠️ «Informe» es la última y llegó con F03·B5: reproduce el `F-SG-12` de la
+ * firma y se arma **con lo que ya está en la caché**, para que se pueda enseñar
+ * en la reunión de cierre sin señal.
  *
  * ⚠️ «Recorrido» va al final aunque sea lo más importante, y es deliberado: las
  * cinco anteriores se preparan **una vez, en la oficina**; ésta se abre en la
@@ -54,6 +57,7 @@ const PESTANAS: readonly Pestana[] = [
   { clave: 'agenda', etiqueta: 'Agenda' },
   { clave: 'recorrido', etiqueta: 'Recorrido' },
   { clave: 'hallazgos', etiqueta: 'Hallazgos' },
+  { clave: 'informe', etiqueta: 'Informe' },
 ]
 
 const FORM = 'form-editar-auditoria'
@@ -234,6 +238,7 @@ export default function ExpedienteAuditoria({ id }: { id: string }) {
       )}
       {activa === 'recorrido' && <PanelRecorrido auditoria={auditoria} />}
       {activa === 'hallazgos' && <PanelHallazgos auditoria={auditoria} />}
+      {activa === 'informe' && <PanelInforme auditoria={auditoria} />}
 
       <Modal
         abierto={editando}
@@ -303,6 +308,7 @@ function Plan({ auditoria }: { auditoria: AuditoriaEnLista }) {
         )}
       </div>
 
+      <Parrafo etiqueta="Objetivo" texto={auditoria.objetivo} />
       <Parrafo etiqueta="Alcance" texto={auditoria.alcance} />
       <Parrafo etiqueta="Criterios" texto={auditoria.criterios} />
       <Parrafo etiqueta="Metodología" texto={auditoria.metodologia} />

@@ -21,9 +21,29 @@ de dominio cuelga de una `org_id`. Ver §Reglas críticas, regla 1.
 
 ## Estado actual — lee esto antes de pedir nada
 
-- ⚠️ **HAY DOS MIGRACIONES ESCRITAS Y SIN APLICAR: la partición de pruebas**
-  (`20260825120000_particion_de_pruebas.sql` y
-  `20260825120100_storage_particion_de_pruebas.sql`, tarea `A10`). Parten la base
+- ⚠️ **HAY UNA MIGRACIÓN ESCRITA Y SIN APLICAR, Y ES LA ÚNICA:**
+  `20260830120000_informe_de_auditoria.sql` — tarea `D05`, la de F03·B5. Es la más
+  pequeña de todas: `auditorias.objetivo` y el trigger `sellar_emision_informe()`.
+  Probada en Docker con las **doce anteriores en orden**: **18 comprobaciones**,
+  once de ellas de regresión. `src/types/database.ts` está regenerado desde ese
+  esquema (tres líneas: `objetivo` en `Row`, `Insert` y `Update`).
+  **Lo que hay que saber:**
+  - **`objetivo` no es `alcance`.** El objetivo dice *para qué* se audita y el
+    alcance *qué* se audita, y los dos formatos de la firma abren con «Objetivo».
+    No bastaba el de `programa_auditorias`: `programa_id` es NULLABLE, así que una
+    preauditoría o una de seguimiento se quedaban sin ninguno.
+  - ⚠️ **`informe_emitido_en` existía desde la Fase 03 y NUNCA lo escribió nadie.**
+    La pestaña Plan llevaba desde entonces diciendo «Sin emitir» sin manera de
+    cambiarlo. Ahora lo sella el servidor, y **descarta cualquier fecha que mande
+    el navegador**: emitir es de oficina, y el plazo de una semana de `P-SG-03`
+    §5.4.5 se mide contra ella. Reemitir vuelve a sellar; retractar (null) no.
+  - ⚠️ **La app funciona sin la migración, a medias y sin romperse**: el informe se
+    imprime igual, la sección «Objetivo» sale vacía y «Marcar como emitido» falla
+    al guardar. No hay que bloquear nada esperándola.
+
+- ✅ **LA PARTICIÓN DE PRUEBAS ESTÁ APLICADA** (30 ago 2026, por el dueño):
+  `20260825120000_particion_de_pruebas.sql` y
+  `20260825120100_storage_particion_de_pruebas.sql`, tarea `A10`. Parten la base
   en dos con **una sola igualdad**, `organizaciones.es_demo = soy_dev()`: a un
   lado la cartera real del cliente, al otro la de demostración, que sólo ve una
   cuenta con `usuarios.es_dev`. Ninguna ve a la otra, y el candado está en el RLS.
@@ -68,6 +88,28 @@ de dominio cuelga de una `org_id`. Ver §Reglas críticas, regla 1.
   - **El distintivo `DEV` de la Navbar es PERMANENTE**, al revés que
     `EstadoConexion`. Las dos carteras se ven idénticas; sin él, «¿esto que estoy
     borrando es del cliente o es de mentira?» no tiene respuesta en pantalla.
+    ⚠️ **Y NO sirve para comprobar que la partición quedó**: vive en el código, no
+    en la base, así que no aparece hasta desplegar. El aislamiento en cambio es
+    efectivo en cuanto se aplica la migración, con el build que ya esté en línea.
+    La comprobación buena es el bloque de diagnóstico de `docs/09` · `A10`, que
+    simula la sesión con `set_config('request.jwt.claims', …)` y pregunta
+    `soy_dev()` y `mis_organizaciones()`.
+  - ⚠️ **«Marqué mi cuenta y la app sigue vacía» tiene DOS causas, y ninguna es
+    Vercel.** Una: el `update ... where correo = '…'` afectó cero filas, casi
+    siempre por una mayúscula —`usuarios.correo` se copia tal cual de
+    `auth.users.email`—. Dos: la caché persistida guardó la lista vacía que era
+    correcta entre aplicar la migración y marcar la cuenta, y `staleTime` son
+    cinco minutos. Se cura con una recarga forzada o cerrando sesión. `docs/09` ·
+    `A10` lo tiene tabulado.
+  - ⚠️ **Dejó el `npm run build` en ROJO durante seis días, y ya está arreglado**
+    (30 ago 2026). `conPlantilla()` en `src/lib/auth/particion.ts` devolvía
+    `Record<string, unknown>`, y eso **no es asignable a una columna `jsonb`**:
+    TypeScript no puede comprobar que un `unknown` sea serializable, así que los
+    dos `.update({ plantillas })` —`tareas.ts` y `verificacion.ts`— fallaban con
+    TS2322. Ahora el archivo se tipa contra `Json` de `src/types/database.ts`
+    (regla 9). ⚠️ **Se coló porque `npm run lint` pasa limpio**: el error es sólo
+    de tipos, y la comprobación de tipos vive en `npm run build`. Hay que correr
+    los dos, siempre — está en §Cómo trabajar y no es opcional.
   - ⚠️ **De paso se cerró un agujero que ya existía en Storage**:
     `documentos_borrar` y `evidencias_borrar` decían `es_socio()` sin mirar la
     ruta, así que un socio podía borrar objetos con rutas que
@@ -104,12 +146,11 @@ de dominio cuelga de una `org_id`. Ver §Reglas críticas, regla 1.
   sin justificación, tarea con evidencia obligatoria sin adjunto, organización
   con documentos). Los tipos generados desde ese esquema salieron **idénticos**
   a `src/types/database.ts`.
-- **De la Fase 03 (24 ago 2026): el esquema entero y `B1`–`B4`.** Sólo falta
-  `B5`, el informe, que espera al formato de la firma (`D01`). `/auditorias` deja de
-  ser una pantalla pendiente y se vuelve el dominio, con dos pestañas —Auditorías
-  y Programa anual— y su ruta de detalle `/auditorias/[id]`, que dentro lleva
-  Plan · Alcance · Lista de verificación · Equipo · Agenda · Recorrido ·
-  **Hallazgos**, y el dominio tiene su tablero del lunes. `npm run lint` y
+- **LA FASE 03 ESTÁ COMPLETA POR EL LADO DEL CÓDIGO (`B0`–`B5`).** `/auditorias`
+  es el dominio, con dos pestañas —Auditorías y Programa anual— y su ruta de
+  detalle `/auditorias/[id]`, que dentro lleva **ocho**: Plan · Alcance · Lista de
+  verificación · Equipo · Agenda · Recorrido · Hallazgos · **Informe**, y el
+  dominio tiene su tablero del lunes. `npm run lint` y
   `npm run build` pasan limpios. **Lo que sí está probado es la migración**: se aplicó sobre un
   Postgres 17 desechable con las siete anteriores en orden y pasó **42
   comprobaciones de comportamiento** (folio de la firma que cruza organizaciones,
@@ -117,8 +158,8 @@ de dominio cuelga de una `org_id`. Ver §Reglas críticas, regla 1.
   e idempotente, hallazgo sin cláusula o con evidencia en blanco rechazado, el
   historial escrito por la base, y que **ni el socio ni `service_role`** borren un
   hallazgo o reescriban el historial). Los tipos se regeneraron desde ese esquema.
-- ⚠️ **HAY UNA MIGRACIÓN ESCRITA Y SIN APLICAR:**
-  `20260824180000_evidencia_de_campo.sql` — tarea `D04`, la de F03·B3. Le añade
+- ✅ **APLICADA** (`D04`, la de F03·B3):
+  `20260824180000_evidencia_de_campo.sql`. Le añade
   `item_id` a `adjuntos` —la foto y la nota dictada de un punto de la lista— y
   **cierra un agujero**: un `on delete cascade` se salta el RLS, así que quitar un
   punto de la lista se habría llevado por delante fotos que sólo un socio puede
@@ -207,8 +248,11 @@ de dominio cuelga de una `org_id`. Ver §Reglas críticas, regla 1.
   sin ellos esa cuenta no se puede hacer y el folio no sale sin red.
 - **La ayuda de clasificación se pinta al elegir el tipo**, no en un manual: es lo
   que hace que dos auditores clasifiquen igual. ⚠️ `CRITERIO_HALLAZGO` en
-  `src/lib/auditorias/catalogos.ts` es texto **de arranque**; el criterio real de
-  la firma llega con `D02` y **se reemplaza ahí**.
+  `src/lib/auditorias/catalogos.ts` **ya trae el criterio de la firma** para los
+  tres tipos que `P-SG-03` §3 define —NC mayor, NC menor y observación—, que es lo
+  que cerró `D02` el 30 ago 2026. ⚠️ **`oportunidad_mejora` y `conformidad` siguen
+  con el texto de arranque**: ese procedimiento no los define porque el cliente
+  para el que se escribió no los usa, y el informe necesita los cinco.
 - **El tablero del lunes NO tiene vista en la base**, igual que los widgets del
   tablero: agrupa y calcula la antigüedad en memoria sobre la lista ya bajada. Una
   vista sería otra clave que puede faltar en la caché, y esa pantalla se abre con
@@ -221,7 +265,8 @@ de dominio cuelga de una `org_id`. Ver §Reglas críticas, regla 1.
   La caché sólo tiene lo que alguien ya abrió: sin pulsar «Descargar para trabajar
   sin señal», en la planta la pantalla del recorrido sale **vacía** —no se
   perdieron los datos, nunca se bajaron— y para cuando se nota el auditor ya está
-  en un sótano. Nueve piezas, en `src/lib/auditorias/precarga.ts`.
+  en un sótano. **Once** piezas, en `src/lib/auditorias/precarga.ts` — la última
+  es el membrete de la firma, y entró con B5.
   ⚠️ **El aviso «lista para trabajar sin señal» se calcula mirando la CACHÉ**
   (`faltaPorPrecargar()`), no un `useState`: con un booleano en el componente,
   salir de la pestaña y volver diría «descarga antes de entrar» con todo bajado, y
@@ -250,6 +295,37 @@ de dominio cuelga de una `org_id`. Ver §Reglas críticas, regla 1.
   añadirlo: la lista y el trigger se actualizaron y ese objeto no, así que la foto
   de un hallazgo habría viajado sin su campo dominante y habría acabado colgada
   del cliente entero.
+- **El informe reproduce el `F-SG-12` de la firma** [F03·B5], que llegó con `D01`
+  el 30 ago 2026 junto con el procedimiento `P-SG-03` y dos formatos más. Los
+  cuatro están transcritos en `docs/formatos_informeAuditorias/` — **los `.docx` y
+  `.xlsx` no se commitean**, esos Markdown son su sustituto y llevan el mapeo campo
+  por campo. **El orden de las nueve secciones no se cambia**: es el documento que
+  el cliente ya sabe leer.
+  ⚠️ **La regla que decide si B5 sirve: el informe NO introduce ni una clave de
+  consulta nueva.** Se genera en la reunión de cierre, en la planta y sin señal, así
+  que sus nueve consultas son literalmente las que baja `piezasDeLaPrecarga()`. Al
+  escribirlo apareció el hueco: `config_firma` sólo se leía para `plantillas`, y su
+  **identidad** —razón social y logotipo— no estaba en ninguna clave. Es
+  `src/lib/queries/firma.ts`, `firma.identidad()` y la **undécima pieza** de la
+  precarga; sin ella el documento sale **sin membrete**, delante del cliente.
+  ⚠️ **Los hallazgos `anulado` NO se imprimen.** Siguen en la base con su motivo y
+  su historial —regla 13—, pero no son un resultado de la auditoría: meterlos en el
+  documento que ve el cliente convertiría un error del auditor en una acusación
+  contra su empresa. Se filtra por `estado !== 'anulado'`, no por una lista blanca,
+  para que un estado nuevo entre solo.
+- **Lo imprimible vive en `src/lib/plantillas/`, devuelve una CADENA y no
+  consulta.** `impresion.ts` tiene la paleta **en hexadecimal** —la ventana de
+  impresión no hereda `globals.css`, docs/05 §6—, `esc()` para escapar **cada**
+  interpolación, el armazón `@page` y la apertura de la ventana.
+  ⚠️ **La misma cadena se enseña en pantalla dentro de un `<iframe sandbox>`
+  vacío**: un solo renderizador, así que lo que se ve es lo que sale por la
+  impresora, y el documento queda sin permisos. `esc()` no es opcional — ahí no
+  protege React, y la descripción de un hallazgo la escribió una persona.
+  ⚠️ **Y sigue sin haber librería de gráficas.** El informe tiene su sección
+  «Gráficos de resultados», que era justo la condición del aplazamiento de
+  `docs/02`; se revisó y no entra: esto se genera sin señal, y un chunk que se
+  carga bajo demanda es un chunk que no está. Barras nativas con su número
+  absoluto al lado.
 - **La plantilla de listas de verificación NO es una tabla** [F03·B2]: vive en
   `config_firma.plantillas` bajo la llave `verificacion`, exactamente como la de
   tareas vive bajo `tareas`. Es configuración de la firma —una tabla para esto
@@ -420,6 +496,7 @@ de dominio cuelga de una `org_id`. Ver §Reglas críticas, regla 1.
 | `docs/08_SEGURIDAD_Y_RLS.md` | Roles, políticas, secretos |
 | `docs/09_TAREAS_DEL_DUENO.md` | Pasos manuales y **técnicos** del dueño (Supabase, Vercel, Cloudflare) |
 | `docs/11_TAREAS_DEL_CLIENTE.md` | Lo que el cliente **captura dentro de la app**, paso a paso y sin jerga |
+| `docs/formatos_informeAuditorias/` | Los formatos de auditoría de la firma (`P-SG-03`, `F-SG-11`, `F-SG-12`, `F-SG-06`), transcritos y mapeados al modelo |
 | `guias/*` | Montaje de la infraestructura |
 
 **Regla de oro:** si un cambio afecta lo descrito en cualquiera de estos
@@ -709,9 +786,9 @@ src/
   lib/normas/          → importador del catálogo de normas
   lib/documentos/      → zip · docx · pdf · markdown · convertir  [F02·B2]
   lib/sistemas/        → catálogos de la Fase 02
-  lib/auditorias/      → catálogos de la Fase 03  [F03·B1]
+  lib/auditorias/      → catálogos · precarga · informe  [Fase 03]
   lib/asistente/       → proveedor, esquemas Zod, instrucciones, herramientas
-  lib/plantillas/      → informes y documentos imprimibles
+  lib/plantillas/      → impresion.ts + informeAuditoria.ts  [F03·B5]
   lib/utils/           → helpers puros
   types/database.ts    → todos los tipos
 worker/index.js        → oyentes push del service worker

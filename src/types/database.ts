@@ -587,6 +587,7 @@ export type Database = {
           id: string
           informe_emitido_en: string | null
           metodologia: string | null
+          objetivo: string | null
           org_id: string
           programa_id: string | null
           proyecto_id: string | null
@@ -610,6 +611,7 @@ export type Database = {
           id?: string
           informe_emitido_en?: string | null
           metodologia?: string | null
+          objetivo?: string | null
           org_id: string
           programa_id?: string | null
           proyecto_id?: string | null
@@ -633,6 +635,7 @@ export type Database = {
           id?: string
           informe_emitido_en?: string | null
           metodologia?: string | null
+          objetivo?: string | null
           org_id?: string
           programa_id?: string | null
           proyecto_id?: string | null

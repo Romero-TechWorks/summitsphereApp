@@ -36,6 +36,7 @@ import {
 } from '@/lib/queries/auditorias'
 import { listarItems } from '@/lib/queries/verificacion'
 import { listarHallazgos } from '@/lib/queries/hallazgos'
+import { obtenerIdentidadFirma } from '@/lib/queries/firma'
 
 export type PiezaPrecarga = {
   /** Lo que se le dice al auditor mientras baja. En español y sin jerga. */
@@ -180,6 +181,27 @@ export function piezasDeLaPrecarga(auditoriaId: string, orgId: string): PiezaPre
       cargar: (c) => c.ensureQueryData({
         queryKey: queryKeys.auditorias.hallazgos(auditoriaId),
         queryFn: () => listarHallazgos(auditoriaId),
+      }),
+    },
+    {
+      /**
+       * El membrete de la firma [F03·B5].
+       *
+       * ⚠️ **Es una fila y parece de adorno, y no lo es.** El informe preliminar
+       * se imprime **en la reunión de cierre**, en la planta y sin señal, y se le
+       * enseña al coordinador de calidad del cliente. Sin esta pieza sale sin
+       * razón social y sin logotipo: un documento anónimo, en la única ocasión en
+       * que el entregable se mira delante de quien lo paga.
+       *
+       * Va la última a propósito. Es la más barata de todas y la única que no
+       * hace falta para *trabajar*: si la señal se corta a mitad de la precarga,
+       * lo que tiene que haber bajado ya son la lista y los hallazgos.
+       */
+      etiqueta: 'El membrete de la firma',
+      claves: [queryKeys.firma.identidad()],
+      cargar: (c) => c.ensureQueryData({
+        queryKey: queryKeys.firma.identidad(),
+        queryFn: obtenerIdentidadFirma,
       }),
     },
   ]

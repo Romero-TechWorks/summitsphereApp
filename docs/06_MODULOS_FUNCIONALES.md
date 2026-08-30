@@ -17,7 +17,7 @@ antes de reportarlo como faltante.
 |---|---|---|
 | **Cartera** | `/cartera` | Organizaciones · Proyectos · Contactos |
 | **Sistemas** | `/sistemas` | Documentos · Requisitos · Procesos · Riesgos · Indicadores |
-| **Auditorías** | `/auditorias` | Programa · Auditorías · Hallazgos |
+| **Auditorías** | `/auditorias` | Programa · Auditorías · Hallazgos. El expediente `/auditorias/[id]` lleva ocho: Plan · Alcance · Lista · Equipo · Agenda · Recorrido · Hallazgos · Informe |
 | **Cumplimiento** | `/cumplimiento` | Matriz NOM · Obligaciones · Dictámenes |
 | **Capacitación** | `/capacitacion` | Cursos · Programa · Sesiones · Constancias |
 | **Acciones** | `/acciones` | Abiertas · Por verificar · Cerradas |
@@ -340,9 +340,36 @@ cliente, por norma o por antigüedad, con los vencidos contados aparte. No es la
 lista de una auditoría — es «qué le debo a quién». Cada fila lleva a su auditoría.
 
 ### Informe
-Se genera **el mismo día, en el sitio, con lo que hay en la caché**: alcance,
-criterios, equipo, agenda cumplida, resumen de hallazgos por tipo y por cláusula,
-conclusiones y firmas. Con la identidad de Summit.
+Octava y última pestaña del expediente de una auditoría. Reproduce el **`F-SG-12 Reporte
+Final de Auditoría Interna`**, el formato que usa la firma: está transcrito, con
+su mapeo campo por campo, en
+[`docs/formatos_informeAuditorias/`](formatos_informeAuditorias/README.md).
+
+Nueve secciones, **en el orden del original**: objetivo y alcance · reunión de
+apertura · resumen con la agenda cumplida · fortalezas del sistema de gestión ·
+observaciones y oportunidades de mejora · no conformidades (mayores y menores por
+separado) · gráficos de resultados · conclusión · equipo auditor y firma. Con el
+membrete de la firma.
+
+- ⚠️ **Se genera el mismo día, en el sitio, con lo que hay en la caché.** El
+  auditor lo enseña en la reunión de cierre, y en una planta eso puede ser sin
+  señal. No consulta nada que la precarga no haya bajado ya.
+- ⚠️ **Los hallazgos anulados NO salen.** Siguen en la base con su motivo y su
+  historial —no se borran nunca—, pero no son un resultado de la auditoría:
+  imprimirlos convertiría un error del auditor en una acusación contra la empresa
+  del cliente. Lo que un certificador revisa es el historial, no el informe.
+- **«Fortalezas del sistema de gestión» se imprime aunque esté vacía**, con una
+  línea que lo dice. Es la única sección donde el hueco es el mensaje: un informe
+  que sólo enumera lo que está mal es una lista de quejas, y verlo impreso es lo
+  que hace que la próxima vez se registren las conformidades.
+- Antes de imprimir, la pantalla **dice qué le falta** —el objetivo, la conclusión,
+  el equipo— y **deja imprimir igual**: un preliminar incompleto en la reunión de
+  cierre sigue siendo mejor que ningún documento, y quien decide es el auditor.
+- **Marcarlo como emitido lo fecha el servidor.** El procedimiento de la firma da
+  una semana de plazo desde la auditoría, y ese plazo se mide contra esa fecha.
+  Enseñar el preliminar no lo marca ni escribe nada.
+- **En el teléfono, imprimir es compartir**: no hay impresora en una planta, así
+  que sale un PDF que se manda.
 
 ---
 
