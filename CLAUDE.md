@@ -469,12 +469,25 @@ de dominio cuelga de una `org_id`. Ver §Reglas críticas, regla 1.
   la pestaña **Equipo** del expediente — no en `/admin`, que llega en la Fase 06.
   §8.2 · docs/08 §2.
 - **Los widgets del tablero NO tienen vistas en la base**: se calculan en
-  memoria sobre la lista de proyectos que ya está en la caché
-  (`src/lib/tablero/calculos.ts`), y los cuatro comparten **una sola** consulta
-  con `/cartera?tab=proyectos`. Una vista por widget sería otra clave que puede
-  faltar en la caché, y el tablero se abre por la mañana con media barra de
-  señal. Se moverá a vistas con `security_invoker` el día que una firma tenga
-  miles de proyectos.
+  memoria (`src/lib/tablero/calculos.ts`) sobre listas que ya están en la caché,
+  y cada uno comparte la consulta de su pantalla — los cuatro de la cartera con
+  `/cartera?tab=proyectos`, los tres de auditorías con `/auditorias`. Una vista
+  por widget sería otra clave que puede faltar en la caché, y el tablero se abre
+  por la mañana con media barra de señal. Se moverá a vistas con
+  `security_invoker` el día que una firma tenga miles de proyectos.
+  ⚠️ **La única excepción es `documentos_por_aprobar`**, que sí estrena clave
+  (`sistemas.porAprobar()`): `/sistemas` es por cliente y este widget cruza la
+  cartera, así que no hay ninguna lista suya que compartir. Y como esa clave es
+  **hermana** de `sistemas.documentos(orgId)` y no su hija, invalidar la del
+  cliente **no la toca**: aprobar una versión invalida las dos, en
+  `ExpedienteDocumento.tsx`.
+- ⚠️ **Al cerrar una fase se conectan SUS widgets, en el mismo commit.** El campo
+  `fase` de `src/lib/tablero/widgets.ts` dice de dónde salen los datos, no si el
+  widget funciona: si nadie lo conecta en `ContenidoWidget.tsx`, el tablero
+  —que es lo primero que la firma abre cada mañana— sigue diciendo «llega en la
+  Fase 03» con la fase entregada, y eso se lee como que la fase no está. Pasó con
+  la 02 y la 03 y se arregló el 30 ago 2026. Quedan **dos** placeholders y los dos
+  son de verdad: `acciones_semana` [F04] y `vencimientos_criticos` [F05].
 - **El indicador de conexión sólo aparece cuando tiene algo que decir**
   (`EstadoConexion` en la Navbar): sin conexión, con cola pendiente o con algo
   rechazado. En verde y vacío no se pinta — un indicador permanente deja de

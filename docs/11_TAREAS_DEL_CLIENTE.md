@@ -1,12 +1,5 @@
 # Tareas del cliente — poner la información de Summit en la app
 
-**Esto es lo que tienes que capturar tú, y sólo tú.** Está escrito para alguien
-que no programa: cada paso dice a qué pantalla ir, qué botón pulsar y cómo saber
-que quedó bien.
-
-Ningún programa puede inventar tu cartera de clientes, tu criterio técnico ni el
-alcance de tus contratos. Eso es esta lista.
-
 > **La app ya está terminada para todo lo que aparece aquí.** Si algo se ve vacío
 > no está roto: es que todavía no se ha capturado. Cada pantalla vacía de este
 > sistema te dice, con palabras, qué le falta.
@@ -212,11 +205,16 @@ capacitación son tres proyectos.
 El tablero de inicio (**Inicio**, en la barra de la izquierda) deja de estar
 vacío: aparecen los proyectos repartidos por etapa.
 
+⚠️ **Si un bloque del tablero dice «Sin datos todavía · llega en la Fase 04» o
+«Fase 05», está bien así**: son *Acciones de la semana* y *Vencimientos críticos*,
+y esas pantallas todavía no existen. Cualquier otro bloque ya trae datos de verdad
+en cuanto captures lo suyo — si uno se queda vacío, es que falta capturar, no que
+la app esté a medias.
+
 ---
 
 # Paso 4 · Subir tu catálogo de normas
 
-> Antes eran las tareas `B03` y `C01` de la lista del dueño.
 > **Bloquea: el alcance, la matriz de requisitos y toda lista de verificación.**
 
 ⚠️ **Es el paso más importante de la lista y el único que no puedes delegar

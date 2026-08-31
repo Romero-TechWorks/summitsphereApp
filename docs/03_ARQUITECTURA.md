@@ -511,6 +511,19 @@ Los archivos, y qué hace cada uno:
 Todas en `src/lib/query/keys.ts`. Una clave inventada en un componente es un dato
 que no se invalida cuando debe.
 
+⚠️ **El tablero de inicio no tiene claves propias, salvo una.** Cada widget lee
+la consulta de su pantalla —los de la cartera la de `/cartera?tab=proyectos`, los
+de auditorías la de `/auditorias`— y calcula lo suyo en memoria
+(`src/lib/tablero/calculos.ts`): abrir el dominio deja el tablero listo y al
+revés, y no hay ninguna clave de más que pueda faltar la mañana que se abre la
+app con media barra de señal. La excepción es `sistemas.porAprobar()`, porque
+`/sistemas` cuelga de un `?org=` y ese widget cruza la cartera.
+
+⚠️ **Una clave hermana no se invalida invalidando a su vecina.** El prefijo va de
+padre a hijo: invalidar `['sistemas','documentos', orgId]` **no** toca
+`['sistemas','documentos','por-aprobar']`. Aprobar una versión invalida las dos a
+mano, en `ExpedienteDocumento.tsx`.
+
 ### §8.11 · Precarga de auditoría  [F03·B3]
 
 ⚠️ Regla propia de este proyecto, y la que decide si la Fase 03 sirve. La caché

@@ -15,6 +15,7 @@ import {
   ESTADOS_ABIERTOS_HALLAZGO,
   ESTADOS_HALLAZGO,
   TIPOS_HALLAZGO,
+  TRAMOS_ANTIGUEDAD,
 } from '@/lib/auditorias/catalogos'
 import { etiquetaDe, tonoDe } from '@/lib/cartera/catalogos'
 import { formatDateOnly, hoyISO } from '@/lib/utils/dates'
@@ -29,14 +30,6 @@ import Skeleton from '@/components/ui/Skeleton'
 import { IconoAlerta } from '@/components/ui/Iconos'
 
 type Agrupar = 'cliente' | 'norma' | 'antiguedad'
-
-/** Los tramos de antigüedad, del más urgente al menos. */
-const TRAMOS: readonly { hasta: number; etiqueta: string }[] = [
-  { hasta: 30, etiqueta: 'Menos de 30 días' },
-  { hasta: 90, etiqueta: 'De 30 a 90 días' },
-  { hasta: 180, etiqueta: 'De 90 a 180 días' },
-  { hasta: Infinity, etiqueta: 'Más de 180 días' },
-]
 
 /**
  * **El tablero que el consultor abre cada lunes** [F03·B4].
@@ -113,7 +106,7 @@ export default function TableroHallazgos() {
             : 'Sin cliente'
           : agrupar === 'norma'
             ? nombreDeNorma(hallazgo.clausula_id)
-            : (TRAMOS.find((t) => diasAbierto(hallazgo) < t.hasta) ?? TRAMOS[TRAMOS.length - 1]).etiqueta
+            : (TRAMOS_ANTIGUEDAD.find((t) => diasAbierto(hallazgo) < t.hasta) ?? TRAMOS_ANTIGUEDAD[TRAMOS_ANTIGUEDAD.length - 1]).etiqueta
 
       const lista = mapa.get(clave) ?? []
       lista.push(hallazgo)
@@ -124,7 +117,7 @@ export default function TableroHallazgos() {
     // Por antigüedad manda el orden de los tramos, no el alfabético: «Más de 180
     // días» tiene que salir al final aunque empiece por M.
     return agrupar === 'antiguedad'
-      ? TRAMOS.map((t) => [t.etiqueta, mapa.get(t.etiqueta) ?? []] as const).filter(([, l]) => l.length > 0)
+      ? TRAMOS_ANTIGUEDAD.map((t) => [t.etiqueta, mapa.get(t.etiqueta) ?? []] as const).filter(([, l]) => l.length > 0)
       : entradas.sort(([a], [b]) => a.localeCompare(b))
   }, [visibles, agrupar, nombreDeNorma])
 

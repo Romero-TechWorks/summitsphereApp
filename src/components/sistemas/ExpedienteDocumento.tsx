@@ -112,6 +112,10 @@ export default function ExpedienteDocumento({
   function refrescar() {
     void cliente.invalidateQueries({ queryKey: clave })
     void cliente.invalidateQueries({ queryKey: queryKeys.sistemas.documentos(orgId) })
+    // ⚠️ `porAprobar()` NO cuelga de `documentos(orgId)`: son ramas hermanas, así
+    // que invalidar la del cliente no la toca. Sin esta línea, aprobar una
+    // versión la deja en el widget del tablero hasta que caduque sola.
+    void cliente.invalidateQueries({ queryKey: queryKeys.sistemas.porAprobar() })
   }
 
   async function abrirOriginal(version: VersionConFirmas) {

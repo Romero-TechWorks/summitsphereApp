@@ -163,6 +163,22 @@ export const ESTADOS_HALLAZGO: readonly Opcion[] = [
 export const ESTADOS_ABIERTOS_HALLAZGO: readonly string[] = ['abierto', 'en_accion', 'verificado']
 
 /**
+ * Los tramos de antigüedad de un hallazgo abierto, del más urgente al menos.
+ *
+ * ⚠️ Vive aquí y no en la pantalla porque lo leen **dos**: el tablero del lunes
+ * (`/auditorias?tab=hallazgos`) y el widget «Hallazgos abiertos» del tablero de
+ * inicio. Con la lista duplicada, mover el corte de 90 días en una y no en la
+ * otra deja al mismo hallazgo en dos tramos distintos según por dónde se mire —y
+ * el consultor deja de creerle a los dos.
+ */
+export const TRAMOS_ANTIGUEDAD: readonly { hasta: number; etiqueta: string; corta: string }[] = [
+  { hasta: 30,       etiqueta: 'Menos de 30 días',  corta: '< 30 d' },
+  { hasta: 90,       etiqueta: 'De 30 a 90 días',   corta: '30-90 d' },
+  { hasta: 180,      etiqueta: 'De 90 a 180 días',  corta: '90-180 d' },
+  { hasta: Infinity, etiqueta: 'Más de 180 días',   corta: '> 180 d' },
+]
+
+/**
  * Cómo se lee un campo del historial de un hallazgo.
  *
  * ⚠️ Las claves son **nombres de columna** porque las escribe un trigger de la

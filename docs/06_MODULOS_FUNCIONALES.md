@@ -49,6 +49,30 @@ pertenecen al módulo `facturacion`, que viene apagado de fábrica y se enciende
 **«Esperando señal»** es el widget que sí tiene datos desde la Fase 00: enseña lo
 que se guardó sin conexión y todavía no ha subido. Lo ven los cinco roles.
 
+### Qué widget tiene datos hoy
+
+| Widget | Fase | De dónde salen los datos |
+|---|---|---|
+| Esperando señal | 00 | La cola de salida de IndexedDB, sin pasar por el servidor |
+| Embudo de proyectos · Mis proyectos · Carga del equipo · Contratos por renovar | 01 | **Una sola** consulta, la de `/cartera?tab=proyectos` |
+| Documentos por aprobar | 02 | `sistemas.porAprobar()` — **la única clave propia del tablero**, porque `/sistemas` es por cliente y esto cruza la cartera |
+| Mis auditorías · Próxima visita | 03 | La lista de `/auditorias`, con la marca de «lista sin señal» leída de la caché (`faltaPorPrecargar`) |
+| Hallazgos abiertos | 03 | La misma lista del tablero del lunes, repartida por los tramos de `TRAMOS_ANTIGUEDAD` |
+| Acciones de la semana | 04 | *Pendiente* |
+| Vencimientos críticos | 05 | *Pendiente* |
+
+⚠️ **Un widget cuya fase ya se entregó tiene que estar conectado.** El campo
+`fase` del catálogo dice de dónde salen los datos, no si el widget funciona: con
+la Fase 03 completa y el widget sin conectar, el tablero seguía anunciando «llega
+en la Fase 03» y la firma lo leía como que la fase no se terminó. Se conectan en
+`src/components/tablero/ContenidoWidget.tsx`, en el mismo commit que cierra la
+fase.
+
+⚠️ **Ninguno tiene vista en la base.** Se calculan en memoria sobre listas que ya
+están en la caché, por la misma razón que la pestaña de hallazgos de
+`/auditorias`: una vista es otra clave que puede faltar la mañana que alguien
+abre la app en el estacionamiento de una planta.
+
 ---
 
 ## Cartera `[Fase 01]`

@@ -903,7 +903,7 @@ Todas con **`security_invoker = true`** (§4.4):
 | Vista | Qué resuelve |
 |---|---|
 | `avance_proyecto` | % de requisitos por proyecto y por norma |
-| `hallazgos_abiertos` | ⚠️ **Aplazada en F03·B4.** El tablero del lunes agrupa y calcula la antigüedad **en memoria**, sobre la lista ya bajada — una vista es otra clave que puede faltar en la caché, y esa pantalla se abre con media barra de señal. Es la misma decisión que la de los widgets del tablero [F01·B3] |
+| `hallazgos_abiertos` | ⚠️ **Aplazada en F03·B4, y confirmada al conectar el widget del tablero** (30 ago 2026). El tablero del lunes y el widget «Hallazgos abiertos» agrupan y calculan la antigüedad **en memoria**, sobre la misma lista ya bajada — una vista es otra clave que puede faltar en la caché, y las dos pantallas se abren con media barra de señal. Es la misma decisión que la de los widgets de la cartera [F01·B3] |
 | `obligaciones_semaforo` | Qué vence en 7 / 30 / 90 días |
 | `carga_consultor` | Proyectos y acciones abiertas por consultor |
 | `indice_busqueda_global` | Las seis fuentes del buscador |

@@ -1,10 +1,17 @@
 /**
  * El catálogo de widgets del tablero.
  *
- * Casi todos dicen todavía "sin datos": la pantalla que llena cada uno llega en
- * su fase. Están aquí igualmente porque el tablero **no es una lista de
- * pendientes**, es la portada de la app — y porque cada rol tiene que abrir
- * viendo lo suyo desde el primer día (docs/06_MODULOS_FUNCIONALES.md).
+ * Los que dicen todavía "sin datos" son **dos**, los de la Fase 04 y la 05: la
+ * pantalla que llena cada uno llega en su fase. Están aquí igualmente porque el
+ * tablero **no es una lista de pendientes**, es la portada de la app — y porque
+ * cada rol tiene que abrir viendo lo suyo desde el primer día
+ * (docs/06_MODULOS_FUNCIONALES.md).
+ *
+ * ⚠️ **`fase` dice de dónde salen los datos, no si el widget funciona.** Un
+ * widget cuya fase ya se entregó tiene que estar conectado en
+ * `ContenidoWidget.tsx`: si no, el tablero —que es lo primero que la firma abre
+ * cada mañana— sigue anunciando como pendiente algo que ya está hecho, y eso se
+ * lee como que la fase no se terminó.
  *
  * ⚠️ TRAMPA HEREDADA — CLAUDE.md. Un catálogo indexado por un valor que viene de
  * la base **nunca devuelve `undefined`**: aquí se resuelve por búsqueda en el

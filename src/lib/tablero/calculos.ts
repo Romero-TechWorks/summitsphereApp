@@ -8,16 +8,25 @@
  *   la caché. El tablero es lo primero que se abre por la mañana —a veces con
  *   media barra de señal en el estacionamiento de una planta— y tiene que
  *   pintarse con lo que ya se descargó.
- * - Los cuatro widgets salen de **la misma lista** que `/cartera?tab=proyectos`:
- *   abrir cualquiera de las dos pantallas deja lista la otra.
+ * - Cada widget sale de **la misma lista** que su pantalla: los cuatro de la
+ *   cartera de `/cartera?tab=proyectos`, y los tres de la Fase 03 de
+ *   `/auditorias` y de su pestaña de hallazgos. Abrir cualquiera de las dos
+ *   pantallas deja lista la otra, y el tablero no pide ni una consulta propia.
  * - Y son decenas o cientos de proyectos, no millones de filas. El día que una
  *   firma tenga cinco mil, esto se mueve a una vista con `security_invoker` —y
  *   ese día se paga, no hoy.
  */
 
 import { ESTADOS_ARCHIVADOS_PROYECTO, ETAPAS_PROYECTO } from '@/lib/cartera/catalogos'
+import {
+  ESTADOS_ABIERTOS_HALLAZGO,
+  ESTADOS_ARCHIVADOS_AUDITORIA,
+  TRAMOS_ANTIGUEDAD,
+} from '@/lib/auditorias/catalogos'
 import { toISODate } from '@/lib/utils/dates'
 import type { ProyectoEnCartera } from '@/lib/queries/proyectos'
+import type { AuditoriaEnLista } from '@/lib/queries/auditorias'
+import { diasAbierto, type HallazgoEnCartera } from '@/lib/queries/hallazgos'
 
 /** Los que cuentan como trabajo vivo: ni cerrados ni cancelados. */
 export function proyectosVivos(proyectos: ProyectoEnCartera[]): ProyectoEnCartera[] {
@@ -123,4 +132,115 @@ export function misProyectos(
     const fechaB = b.fecha_fin_estimada ?? '9999-12-31'
     return fechaA.localeCompare(fechaB)
   })
+}
+
+// ═══════════════════════════════════════════ los tres de la Fase 03 ════════
+
+/**
+ * Las auditorías que siguen siendo trabajo: ni cerradas ni canceladas.
+ *
+ * ⚠️ Una `cancelada` no se esconde en `/auditorias` porque explica por qué el
+ * programa anual no se cumplió; en el tablero sí, porque el tablero contesta
+ * «qué tengo esta semana» y una auditoría que no se va a hacer no es eso.
+ */
+export function auditoriasVivas(auditorias: AuditoriaEnLista[]): AuditoriaEnLista[] {
+  return auditorias.filter((a) => !ESTADOS_ARCHIVADOS_AUDITORIA.includes(a.estado))
+}
+
+/**
+ * Las auditorías de quien mira, **las suyas primero** y por fecha.
+ *
+ * Mismo criterio que `misProyectos`: por RLS se ven las de todas las
+ * organizaciones asignadas, y las que uno lidera van arriba. Una auditoría sin
+ * fecha se va al final — todavía no compromete a nadie.
+ */
+export function misAuditorias(
+  auditorias: AuditoriaEnLista[],
+  usuarioId: string | null,
+): AuditoriaEnLista[] {
+  return auditoriasVivas(auditorias).sort((a, b) => {
+    const mia = (x: AuditoriaEnLista) => (usuarioId && x.auditor_lider_id === usuarioId ? 0 : 1)
+    if (mia(a) !== mia(b)) return mia(a) - mia(b)
+
+    const fechaA = a.fecha_inicio ?? '9999-12-31'
+    const fechaB = b.fecha_inicio ?? '9999-12-31'
+    return fechaA.localeCompare(fechaB)
+  })
+}
+
+/**
+ * A dónde va uno después: la auditoría que toca.
+ *
+ * ⚠️ Lo que está **`en_curso` manda sobre la fecha**, y no es un detalle: una
+ * auditoría de tres días que empezó ayer tiene la fecha de inicio en el pasado,
+ * y ordenando sólo por fecha el tablero enseñaría la de la semana que viene
+ * mientras el auditor está dentro de la planta.
+ *
+ * ⚠️ Y las fechas se comparan como **texto** `YYYY-MM-DD`, nunca con
+ * `new Date()`: una columna `date` corre un día en México (CLAUDE.md · trampas
+ * heredadas).
+ */
+export function proximaVisita(
+  auditorias: AuditoriaEnLista[],
+  usuarioId: string | null,
+  hoy: string = toISODate(),
+): AuditoriaEnLista | null {
+  const candidatas = misAuditorias(auditorias, usuarioId).filter((a) => {
+    if (a.estado === 'en_curso') return true
+    // Sin fecha no se puede decir «a dónde vas»: es un plan, no una visita.
+    if (a.fecha_inicio === null) return false
+    return (a.fecha_fin ?? a.fecha_inicio) >= hoy
+  })
+
+  const enCurso = candidatas.find((a) => a.estado === 'en_curso')
+  return enCurso ?? candidatas[0] ?? null
+}
+
+export type TramoAntiguedad = { etiqueta: string; corta: string; total: number }
+
+/**
+ * Los hallazgos abiertos de la cartera, repartidos por antigüedad.
+ *
+ * ⚠️ Devuelve **los cuatro tramos siempre**, incluidos los vacíos, por lo mismo
+ * que el embudo devuelve las seis etapas: lo que dice «no hay nada de más de 180
+ * días» es justamente el hueco, y un tramo que desaparece se lee como que no se
+ * midió.
+ *
+ * Los tramos salen de `TRAMOS_ANTIGUEDAD`, la misma lista que agrupa el tablero
+ * del lunes: si el corte cambia, cambia en las dos pantallas a la vez.
+ */
+export function hallazgosPorAntiguedad(hallazgos: HallazgoEnCartera[]): TramoAntiguedad[] {
+  const abiertos = hallazgosAbiertos(hallazgos)
+
+  return TRAMOS_ANTIGUEDAD.map((tramo, indice) => {
+    const desde = indice === 0 ? -1 : TRAMOS_ANTIGUEDAD[indice - 1].hasta
+    return {
+      etiqueta: tramo.etiqueta,
+      corta: tramo.corta,
+      total: abiertos.filter((h) => {
+        const dias = diasAbierto(h)
+        return dias >= desde && dias < tramo.hasta
+      }).length,
+    }
+  })
+}
+
+/** Los que siguen contando: abierto, en acción o verificado. */
+export function hallazgosAbiertos(hallazgos: HallazgoEnCartera[]): HallazgoEnCartera[] {
+  return hallazgos.filter((h) => ESTADOS_ABIERTOS_HALLAZGO.includes(h.estado))
+}
+
+/**
+ * Los abiertos cuyo compromiso con el cliente ya pasó.
+ *
+ * Es el número que hace que el widget valga la pena: un hallazgo de hace 40 días
+ * no dice nada por sí solo, pero uno que se prometió cerrar la semana pasada sí.
+ */
+export function hallazgosVencidos(
+  hallazgos: HallazgoEnCartera[],
+  hoy: string = toISODate(),
+): HallazgoEnCartera[] {
+  return hallazgosAbiertos(hallazgos).filter(
+    (h) => h.fecha_compromiso !== null && h.fecha_compromiso < hoy,
+  )
 }

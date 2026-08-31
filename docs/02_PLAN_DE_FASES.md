@@ -860,7 +860,7 @@ formatos. Todo está transcrito en
 [`docs/formatos_informeAuditorias/`](formatos_informeAuditorias/README.md) — los
 originales `.docx`/`.xlsx` no se commitean.
 
-- **Pestaña «Informe»** en `/auditorias/[id]`, la séptima y última. Plantilla
+- **Pestaña «Informe»** en `/auditorias/[id]`, la octava y última. Plantilla
   imprimible sin dependencias, con colores literales (`src/lib/plantillas/`).
 - Nueve secciones **en el orden del formato original, que no se cambia**: es el
   documento que el cliente ya sabe leer. Objetivo y alcance · reunión de apertura ·
@@ -904,6 +904,33 @@ razones y la tercera decide: no romper el bundle; un `canvas` no imprime bien; y
 **esto se genera en una planta sin señal**, donde un chunk que se carga bajo
 demanda es un chunk que no está. Son barras nativas con su número absoluto al
 lado — un porcentaje sobre cuatro hallazgos dice «25%» y suena a mucho.
+
+### Los tres widgets del tablero, que se habían quedado sin conectar
+
+Con B5 escrito, el tablero de inicio **seguía diciendo «llega en la Fase 03»** en
+*Mis auditorías*, *Hallazgos abiertos* y *Próxima visita* — y en *Documentos por
+aprobar*, de la Fase 02. El campo `fase` del catálogo de widgets dice de dónde
+salen los datos, no si el widget está conectado, y conectarlos es parte de cerrar
+la fase: lo primero que la firma abre cada mañana no puede anunciar como pendiente
+algo que ya está entregado.
+
+- **Mis auditorías** y **Próxima visita** comparten `auditorias.lista()` con
+  `/auditorias`, igual que los cuatro de la cartera comparten la suya: el tablero
+  no estrena ni una clave. La marca de «lista sin señal» se pregunta a la caché
+  con `faltaPorPrecargar()` en cada render — con un `useState` diría «falta
+  descargar» sobre una auditoría perfectamente bajada.
+- **Hallazgos abiertos** comparte `hallazgosDeLaCartera()` con el tablero del
+  lunes y reparte por `TRAMOS_ANTIGUEDAD`, que se subió de la pantalla a
+  `lib/auditorias/catalogos.ts` para que el corte de 90 días no pueda moverse en
+  una y no en la otra. Sin vista `hallazgos_abiertos`, que sigue aplazada.
+- **Documentos por aprobar** [F02·B2] es **la única excepción de todo el tablero**
+  y estrena clave, `sistemas.porAprobar()`: `/sistemas` cuelga de un `?org=` y
+  esta pregunta cruza la cartera, así que no hay lista suya que compartir. ⚠️ Esa
+  clave es **hermana** de `sistemas.documentos(orgId)`, no su hija, así que
+  invalidar la del cliente no la toca: aprobar una versión invalida las dos.
+
+Quedan dos placeholders y los dos son de verdad: *Acciones de la semana* [F04] y
+*Vencimientos críticos* [F05].
 
 ### Criterio de cierre — Fase 03
 

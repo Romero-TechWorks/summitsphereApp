@@ -135,6 +135,41 @@ export async function listarCoberturaDeClausulas(orgId: string): Promise<Cobertu
   return (data ?? []) as unknown as CoberturaClausula[]
 }
 
+/**
+ * **Lo que está esperando una firma**, de toda la cartera visible.
+ *
+ * Es el widget «Documentos por aprobar» del tablero [F02·B2]. Es la única
+ * consulta de la Fase 02 que **no cuelga de una organización**, y tiene que
+ * serlo: un consultor lleva seis clientes y la pregunta de la mañana es «qué
+ * tengo que firmar», no «qué tengo que firmar de Aceros del Bajío». El RLS ya
+ * recorta la lista a sus organizaciones asignadas.
+ *
+ * ⚠️ Sin filtrar por quién revisa. `reviso_id` se captura y **no se sella**
+ * (docs/04 · F02): una versión mandada a revisión sin revisor apuntado
+ * desaparecería del tablero de todos, que es justo el documento que lleva tres
+ * semanas parado.
+ */
+export type VersionPorAprobar = Pick<
+  VersionDocumento,
+  'id' | 'version' | 'estado' | 'org_id' | 'documento_id' | 'actualizado_en'
+> & {
+  documento: Pick<Documento, 'id' | 'codigo' | 'titulo'> | null
+  organizacion: Pick<Tables<'organizaciones'>, 'id' | 'razon_social' | 'nombre_comercial'> | null
+}
+
+export async function listarVersionesPorAprobar(): Promise<VersionPorAprobar[]> {
+  const { data, error } = await createClient()
+    .from('documento_versiones')
+    .select(
+      'id, version, estado, org_id, documento_id, actualizado_en, documento:documentos!documento_versiones_documento_id_fkey(id, codigo, titulo), organizacion:organizaciones(id, razon_social, nombre_comercial)',
+    )
+    .eq('estado', 'en_revision')
+    .order('actualizado_en')
+
+  if (error) throw error
+  return (data ?? []) as unknown as VersionPorAprobar[]
+}
+
 export type ExpedienteDocumento = {
   documento: Documento
   versiones: VersionConFirmas[]

@@ -94,6 +94,15 @@ export const queryKeys = {
     procesos: (orgId: string) => ['sistemas', 'procesos', orgId] as const,
     /** La biblioteca documental de un cliente, entera. */
     documentos: (orgId: string) => ['sistemas', 'documentos', orgId] as const,
+    /**
+     * Lo que espera una firma en **toda** la cartera visible: el widget
+     * «Documentos por aprobar» del tablero.
+     *
+     * ⚠️ La única clave de la Fase 02 sin `orgId`, y tiene que serlo: la
+     * pregunta de la mañana es «qué tengo que firmar», no «qué tengo que firmar
+     * de este cliente». El RLS ya la recorta a las organizaciones asignadas.
+     */
+    porAprobar: () => ['sistemas', 'documentos', 'por-aprobar'] as const,
     /** Un documento con todas sus versiones y las cláusulas que cubre. */
     documento: (documentoId: string) => ['sistemas', 'documento', documentoId] as const,
     /**
