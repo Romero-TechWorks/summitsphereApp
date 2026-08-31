@@ -16,6 +16,7 @@ const esquema = z.object({
   anio: z.string().refine((v) => /^\d{4}$/.test(v), 'Un año de cuatro cifras'),
   nombre: z.string().trim().min(1, 'El programa necesita un nombre'),
   objetivo: z.string().trim(),
+  alcance: z.string().trim(),
   criterios: z.string().trim(),
   estado: z.string().min(1),
 })
@@ -54,6 +55,7 @@ export default function FormularioPrograma({
     anio: String(inicial?.anio ?? anios[1]),
     nombre: inicial?.nombre ?? `Programa anual de auditorías ${anios[1]}`,
     objetivo: inicial?.objetivo ?? '',
+    alcance: inicial?.alcance ?? '',
     criterios: inicial?.criterios ?? '',
     estado: inicial?.estado ?? 'borrador',
   })
@@ -89,6 +91,7 @@ export default function FormularioPrograma({
       anio: Number(v.anio),
       nombre: v.nombre,
       objetivo: v.objetivo || null,
+      alcance: v.alcance || null,
       criterios: v.criterios || null,
       estado: v.estado,
     })
@@ -155,6 +158,17 @@ export default function FormularioPrograma({
         value={campos.objetivo}
         ayuda="Para qué se audita este año. Va tal cual en el programa que firma la dirección."
         onChange={(e) => escribir('objetivo', e.target.value)}
+      />
+
+      {/* ⚠️ Los tres van juntos y en este orden porque así los imprime el
+          F-SG-09. El alcance faltaba: hasta el 31 ago 2026 el formato pedía tres
+          textos y la tabla sólo tenía dos. */}
+      <Textarea
+        etiqueta="Alcance"
+        rows={3}
+        value={campos.alcance}
+        ayuda="Qué abarca el programa: qué personal, qué unidades, qué sitios. Es del año entero, no de una visita."
+        onChange={(e) => escribir('alcance', e.target.value)}
       />
 
       <Textarea

@@ -18,6 +18,8 @@
  * es una barra.
  */
 
+import type { IdentidadFirma } from '@/lib/queries/firma'
+
 /**
  * La paleta del papel. Los mismos valores que los tokens de `globals.css`, pero
  * escritos a mano porque allá no llegan.
@@ -107,6 +109,89 @@ export function escParrafos(texto: unknown, sustituto = ''): string {
   const limpio = esc(texto, '')
   if (limpio === '') return sustituto
   return limpio.replace(/\r?\n/g, '<br />')
+}
+
+// ══════════════════════════════════════════ piezas compartidas ═══════════════
+//
+// Las comparten los cuatro documentos de la firma —F-SG-12, F-SG-11, F-SG-09 y
+// F-SG-03— y los ocho que llegan con F06·B2. Vivían dentro de
+// `informeAuditoria.ts` hasta que hubo un segundo documento que las quería
+// idénticas: un membrete que se escribe dos veces es un membrete que acaba
+// distinto en cada entregable.
+
+/** Cómo numera la firma un formato suyo. */
+export type FormatoDeLaFirma = {
+  /** El nombre tal como lo lee el cliente: «Reporte Final de Auditoría Interna». */
+  nombre: string
+  /** `F-SG-12`. */
+  codigo: string
+  /** La versión de la PLANTILLA, no la del documento lleno. */
+  version: string
+}
+
+/**
+ * El membrete: identidad de la firma a la izquierda, formato a la derecha.
+ *
+ * ⚠️ **La identidad sale de `config_firma` y el código del formato de una
+ * constante del código**, y la división es a propósito: la razón social y el
+ * logotipo los edita el dueño desde la app; renumerar los formatos de la firma
+ * es un despliegue.
+ *
+ * ⚠️ `firma` puede ser `null` —la fila de `config_firma` puede no existir
+ * todavía—, y entonces se imprime «Summit-Sphere». Un documento sin membrete es
+ * mejor que un documento que no se puede imprimir delante del cliente.
+ */
+export function membrete(firma: IdentidadFirma | null, formato: FormatoDeLaFirma): string {
+  const logo = firma?.logotipo_url
+    ? `<img src="${esc(firma.logotipo_url)}" alt="" style="height:34px;width:auto" />`
+    : ''
+
+  return `<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding-bottom:8px;border-bottom:2px solid ${TINTA.verde};margin-bottom:18px">
+    <div style="display:flex;gap:10px;align-items:center;min-width:0">
+      ${logo}
+      <div>
+        <div style="font-size:14px;font-weight:600">${esc(firma?.razon_social, 'Summit-Sphere')}</div>
+        <div style="font-size:11px;color:${TINTA.dim}">${[esc(firma?.telefono, ''), esc(firma?.correo, '')].filter(Boolean).join(' · ')}</div>
+      </div>
+    </div>
+    <div style="text-align:right;font-size:11px;color:${TINTA.dim};flex-shrink:0">
+      <div style="font-weight:600;color:${TINTA.navy};font-size:12px">${esc(formato.nombre)}</div>
+      <div>${esc(formato.codigo)} · versión ${esc(formato.version)}</div>
+    </div>
+  </div>`
+}
+
+/**
+ * El pie de confidencialidad.
+ *
+ * ⚠️ **La leyenda es de SUMMIT, no la del formato original.** La del original
+ * protege al cliente de sus propios empleados; ésta protege el expediente que la
+ * firma le entrega a su cliente.
+ *
+ * `nota` es la línea de arriba, que cambia por documento: «informe emitido
+ * el…», «programa aprobado por…».
+ */
+export function pieConfidencial(
+  cliente: string,
+  firma: IdentidadFirma | null,
+  nota?: string,
+): string {
+  const encabezado = nota ? `<p style="margin:0 0 3px">${esc(nota)}</p>` : ''
+
+  return `<div style="margin-top:26px;padding-top:8px;border-top:1px solid ${TINTA.borde};font-size:10px;line-height:1.5;color:${TINTA.dim}">
+    ${encabezado}
+    <p style="margin:0">Este documento contiene información confidencial de ${esc(cliente)}, elaborada por ${esc(firma?.razon_social, 'Summit-Sphere')} en el marco de sus servicios de consultoría. Queda prohibida su reproducción total o parcial y su entrega a terceros sin autorización expresa de ambas partes.</p>
+  </div>`
+}
+
+/** El título de una sección, subrayado con el verde de Summit. */
+export function tituloSeccion(texto: string): string {
+  return `<h2 style="font-size:15px;color:${TINTA.navy};margin:22px 0 8px;padding-bottom:5px;border-bottom:2px solid ${TINTA.verde}">${esc(texto)}</h2>`
+}
+
+/** El rótulo pequeño en versalitas que va encima de un dato. */
+export function rotulo(texto: string): string {
+  return `<div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:${TINTA.dim};margin-bottom:2px">${esc(texto)}</div>`
 }
 
 /** El armazón del documento: `@page`, tipografías y las reglas de salto. */

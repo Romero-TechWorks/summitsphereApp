@@ -158,7 +158,8 @@ base en:
 - El estado e importancia de los procesos.
 - Los resultados de las auditorías previas.
 
-⚠️ **La regla de frecuencia, que es lo interesante y que no tenemos:**
+⚠️ **La regla de frecuencia, tal como la redacta este procedimiento** — pero ojo,
+porque **el archivo F-SG-09 no hace esto**; ver el aviso al final de la sección:
 
 ```
 valor del proceso × número de NC documentadas en la auditoría anterior
@@ -175,14 +176,30 @@ aplicable; o se buscan elementos de mejora continua.
 
 Las fechas las determina el Coordinador del SGC junto con la Dirección.
 
-⚠️ **Nuestro `programa_auditorias` no llega hasta aquí.** Tiene año, nombre,
-objetivo, criterios y estado — un programa por cliente y por año—, pero **no
-tiene renglones por proceso** con su valor y su número de auditorías calculado.
-F03·B1 está cerrado, así que esto es backlog, no un arreglo: apuntado en el
-README como hueco 5. El día que se haga, la tabla sería
-`programa_procesos (programa_id, proceso_id, valor int check (valor in (1,2)),
-nc_previas int, auditorias_requeridas int generated…)` y el cálculo vive en la
-base, no en la pantalla.
+### ⚠️ 5.2.1 · Este párrafo está mal, y manda el archivo
+
+El F-SG-09 llegó el 31 ago 2026 **con sus fórmulas**, y no dicen esto:
+
+```
+Puntos     = valor × NC del evento anterior
+Auditorías = 1 si Puntos ≤ 5, si no 2      ← nunca más de 2
+```
+
+El texto de arriba convierte el producto directamente en auditorías; el archivo lo
+trata como *puntos* y aplica un umbral. Con 4 NC en un proceso de servicio, este
+párrafo pide **8 auditorías** al año y la hoja pide **2**.
+
+**Decisión del dueño (31 ago 2026): manda la hoja.** Es el artefacto que la firma
+llena todos los años; el párrafo se escribió una vez. Detalle y transcripción
+literal en [F-SG-09 §3.1](F-SG-09_programa_anual.md).
+
+⚠️ **Nuestro `programa_auditorias` todavía no llega hasta aquí.** Tiene año,
+nombre, objetivo, criterios y estado —un programa por cliente y por año—, pero
+**no tiene renglones por proceso** ni la columna `alcance` que el formato pide
+junto a criterios y objetivo. F03·B1 está cerrado, así que es backlog de Fase 03:
+huecos 5 y 10 del README. La tabla `programa_procesos` ya está especificada
+columna por columna en [F-SG-09 §4](F-SG-09_programa_anual.md), con el cálculo en
+la base y no en la pantalla.
 
 ### 5.3 · Planeación de la auditoría — **F-SG-11**
 
@@ -226,11 +243,12 @@ Con base en el F-SG-11, con los responsables de proceso y el personal a auditar:
 **Se registra en el F-SG-03 Lista de Asistencia**, con el tema «Reunión de
 Apertura de Auditoría Interna» y la fecha.
 
-⚠️ **F-SG-03 no llegó y no existe en ninguna fase del plan.** Hueco 4 del README.
-Provisional razonable: la foto del acta firmada entra como **adjunto de la
-auditoría**, que ya sabemos hacer —`adjuntos` con `auditoria_id`— y en una planta
-sin señal se toma con la cámara igual que cualquier evidencia. Lo que falta es el
-formato en sí, para poderlo imprimir desde la app.
+✅ **F-SG-03 llegó el 31 ago 2026** — [ficha](F-SG-03_lista_de_asistencia.md)—, y
+resultó no necesitar ni una columna nueva: se **imprime prellenado** desde la
+pestaña Agenda con el objetivo, la fecha, el lugar y los puestos que la app ya
+sabe, se firma con pluma en la sala y la foto vuelve como **adjunto de la
+auditoría** (`adjuntos` con `auditoria_id`). Sigue sin existir en ninguna fase del
+plan: es trabajo de Fase 03 pendiente.
 
 #### 5.4.2 · Entrevistas, revisión y recolección de evidencias
 
@@ -300,7 +318,8 @@ los procesos auditados.
 Los responsables deben resolver las no conformidades con el Coordinador **en un
 plazo no mayor a 15 días hábiles**: analizan las causas en el **F-SG-07 Análisis
 de Causa Raíz 5 ¿Por qué?** y determinan las acciones correctivas en el
-**F-SG-06**, con responsables y fechas compromiso. Las acciones deben ejecutarse
+**F-SG-06**, con responsables y fechas compromiso. Los dos formatos van siempre en
+pareja — [F-SG-07](F-SG-07_analisis_causa_raiz.md) llegó el 31 ago 2026. Las acciones deben ejecutarse
 sin retrasos injustificados, y el seguimiento se lleva en la **F-SG-17 Base de
 Datos de No Conformidades** hasta su **cierre efectivo**.
 
@@ -374,16 +393,19 @@ Fase 06·B3, con el alta de usuarios. Codificarla hoy sería un interruptor muer
 
 | Clave | Documento | En este repositorio |
 |---|---|---|
-| F-SG-03 | Lista de Asistencia o implementación | ❌ No entregado — hueco 4 |
+| F-SG-03 | Lista de Asistencia o implementación | [ficha](F-SG-03_lista_de_asistencia.md) |
 | F-SG-06 | Reporte de No Conformidad | [ficha](F-SG-06_reporte_no_conformidad.md) |
-| F-SG-07 | Análisis de Causa Raíz 5 ¿Por qué? | ❌ No entregado. Planeado en F04·B1 |
-| F-SG-09 | Programa Anual de Auditorías | ❌ No entregado — hueco 5 |
+| F-SG-07 | Análisis de Causa Raíz 5 ¿Por qué? | [ficha](F-SG-07_analisis_causa_raiz.md) — **es F04·B1** |
+| F-SG-09 | Programa Anual de Auditorías | [ficha](F-SG-09_programa_anual.md) |
 | F-SG-11 | Planeación y Agenda de Auditoría Interna | [ficha](F-SG-11_planeacion_y_agenda.md) |
 | F-SG-12 | Reporte Final de Auditoría Interna | [ficha](F-SG-12_reporte_final.md) |
 | P-SG-05 | Procedimiento para el control de Acciones Correctivas | ❌ No entregado. Sería la guía de la Fase 04 |
 | — | ISO 9001:2015 · ISO 19011:2018 | Regla 12: **no se copian al repositorio** |
 
-⚠️ **Faltan cuatro documentos que este procedimiento cita.** Ninguno bloquea B5.
-Los que valdría la pena pedir, por orden de utilidad: **P-SG-05** (gobierna la
-Fase 04 entera), **F-SG-07** (el formato exacto de los 5 porqués), **F-SG-09** (la
-tabla de frecuencias que el texto describe pero no muestra) y **F-SG-03**.
+✅ **Tres de los cuatro llegaron el 31 ago 2026** — F-SG-07, F-SG-09 y F-SG-03—,
+en el orden de utilidad en que se pidieron.
+
+⚠️ **Sigue faltando `P-SG-05`, y es el que más pesa**: gobierna la Fase 04 entera.
+Sin él, el ciclo de estados de `acciones` se está infiriendo de dos formatos
+(F-SG-06 y F-SG-07), igual que se infería el de auditorías antes de que llegara
+este procedimiento.

@@ -151,6 +151,17 @@ export const queryKeys = {
     todo: () => ['auditorias'] as const,
     /** El programa anual, de toda la cartera visible. */
     programas: () => ['auditorias', 'programas'] as const,
+    /**
+     * Los renglones por proceso de UN programa [F03·B6b]: su valor, las NC del
+     * año anterior y en qué meses se audita.
+     *
+     * ⚠️ Cuelga del programa y no de la cartera, al revés que `programas()`: la
+     * parrilla del F-SG-09 es de un cliente y un año, y son once o doce filas.
+     * Bajar las de toda la cartera para pintar una sería traer el trabajo de
+     * cinco clientes para enseñar el de uno.
+     */
+    programaProcesos: (programaId: string) =>
+      ['auditorias', 'programa-procesos', programaId] as const,
     /** Todas las auditorías visibles, para el listado del dominio. */
     lista: () => ['auditorias', 'lista'] as const,
     /** Una auditoría concreta, con su cliente y su auditor líder. */

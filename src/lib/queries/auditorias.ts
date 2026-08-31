@@ -18,7 +18,8 @@ import { createClient } from '@/lib/supabase/client'
 import { offlineWrite, type ResultadoEscritura } from '@/lib/offline/mutate'
 import { exigirFilas } from '@/lib/supabase/errores'
 import { uuid } from '@/lib/utils/uuid'
-import type { Tables } from '@/types/database'
+import { auditoriasDe, puntosDe } from '@/lib/auditorias/programaAnual'
+import type { Json, Tables } from '@/types/database'
 
 export type Programa = Tables<'programa_auditorias'>
 export type Auditoria = Tables<'auditorias'>
@@ -44,8 +45,22 @@ export type AuditoriaEnLista = Auditoria & {
   lider: Pick<Tables<'usuarios'>, 'id' | 'nombre'> | null
 }
 
+/**
+ * Un renglón de la parrilla del F-SG-09 [F03·B6b].
+ *
+ * ⚠️ `puntos` y `auditorias_requeridas` son **columnas generadas**: nunca se
+ * mandan en un `insert` ni en un `update` —Postgres lo rechaza con 428C9— y en
+ * la fila optimista las calcula `puntosDe()`/`auditoriasDe()`, que son la copia
+ * de TypeScript de la misma fórmula. La base es la autoridad.
+ */
+export type RenglonPrograma = Tables<'programa_procesos'> & {
+  proceso: Pick<Tables<'procesos'>, 'id' | 'nombre' | 'tipo'> | null
+}
+
 export type ProgramaEnLista = Programa & {
   organizacion: Pick<Tables<'organizaciones'>, 'id' | 'razon_social' | 'nombre_comercial' | 'giro'> | null
+  /** Quién lo aprobó. Se imprime al pie del F-SG-09, junto a la fecha del sello. */
+  aprobador: Pick<Tables<'usuarios'>, 'id' | 'nombre'> | null
 }
 
 /**
@@ -57,7 +72,11 @@ export type ProgramaEnLista = Programa & {
 const EMBEBIDO_ORG = 'organizacion:organizaciones(id, razon_social, nombre_comercial, giro)'
 const EMBEBIDO_LIDER = 'lider:usuarios!auditorias_auditor_lider_id_fkey(id, nombre)'
 const EMBEBIDO_AUDITORIA = `*, ${EMBEBIDO_ORG}, ${EMBEBIDO_LIDER}`
-const EMBEBIDO_PROGRAMA = `*, ${EMBEBIDO_ORG}`
+// ⚠️ Nombrado por la clave foránea: `programa_auditorias` apunta **dos veces** a
+// `usuarios` —`aprobado_por_id` y `creado_por`— y sin nombrar la relación
+// PostgREST responde *"more than one relationship was found"*.
+const EMBEBIDO_APROBADOR = 'aprobador:usuarios!programa_auditorias_aprobado_por_id_fkey(id, nombre)'
+const EMBEBIDO_PROGRAMA = `*, ${EMBEBIDO_ORG}, ${EMBEBIDO_APROBADOR}`
 const EMBEBIDO_MIEMBRO =
   '*, usuario:usuarios!auditoria_equipo_usuario_id_fkey(id, nombre, correo, certificaciones)'
 
@@ -96,6 +115,8 @@ export type DatosPrograma = {
   anio: number
   nombre: string
   objetivo: string | null
+  /** Qué abarca el programa del año. Lo pide el F-SG-09 junto a los otros dos. */
+  alcance: string | null
   criterios: string | null
   estado: string
 }
@@ -127,6 +148,7 @@ export async function crearPrograma(
       ...valores,
       aprobado_en: null,
       aprobado_por_id: null,
+      aprobador: null,
       creado_en: ahora,
       actualizado_en: ahora,
       organizacion,
@@ -163,6 +185,142 @@ export async function actualizarPrograma(
     offline: { ...programa, ...datos },
   })
 }
+
+// ═══════════════════════════════ el programa, proceso por proceso ════════════
+//
+// La parrilla del F-SG-09 [F03·B6b]. Ver la regla de frecuencia y por qué manda
+// la hoja de cálculo en `src/lib/auditorias/programaAnual.ts`.
+
+const EMBEBIDO_RENGLON_PROGRAMA =
+  '*, proceso:procesos(id, nombre, tipo)'
+
+export type DatosRenglonPrograma = {
+  valor: number
+  nc_previas: number
+  meses: Json
+  orden: number
+  nota: string | null
+}
+
+export async function listarProgramaProcesos(programaId: string): Promise<RenglonPrograma[]> {
+  const { data, error } = await createClient()
+    .from('programa_procesos')
+    .select(EMBEBIDO_RENGLON_PROGRAMA)
+    .eq('programa_id', programaId)
+    .order('orden')
+
+  if (error) throw error
+  return (data ?? []) as RenglonPrograma[]
+}
+
+/**
+ * ⚠️ **`org_id` se manda porque la columna es NOT NULL, y la base la pisa.** El
+ * trigger `heredar_org_del_programa()` la reemplaza por la del programa y, de
+ * paso, rechaza un proceso que sea de otra organización. Mandarla mal no abre
+ * ningún agujero; no mandarla rompería el insert optimista de la cola.
+ */
+export async function crearRenglonPrograma(
+  programaId: string,
+  orgId: string,
+  proceso: Pick<Tables<'procesos'>, 'id' | 'nombre' | 'tipo'>,
+  datos: DatosRenglonPrograma,
+): Promise<ResultadoEscritura<RenglonPrograma>> {
+  const id = uuid()
+  const ahora = new Date().toISOString()
+  const creadoPor = await idDeLaSesion()
+  const valores = {
+    id,
+    programa_id: programaId,
+    org_id: orgId,
+    proceso_id: proceso.id,
+    ...datos,
+    creado_por: creadoPor,
+  }
+
+  return offlineWrite<RenglonPrograma>({
+    tabla: 'programa_procesos',
+    operacion: 'insert',
+    etiqueta: `Programa anual — ${proceso.nombre}`,
+    valores,
+    online: async () => {
+      const { data, error } = await createClient()
+        .from('programa_procesos')
+        .insert(valores)
+        .select(EMBEBIDO_RENGLON_PROGRAMA)
+      if (error) throw error
+      return exigirFilas(data, 'Proceso del programa')[0] as RenglonPrograma
+    },
+    offline: {
+      ...valores,
+      // Las dos generadas, calculadas aquí para que el número salga sin señal.
+      puntos: puntosDe(datos.valor, datos.nc_previas),
+      auditorias_requeridas: auditoriasDe(datos.valor, datos.nc_previas),
+      creado_en: ahora,
+      actualizado_en: ahora,
+      proceso,
+    } as RenglonPrograma,
+  })
+}
+
+export async function actualizarRenglonPrograma(
+  renglon: RenglonPrograma,
+  datos: DatosRenglonPrograma,
+): Promise<ResultadoEscritura<RenglonPrograma>> {
+  return offlineWrite<RenglonPrograma>({
+    tabla: 'programa_procesos',
+    operacion: 'update',
+    etiqueta: `Programa anual — ${renglon.proceso?.nombre ?? 'proceso'}`,
+    valores: datos,
+    filtro: { id: renglon.id },
+    online: async () => {
+      const { data, error } = await createClient()
+        .from('programa_procesos')
+        .update(datos)
+        .eq('id', renglon.id)
+        .select(EMBEBIDO_RENGLON_PROGRAMA)
+      if (error) throw error
+      // ⚠️ `.select()` y 0 filas = error, no éxito: un UPDATE que el RLS no deja
+      // tocar responde 200 con lista vacía (CLAUDE.md · Trampas heredadas).
+      return exigirFilas(data, 'Proceso del programa')[0] as RenglonPrograma
+    },
+    offline: {
+      ...renglon,
+      ...datos,
+      puntos: puntosDe(datos.valor, datos.nc_previas),
+      auditorias_requeridas: auditoriasDe(datos.valor, datos.nc_previas),
+    } as RenglonPrograma,
+  })
+}
+
+/**
+ * ⚠️ Sólo sale mientras el programa esté en **borrador** — lo impone la política
+ * de DELETE, no la pantalla. Uno aprobado es un registro de ISO 9001 §9.2.2: si
+ * sus renglones se pudieran quitar, la justificación del número de auditorías
+ * del año desaparecería sin dejar rastro. La pantalla evita ofrecer el botón,
+ * que es otra cosa.
+ */
+export async function eliminarRenglonPrograma(
+  renglon: RenglonPrograma,
+): Promise<ResultadoEscritura<null>> {
+  return offlineWrite<null>({
+    tabla: 'programa_procesos',
+    operacion: 'delete',
+    etiqueta: `Quitar del programa — ${renglon.proceso?.nombre ?? 'proceso'}`,
+    filtro: { id: renglon.id },
+    online: async () => {
+      const { data, error } = await createClient()
+        .from('programa_procesos')
+        .delete()
+        .eq('id', renglon.id)
+        .select()
+      if (error) throw error
+      exigirFilas(data, 'Quitar del programa')
+      return null
+    },
+    offline: null,
+  })
+}
+
 
 // ══════════════════════════════════════════════════════ las auditorías ═══════
 

@@ -11,9 +11,24 @@ import {
   crearRenglonAgenda,
   eliminarRenglonAgenda,
   listarAgenda,
+  listarAlcanceNormas,
+  listarAlcanceProcesos,
+  listarAlcanceSitios,
+  listarEquipoAuditor,
+  type AuditoriaEnLista,
   type DatosAgenda,
   type RenglonAgenda,
 } from '@/lib/queries/auditorias'
+import { obtenerIdentidadFirma } from '@/lib/queries/firma'
+import {
+  listaDeAsistenciaHtml,
+  tituloDeListaAsistencia,
+} from '@/lib/plantillas/listaAsistencia'
+import {
+  planeacionAgendaHtml,
+  tituloDeLaPlaneacion,
+} from '@/lib/plantillas/planeacionAgenda'
+import { documentoImprimible, imprimirDocumento } from '@/lib/plantillas/impresion'
 import { formatDateOnly } from '@/lib/utils/dates'
 import Aviso from '@/components/ui/Aviso'
 import Button from '@/components/ui/Button'
@@ -35,26 +50,128 @@ const FORM = 'form-agenda'
  *
  * ⚠️ Marcar «cumplido» se hace **en planta**, y pasa por la cola como todo lo
  * demás. Sin señal se marca igual y sube al salir.
+ *
+ * ⚠️ **De aquí sale también la lista de asistencia** (`F-SG-03`, F03·B6d): cada
+ * renglón puede imprimir la suya, porque cada renglón es un evento con gente
+ * sentada enfrente. La reunión de apertura y la de clausura son las dos que
+ * `P-SG-03` §5.4.1 exige por escrito, pero el botón no distingue: el `tema` es
+ * texto libre y un catálogo de tipos de reunión sería un interruptor que sólo
+ * sirve para dos de los cuatro usos del formato (regla 11).
  */
-export default function PanelAgenda({
-  auditoriaId,
-  orgId,
-}: {
-  auditoriaId: string
-  orgId: string
-}) {
+export default function PanelAgenda({ auditoria }: { auditoria: AuditoriaEnLista }) {
   const cliente = useQueryClient()
+  const auditoriaId = auditoria.id
+  const orgId = auditoria.org_id
   const clave = queryKeys.auditorias.agenda(auditoriaId)
 
   const [editando, setEditando] = useState<RenglonAgenda | null>(null)
   const [abierto, setAbierto] = useState(false)
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  /**
+   * Qué documento se está mirando. `null` = ninguno.
+   *
+   * Los dos salen de esta pestaña porque los dos son la agenda vista de otra
+   * manera: el `F-SG-11` es el plan que se manda **antes**, y el `F-SG-03` es la
+   * hoja de firmas de una de sus reuniones.
+   */
+  const [documento, setDocumento] = useState<
+    { tipo: 'planeacion' } | { tipo: 'asistencia'; renglon: RenglonAgenda } | null
+  >(null)
 
   const { data: agenda = [], isPending } = useQuery({
     queryKey: clave,
     queryFn: () => listarAgenda(auditoriaId),
   })
+
+  // ── lo que hace falta para la lista de asistencia ──────────────────────────
+  //
+  // ⚠️ **Las tres son claves que la precarga YA baja** (`piezasDeLaPrecarga()`),
+  // así que esto no añade ni una consulta nueva. Es la misma regla que gobernó
+  // el informe en B5: el documento se genera en la planta, y una clave que nadie
+  // precargó es un documento en blanco el día que se usa.
+  const equipo = useQuery({
+    queryKey: queryKeys.auditorias.equipo(auditoriaId),
+    queryFn: () => listarEquipoAuditor(auditoriaId),
+  })
+  const sitios = useQuery({
+    queryKey: queryKeys.auditorias.alcanceSitios(auditoriaId),
+    queryFn: () => listarAlcanceSitios(auditoriaId),
+  })
+  const normas = useQuery({
+    queryKey: queryKeys.auditorias.alcanceNormas(auditoriaId),
+    queryFn: () => listarAlcanceNormas(auditoriaId),
+  })
+  const procesos = useQuery({
+    queryKey: queryKeys.auditorias.alcanceProcesos(auditoriaId),
+    queryFn: () => listarAlcanceProcesos(auditoriaId),
+  })
+  const firma = useQuery({
+    queryKey: queryKeys.firma.identidad(),
+    queryFn: obtenerIdentidadFirma,
+  })
+
+  const listaLista =
+    !equipo.isPending &&
+    !sitios.isPending &&
+    !normas.isPending &&
+    !procesos.isPending &&
+    !firma.isPending
+
+  /**
+   * El documento abierto, ya armado.
+   *
+   * ⚠️ `useMemo` y no `useState`: la caché es la fuente de verdad (regla 2 del
+   * offline). Copiarlo a un estado lo dejaría congelado en cuanto alguien
+   * añadiera un punto más a la agenda.
+   */
+  const impreso = useMemo(() => {
+    if (!documento || !listaLista) return { titulo: '', html: '' }
+
+    if (documento.tipo === 'asistencia') {
+      return {
+        titulo: tituloDeListaAsistencia(auditoria, documento.renglon),
+        html: listaDeAsistenciaHtml({
+          auditoria,
+          renglon: documento.renglon,
+          agenda,
+          equipo: equipo.data ?? [],
+          sitios: sitios.data ?? [],
+          firma: firma.data ?? null,
+        }),
+      }
+    }
+
+    return {
+      titulo: tituloDeLaPlaneacion(auditoria),
+      html: planeacionAgendaHtml({
+        auditoria,
+        normas: normas.data ?? [],
+        sitios: sitios.data ?? [],
+        procesos: procesos.data ?? [],
+        equipo: equipo.data ?? [],
+        agenda,
+        firma: firma.data ?? null,
+      }),
+    }
+  }, [
+    documento,
+    listaLista,
+    auditoria,
+    agenda,
+    equipo.data,
+    sitios.data,
+    normas.data,
+    procesos.data,
+    firma.data,
+  ])
+
+  function imprimir() {
+    if (!documento) return
+    setError(null)
+    const resultado = imprimirDocumento(impreso.titulo, impreso.html)
+    if (!resultado.abierta) setError(resultado.motivo)
+  }
 
   /** Agrupada por día: es como se lee y como se imprime. */
   const porDia = useMemo(() => {
@@ -168,7 +285,18 @@ export default function PanelAgenda({
             ? 'Sin agenda todavía'
             : `${agenda.length} punto${agenda.length === 1 ? '' : 's'} · ${cumplidos} cumplido${cumplidos === 1 ? '' : 's'}`}
         </span>
-        <Button variante="primario" onClick={abrirAlta}>Añadir un punto</Button>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {agenda.length > 0 && (
+            <Button
+              variante="secundario"
+              onClick={() => setDocumento({ tipo: 'planeacion' })}
+              title="Planeación y agenda (F-SG-11): lo que se le manda al cliente antes de la visita"
+            >
+              Imprimir la agenda
+            </Button>
+          )}
+          <Button variante="primario" onClick={abrirAlta}>Añadir un punto</Button>
+        </div>
       </div>
 
       {error && (
@@ -235,6 +363,14 @@ export default function PanelAgenda({
                         <Button
                           variante="fantasma"
                           tamano="sm"
+                          onClick={() => setDocumento({ tipo: 'asistencia', renglon })}
+                          title={`Lista de asistencia de «${renglon.tema}» (F-SG-03)`}
+                        >
+                          Asistencia
+                        </Button>
+                        <Button
+                          variante="fantasma"
+                          tamano="sm"
                           onClick={() => quitar(renglon)}
                           title={`Quitar «${renglon.tema}» de la agenda`}
                         >
@@ -249,6 +385,50 @@ export default function PanelAgenda({
           ))}
         </div>
       )}
+
+      <Modal
+        abierto={documento !== null}
+        alCerrar={() => setDocumento(null)}
+        titulo={documento?.tipo === 'planeacion' ? 'Planeación y agenda' : 'Lista de asistencia'}
+        ancho={880}
+        pie={
+          <>
+            <Button variante="fantasma" onClick={() => setDocumento(null)}>Cerrar</Button>
+            <Button variante="primario" onClick={imprimir} disabled={!listaLista}>
+              Imprimir o guardar PDF
+            </Button>
+          </>
+        }
+      >
+        <p style={{ fontSize: 12, color: 'var(--texto-dim)', margin: '0 0 10px' }}>
+          {documento?.tipo === 'planeacion'
+            ? 'El plan que se le manda al cliente antes de la visita, con copia a los jefes inmediatos. Un renglón sin auditor asignado se imprime con las iniciales del equipo completo.'
+            : 'Así se imprime, con el evento, el objetivo, la fecha, el lugar y los puestos ya puestos. Sólo la columna de firma va en blanco.'}{' '}
+          Se arma con lo que ya está descargado, así que funciona sin señal.
+        </p>
+
+        {!listaLista ? (
+          <Skeleton alto={360} radio={4} />
+        ) : (
+          /* ⚠️ `srcDoc` y `sandbox` vacío, igual que la vista previa del informe:
+             un solo renderizador para lo que se ve y lo que se imprime, y el
+             documento sin permisos. Aquí no protege React —la plantilla escapa
+             cada interpolación— y el tema de un renglón lo escribió una persona. */
+          <iframe
+            title="Vista previa del documento"
+            srcDoc={documentoImprimible(impreso.titulo || 'Documento', impreso.html)}
+            sandbox=""
+            style={{
+              width: '100%',
+              // ⚠️ `var(--vh-full)`, nunca `vh` crudo (regla 4b).
+              height: 'min(calc(var(--vh-full) * 0.55), 720px)',
+              border: '1px solid var(--borde)',
+              borderRadius: 4,
+              background: '#fff',
+            }}
+          />
+        )}
+      </Modal>
 
       <Modal
         abierto={abierto}

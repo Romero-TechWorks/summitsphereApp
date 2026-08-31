@@ -702,7 +702,7 @@ cinco —la sección «Fortalezas del SGC» sale de `conformidad`—, así que e
 siguen con un texto general de arranque. Si la firma tiene criterio propio para
 ellos, mándalo y se reemplaza.
 
-### `D05` — Aplicar la migración del informe · **Bloquea: el objetivo y la fecha de emisión**
+### `D05` — Aplicar la migración del informe · ✅ **HECHA** (30 ago 2026)
 
 `20260830120000_informe_de_auditoria.sql`. Es la más pequeña de todas: añade la
 columna `auditorias.objetivo` y un trigger que fecha la emisión del informe en el
@@ -715,12 +715,8 @@ una preauditoría o una de seguimiento no cuelgan de ningún programa. Y
 así que la pestaña Plan llevaba desde entonces diciendo «Sin emitir» sin manera de
 cambiarlo.
 
-**Cómo se aplica.** Igual que las anteriores: pégala en el editor SQL de Supabase
-y ejecútala, o `npx supabase db push` si trabajas con la CLI.
-
-⚠️ **La app funciona sin ella, a medias y sin romperse.** El informe se imprime
-igual; lo que pasa es que la sección «Objetivo» sale vacía y el botón «Marcar como
-emitido» falla al guardar. No hay prisa, pero tampoco motivo para esperar.
+**Con ésta, las trece migraciones del proyecto están aplicadas y no queda
+ninguna pendiente.**
 
 **Comprobado antes de mandártela:** se aplicó en un Postgres 17 desechable con las
 doce anteriores en orden y pasó **18 comprobaciones de comportamiento** — que el
@@ -733,6 +729,47 @@ pruebas y que ni `authenticated` ni `service_role` puedan borrar evidencia.
 
 El bucket `evidencias` se crea con la migración de la Fase 02: los adjuntos se
 adelantaron a F02·B2b. Ver `C04`.
+
+### `D06` — Aplicar la migración del programa anual · **Bloquea: la frecuencia por proceso**
+
+`20260831120000_programa_anual_por_proceso.sql`. Sale de leer el `F-SG-09` que
+mandaste el 31 ago 2026. Añade dos cosas:
+
+1. **`programa_auditorias.alcance`** — el formato imprime criterios, alcance y
+   objetivo juntos, y en la tabla sólo estaban dos. Es el mismo hueco que `D05`
+   cerró en las auditorías.
+2. **`programa_procesos`** — el renglón por proceso: su valor, las no
+   conformidades del año anterior, cuántas auditorías le tocan y en qué meses.
+
+**Cómo se aplica.** Igual que las anteriores: pégala en el editor SQL de Supabase
+y ejecútala, o `npx supabase db push` si trabajas con la CLI.
+
+✅ **Se puede aplicar sin prisa y sin avisar a nadie: es puramente aditiva.** Una
+columna nullable y una tabla nueva. El despliegue que ya está en línea no las
+conoce y sigue funcionando exactamente igual mientras tanto — no hay ventana en
+la que la app quede a medias.
+
+⚠️ **La decisión que quedó grabada aquí, y conviene que la confirmes.** Tu hoja de
+cálculo y el texto de `P-SG-03` §5.2 no dicen lo mismo sobre la frecuencia:
+
+| | Con 4 NC en un proceso de servicio (valor 2) |
+|---|---|
+| El texto del procedimiento | 8 auditorías al año |
+| **Tu hoja `F-SG-09`** | **2 auditorías al año** |
+
+Se codificó **la hoja**, tal como pediste: `puntos = valor × NC`, y `1 auditoría`
+hasta 5 puntos, `2` por encima — nunca más de dos. Va en un CHECK de la base, así
+que un 8 no se puede ni teclear. Si algún día el procedimiento se reescribe, esto
+se cambia con una migración.
+
+**Comprobado antes de mandártela:** se aplicó en un Postgres 17 desechable con las
+trece anteriores en orden y pasó **47 comprobaciones de comportamiento** — la
+fórmula y su frontera exacta en 5 puntos, que las columnas calculadas no se
+puedan escribir a mano, que un proceso de otro cliente se rechace, que la cuenta
+de pruebas no vea ni toque los renglones del cliente real, que el papel `lectura`
+no pueda capturar, y que un programa aprobado ya no suelte sus procesos. **Nueve
+de ellas son de regresión**: que el sello del informe, la partición de pruebas y
+los candados de los hallazgos sigan intactos.
 
 ---
 

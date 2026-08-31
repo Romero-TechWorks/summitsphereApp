@@ -544,10 +544,10 @@ semáforo se calcula comparando contra la meta según el sentido.
 > comportamiento que lo respaldan están listadas en esa tarea. `D04` le sumó
 > `adjuntos.item_id` (`20260824180000_evidencia_de_campo.sql`).
 >
-> ⚠️ **`D05` está escrita y pendiente de aplicar**:
+> ✅ **`D05` aplicada** (30 ago 2026):
 > `20260830120000_informe_de_auditoria.sql`, la del informe [F03·B5]. Añade
 > `auditorias.objetivo` y `sellar_emision_informe()`. **18 comprobaciones**, 11 de
-> ellas de regresión.
+> ellas de regresión. Con ella no queda ninguna migración pendiente en el proyecto.
 
 ⚠️ **La regla de las fechas cambia en esta fase, y hay que leerla antes de tocar
 nada.** En las fases 01 y 02 la base sella toda fecha, porque una que viaja desde
@@ -570,6 +570,7 @@ El programa anual por cliente. ISO 9001 §9.2.2 lo exige por escrito y aprobado.
 | `anio` | int CHECK 2000–2100 | |
 | `nombre` | text NOT NULL | «Programa anual de auditorías 2026» |
 | `objetivo`, `criterios` | text | |
+| `alcance` | text | Qué abarca el programa del año. Llegó con `20260831120000` (`D06`) — hueco 10 |
 | `estado` | text CHECK | `borrador` · `aprobado` · `cerrado` |
 | `aprobado_por_id`, `aprobado_en` | | Los sella `sellar_programa_aprobado()`. Devolverlo a borrador **borra la firma** |
 
@@ -577,6 +578,43 @@ El programa anual por cliente. ISO 9001 §9.2.2 lo exige por escrito y aprobado.
 en 45001 por organismos distintos lleva dos programas el mismo año. Un índice
 único rechazaría el segundo, y como toda escritura pasa por la cola, el rechazo
 llegaría tarde y sin nadie mirando.
+
+## `programa_procesos`  [F03·B6b]
+
+**El renglón por proceso del F-SG-09**, que es donde vive la regla de frecuencia
+de P-SG-03 §5.2. Sin él, el programa anual es un título y tres párrafos.
+
+Creada por `20260831120000_programa_anual_por_proceso.sql` (`D06`), validada en
+Docker con las trece anteriores en orden: **47 comprobaciones**, nueve de ellas
+de regresión.
+
+| Columna | Tipo | Nota |
+|---|---|---|
+| `org_id` | uuid FK NOT NULL | La hereda del programa, con trigger (regla 1) |
+| `programa_id` | uuid FK NOT NULL | `on delete cascade` |
+| `proceso_id` | uuid FK NOT NULL | `on delete restrict` — un programa aprobado es evidencia |
+| `valor` | int NOT NULL CHECK `in (1,2)` | 2 = proceso del servicio, 1 = de soporte. Se **propone** desde `procesos.tipo` y se guarda |
+| `nc_previas` | int NOT NULL default 0 | NC del evento anterior. Se puede traer de `hallazgos`, pero se guarda |
+| `puntos` | int generated stored | `valor * nc_previas` |
+| `auditorias_requeridas` | int generated stored | `case when valor*nc_previas <= 5 then 1 else 2 end` |
+| `meses` | jsonb NOT NULL default `'[]'` | `[{"mes":3,"modalidad":"interna"}]` |
+| `orden`, `nota` | int, text | La `nota` justifica subir la frecuencia a mano |
+
+⚠️ **La fórmula sale del ARCHIVO, no del texto del procedimiento**, que dice otra
+cosa y está mal redactado — nunca más de 2 auditorías. Decisión del dueño,
+31 ago 2026. Ver `docs/formatos_informeAuditorias/F-SG-09_programa_anual.md` §3.1.
+
+⚠️ **Las dos generadas son seguras**: enteros y un `case` sobre enteros son
+IMMUTABLE. No es el caso de `fecha::text`, que revienta con 42P17.
+
+⚠️ **`unique (programa_id, proceso_id)`, y por eso NO se usa `upsert`** — la
+pantalla elige `insert` o `update` mirando la caché. Misma regla que `requisitos`
+y `mediciones` (§6.1).
+
+⚠️ **Los meses van en una columna, no en una tabla hija.** Una tabla
+`(programa_proceso_id, mes)` necesitaría un índice único que no es la PK —la
+trampa de arriba— y marcar seis meses serían seis operaciones de la cola en vez de
+una. El gesto real es tocar celdas de una parrilla.
 
 ## `auditorias`
 

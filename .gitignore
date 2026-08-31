@@ -59,3 +59,6 @@ yarn-error.log*
 # supabase local
 /supabase/.temp
 /supabase/.branches
+
+# formatos originales de la firma (su sustituto son los .md de docs/formatos_informeAuditorias/)
+/docs/docsFase4/

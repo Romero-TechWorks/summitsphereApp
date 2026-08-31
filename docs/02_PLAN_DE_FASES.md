@@ -953,13 +953,72 @@ se creó con los adjuntos—. ⚠️ **Quita permisos a propósito**: revoca el 
 dos formatos. `D02` ✅ **HECHA** (30 ago 2026): `P-SG-03` §3 define NC mayor, NC
 menor y observación, y ya está en `CRITERIO_HALLAZGO`. ⚠️ **Falta la mitad**: el
 procedimiento no define `oportunidad de mejora` ni `conformidad`, y el informe
-necesita los cinco tipos. `D05` **Aplicar la migración de B5**,
+necesita los cinco tipos. `D05` ✅ **HECHA** (30 ago 2026): aplicada
 `20260830120000_informe_de_auditoria.sql` — `auditorias.objetivo` y el sello de
-emisión del informe. `D03` → **movido a `C04`** (22 ago 2026):
+emisión del informe. Con ella, **ninguna migración del proyecto queda pendiente**. `D03` → **movido a `C04`** (22 ago 2026):
 el bucket `evidencias` se creó con los adjuntos, que se adelantaron a F02·B2b.
 
 ⚠️ **`C01` bloquea a B2.** La lista de verificación se genera de `norma_clausulas`;
 con el catálogo vacío (`B03`), `generar_lista_verificacion()` devuelve cero.
+
+## F03·B6 — Lo que destaparon los formatos de la segunda tanda  ✅ *código listo, 31 ago 2026*
+
+**Añadido el 31 ago 2026, después de transcribir `F-SG-09` y `F-SG-03`.** No es
+alcance nuevo inventado: son huecos de la Fase 03 que no se podían ver hasta tener
+los formatos en la mano. La fase estaba cerrada por código y esto la reabre por un
+lado concreto — **el programa anual y las actas de reunión**, que es justo la parte
+que el cliente firma y archiva.
+
+- **B6a · `programa_auditorias.alcance`.** ✅ Columna `text` nullable, y capturable
+  en el formulario del programa, junto a objetivo y criterios. El F-SG-09
+  imprime criterios, alcance y objetivo juntos y sólo dos están en la tabla. ⚠️ **No
+  se puede tomar prestado el de la auditoría**: el programa se escribe antes de que
+  exista ninguna, y su alcance es el de la organización entera. Es el mismo error
+  que `D05` arregló en `auditorias`, y la misma solución.
+- **B6b · `programa_procesos` y la regla de frecuencia.** ✅ La tabla, sus dos
+  columnas generadas y la parrilla, que estrena **expediente por query string**
+  (`?programa=<id>`): once procesos por doce meses no caben en un modal.
+  ⚠️ **La fórmula sale de la hoja, no del texto de `P-SG-03` §5.2**, que dice otra
+  cosa: `puntos = valor × NC` y `auditorías = 1 si puntos ≤ 5, si no 2` — nunca
+  más de dos. Decisión del dueño, y va en un CHECK.
+  - El valor se **propone** desde `procesos.tipo` y las NC del año anterior se
+    traen de `hallazgosDeLaCartera()`, **en memoria y sin clave de caché nueva**,
+    igual que los widgets del tablero. Los dos se pueden cambiar: son juicio del
+    consultor, y el programa aprobado es evidencia que no se puede recalcular sola.
+  - Los meses van en una **columna `jsonb`**, no en tabla hija: una tabla
+    `(renglón, mes)` caería en la trampa del índice único que no es la PK (§6.1) y
+    marcar seis meses serían seis operaciones de la cola en vez de una.
+- **B6c · Imprimir el F-SG-09.** ✅ `src/lib/plantillas/programaAnual.ts`. Se
+  imprimen **la leyenda de valores y el umbral**, porque son la justificación del
+  número de auditorías, y la marca de cada mes lleva su letra además del color —
+  este documento acaba fotocopiado en blanco y negro.
+- **B6d · Imprimir el F-SG-03, la lista de asistencia.** ✅ Un botón por renglón
+  de la agenda: cada renglón es un evento con gente sentada enfrente.
+  ⚠️ **Cero esquema y cero claves de caché nuevas** — sale entero de lo que la
+  precarga ya baja, y eso es deliberado: la reunión de apertura pasa en la planta.
+  **Se imprime prellenado**, no en blanco: evento, objetivo, fecha, lugar y los
+  puestos que la app ya sabe; en blanco sólo la columna FIRMA y seis renglones de
+  sobra. Una parrilla vacía es un PDF que cualquiera saca de un Word.
+- **B6e · Imprimir el F-SG-11.** ✅ No lo destapó esta tanda —el README ya lo
+  decía el 30 ago— pero comparte toda la infraestructura con B6c y B6d. La agenda
+  se le manda al cliente **antes** de la visita (P-SG-03 §5.3). Un renglón sin
+  auditor asignado se imprime con las iniciales del **equipo completo**, que
+  resuelve el hueco 8 sin tocar el esquema.
+
+⚠️ **De paso, el membrete y el pie salieron de `informeAuditoria.ts` a
+`impresion.ts`** (`membrete()`, `pieConfidencial()`, `tituloSeccion()`,
+`rotulo()`). Los cuatro documentos de la firma los quieren idénticos, y un
+membrete escrito cuatro veces acaba distinto en cada entregable.
+
+⚠️ **Con B6d y B6e, las reuniones de apertura y clausura dejan de ser un hueco de
+evidencia.** Hoy la app no tiene forma de demostrar que ocurrieron, y P-SG-03 §5.4.1
+las exige por escrito.
+
+⚠️ **Lo que B6 NO incluye: `fuente_nc`.** Aflojar `hallazgos.auditoria_id` a
+nullable para que una NC pueda nacer de una queja o un incidente toca la tabla de
+la Fase 03, sí, pero es una decisión de la **Fase 04** y el README avisa desde el
+30 ago que hay que tomarla *antes* de esa fase, no dentro. Se decide junto con el
+resto del ciclo de acciones.
 
 ---
 
@@ -973,8 +1032,13 @@ con el catálogo vacío (`B03`), `generar_lista_verificacion()` devuelve cero.
 - `acciones`: nace de un hallazgo (o sola, como acción de mejora). Tipo
   (`correccion`, `accion_correctiva`, `preventiva`, `mejora`), responsable, fecha
   compromiso, estado.
-- **Análisis de causa**: 5 porqués e Ishikawa (6M), guardados estructurados, no
-  como un párrafo. ISO 9001 §10.2 lo exige y un auditor externo lo revisa.
+- **Análisis de causa**: 5 porqués, guardados estructurados y no como un párrafo.
+  ISO 9001 §10.2 lo exige y un auditor externo lo revisa. ⚠️ **La forma exacta la
+  fijó `F-SG-07`** (31 ago 2026): cinco pares pregunta/respuesta **cada uno con su
+  propia evidencia**, más un bloque de «cierre del ciclo» con dos booleanos y dos
+  preguntas de impacto —¿nuevo riesgo para el SGC? ¿se requieren recursos?—. La
+  firma **no usa Ishikawa**: se queda como opción sin plantilla impresa. Ficha en
+  `docs/formatos_informeAuditorias/F-SG-07_analisis_causa_raiz.md`.
 - `tareas`: los pasos concretos de la acción, con su responsable y su fecha.
 - **Verificación de eficacia**: fecha, quién verificó, evidencia y veredicto.
   Una acción no se cierra sin esto. Es el error más común en los SGC reales.

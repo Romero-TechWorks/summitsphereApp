@@ -234,7 +234,7 @@ export default function ExpedienteAuditoria({ id }: { id: string }) {
         <PanelEquipoAuditor auditoriaId={auditoria.id} orgId={auditoria.org_id} />
       )}
       {activa === 'agenda' && (
-        <PanelAgenda auditoriaId={auditoria.id} orgId={auditoria.org_id} />
+        <PanelAgenda auditoria={auditoria} />
       )}
       {activa === 'recorrido' && <PanelRecorrido auditoria={auditoria} />}
       {activa === 'hallazgos' && <PanelHallazgos auditoria={auditoria} />}

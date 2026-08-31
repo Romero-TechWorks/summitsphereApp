@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import { usePathname, useSearchParams } from 'next/navigation'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { queryKeys } from '@/lib/query/keys'
 import { aplicarEscritura } from '@/lib/query/cache'
@@ -28,6 +29,7 @@ import Select from '@/components/ui/Select'
 import Skeleton from '@/components/ui/Skeleton'
 import { IconoCalendario } from '@/components/ui/Iconos'
 import FormularioPrograma from './FormularioPrograma'
+import ExpedientePrograma from './ExpedientePrograma'
 
 const FORM = 'form-programa'
 
@@ -41,9 +43,15 @@ const FORM = 'form-programa'
  * caché. Con una consulta por filtro, sin señal la lista se vaciaría al elegir
  * un cliente —esa clave no está en la caché— y quien lo viera concluiría que la
  * app perdió el programa (CLAUDE.md · reglas del offline, 7).
+ *
+ * Lista y expediente en la misma pestaña: la parrilla del F-SG-09 se abre con
+ * `?programa=<id>` [F03·B6b], igual que un documento con `?documento=`.
  */
 export default function PanelPrograma() {
   const cliente = useQueryClient()
+  const ruta = usePathname()
+  const params = useSearchParams()
+  const abiertoId = params.get('programa')
   const clave = queryKeys.auditorias.programas()
 
   const [texto, setTexto] = useState('')
@@ -140,6 +148,24 @@ export default function PanelPrograma() {
     )
   }
 
+  if (abiertoId) {
+    const programa = programas.find((p) => p.id === abiertoId)
+
+    // ⚠️ Un enlace viejo, un programa borrado o el de otro consultor caen aquí
+    // y no en una pantalla consultando con un id fantasma. Misma decisión que la
+    // `org` que ya no está en `/sistemas`.
+    if (!programa) {
+      return (
+        <EstadoVacio
+          titulo="Ese programa no está en la lista"
+          descripcion="O se borró, o el enlace es de un cliente que no tienes asignado. Vuelve a la lista y ábrelo desde ahí."
+        />
+      )
+    }
+
+    return <ExpedientePrograma programa={programa} volverHref={`${ruta}?tab=programa`} />
+  }
+
   return (
     <>
       <div
@@ -225,11 +251,21 @@ export default function PanelPrograma() {
                   )}
                 </>
               }
-              onClick={() => abrirEdicion(programa)}
+              href={`${ruta}?tab=programa&programa=${programa.id}`}
               derecha={
-                <Badge tono={tonoDe(ESTADOS_PROGRAMA, programa.estado)}>
-                  {etiquetaDe(ESTADOS_PROGRAMA, programa.estado)}
-                </Badge>
+                <>
+                  <Badge tono={tonoDe(ESTADOS_PROGRAMA, programa.estado)}>
+                    {etiquetaDe(ESTADOS_PROGRAMA, programa.estado)}
+                  </Badge>
+                  <Button
+                    variante="fantasma"
+                    tamano="sm"
+                    onClick={() => abrirEdicion(programa)}
+                    title={`Editar el programa ${programa.anio}`}
+                  >
+                    Editar
+                  </Button>
+                </>
               }
             />
           ))}

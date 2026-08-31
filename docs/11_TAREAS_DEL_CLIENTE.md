@@ -503,9 +503,30 @@ cada auditoría concreta.
 **El programa anual:**
 
 1. Barra de la izquierda → **Auditorías** → pestaña **Programa anual**.
-2. **Nuevo programa**: cliente, año, nombre, objetivo y criterios.
-3. Cuando esté bien, apruébalo. **Quién lo aprobó y cuándo lo escribe el
+2. **Nuevo programa**: cliente, año, nombre, **objetivo**, **alcance** y
+   **criterios**. Los tres textos se imprimen juntos arriba del programa, igual
+   que en tu `F-SG-09`.
+3. **Pulsa el programa** para abrir su parrilla: un renglón por proceso, que es de
+   donde sale **cuántas veces se audita cada uno**.
+   - **Añadir un proceso**: se elige de la lista del cliente. El sistema
+     **propone** su valor —2 si es del servicio, 1 si es de soporte— y las no
+     conformidades del año pasado. Los dos se pueden cambiar: la app propone, tú
+     decides.
+   - **Traer las NC de [año anterior]** rellena esa columna con los hallazgos que
+     ya están capturados.
+   - **Los puntos y las auditorías se calculan solos**: puntos = valor × no
+     conformidades del año anterior; hasta 5 puntos una auditoría al año, por
+     encima dos. **Nunca más de dos**, igual que tu hoja.
+   - **Toca un mes** para planear la auditoría de ese proceso: una vez queda
+     interna (**I**), otra externa (**E**), otra se quita.
+   - **Imprimir o guardar PDF** saca el `F-SG-09` completo, con la tabla de
+     valores y el umbral, para que la Dirección lo firme.
+4. Cuando esté bien, apruébalo. **Quién lo aprobó y cuándo lo escribe el
    sistema.**
+   ⚠️ Con el programa aprobado **ya no se pueden quitar procesos**: es el registro
+   que exige ISO 9001 §9.2.2, y la justificación del número de auditorías del año
+   tiene que poder consultarse después. Si te equivocaste, devuélvelo a borrador —
+   eso borra la firma de aprobación.
 
 **Una auditoría:**
 
@@ -532,6 +553,16 @@ cada auditoría concreta.
    **reunión de apertura** y la **de cierre**, que en tu `F-SG-11` son el primer y
    el último renglón. El informe saca de ahí su sección de apertura y la lista de
    auditores por proceso.
+   De la misma pestaña salen **dos papeles que se entregan**:
+   - **Imprimir la agenda** (arriba) saca tu `F-SG-11`, que es lo que le mandas al
+     cliente **antes** de ir, con copia a los jefes inmediatos. Un renglón al que
+     no le pusiste auditor sale con las iniciales del equipo completo.
+   - **Asistencia**, en cada renglón, saca tu `F-SG-03` **ya lleno**: el evento, el
+     objetivo, la fecha, el lugar y los puestos que el sistema ya sabe. Sólo la
+     columna de firma va en blanco, con renglones de sobra para quien llegue sin
+     estar en la agenda. Imprímela antes de salir, hazla firmar en la sala y súbela
+     después como foto — con eso queda demostrado que la reunión de apertura
+     ocurrió, que es lo que tu procedimiento exige.
 
 ### Cosas que conviene saber
 

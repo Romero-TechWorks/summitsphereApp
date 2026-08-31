@@ -104,9 +104,11 @@ src/
     documentos/         zip · docx · pdf · markdown · convertir   [F02·B2]
     sistemas/           catálogos de la Fase 02 (documentos, requisitos, riesgos…)
     auditorias/         catálogos de la Fase 03 · precarga.ts · informe.ts [F03·B5]
+                        programaAnual.ts (la regla de frecuencia)     [F03·B6]
     asistente/          proveedor · esquemas · instrucciones · herramientas
-    plantillas/         impresion.ts (paleta literal · escapado · ventana)
-                        informeAuditoria.ts  [F03·B5] · el resto llega en F06·B2
+    plantillas/         impresion.ts (paleta · escapado · membrete · ventana)
+                        informeAuditoria [B5] · programaAnual · listaAsistencia
+                        · planeacionAgenda [B6] · el resto llega en F06·B2
     utils/              helpers puros
     validation/         esquemas Zod compartidos
   types/database.ts     todos los tipos, generados desde el esquema
@@ -602,10 +604,19 @@ con `CRON_SECRET`.
 Render **sin dependencias y con colores literales** — la ventana de impresión no
 hereda `globals.css` (docs/05 §6). Los cimientos están en
 `src/lib/plantillas/impresion.ts`: la paleta en hexadecimal, `esc()` para escapar
-**cada** interpolación, el armazón `@page` con sus reglas de salto y la apertura
-de la ventana. El primer entregable es el informe de auditoría
-(`informeAuditoria.ts`, F03·B5); los otros ocho llegan con F06·B2, más el catálogo
-en código y su configuración en `config_firma`.
+**cada** interpolación, el armazón `@page` con sus reglas de salto, la apertura de
+la ventana y **el membrete y el pie compartidos** (`membrete()`,
+`pieConfidencial()`, `tituloSeccion()`, `rotulo()`).
+
+⚠️ **Esos cuatro nacieron dentro de `informeAuditoria.ts` y salieron en F03·B6**,
+cuando hubo un segundo documento que los quería idénticos: un membrete escrito
+cuatro veces acaba distinto en cada entregable, y la identidad de la firma es lo
+primero que el cliente mira.
+
+Los cuatro formatos de la firma ya están: el informe (`informeAuditoria.ts`,
+F03·B5), el programa anual, la lista de asistencia y la planeación y agenda
+(F03·B6). Los ocho restantes llegan con F06·B2, más el catálogo en código y su
+configuración en `config_firma`.
 
 Tres reglas que ya se pagaron al escribir el primero:
 

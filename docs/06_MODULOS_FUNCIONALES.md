@@ -243,6 +243,26 @@ Aprobarlo **sella quién y cuándo en la base**, no en la pantalla; devolverlo a
 borrador borra esa firma. Un cliente puede tener más de un programa el mismo año
 —9001 y 45001 con organismos distintos— y eso es válido.
 
+**La parrilla por proceso** `[F03·B6b]` se abre pulsando el programa
+(`?programa=<id>`) y es donde vive la frecuencia: cada proceso con su **valor**
+—2 si es del servicio, 1 si es de soporte—, las **no conformidades del año
+anterior**, y de ahí salen los puntos y cuántas auditorías le tocan.
+
+- **Puntos = valor × NC del año anterior.** Hasta 5 puntos, una auditoría al año;
+  por encima, dos. ⚠️ **Nunca más de dos**: es lo que hace la hoja de cálculo de
+  la firma. El texto del procedimiento dice otra cosa y está mal redactado.
+- Los dos números **se proponen solos** —el valor desde el tipo del proceso, las
+  NC desde los hallazgos del año pasado con el botón *Traer las NC*— y los dos se
+  pueden cambiar. Lo que la app propone no es lo que la firma decide.
+- **Los meses se planean tocando la celda**: una vez interna, otra externa, otra
+  para quitarla.
+- ⚠️ Con el programa aprobado los procesos **ya no se quitan**. Es un registro de
+  ISO 9001 §9.2.2: la justificación del número de auditorías del año tiene que
+  poder consultarse después. Lo impone la base, no la pantalla.
+- **Se imprime** `[F03·B6c]`: es el `F-SG-09`, el documento que la Dirección del
+  cliente firma. Sale con la leyenda de valores y el umbral, porque sin ellos el
+  número de auditorías parece arbitrario.
+
 ### Planear una auditoría
 Tipo (interna, preauditoría, seguimiento, acompañamiento a certificación, a
 proveedor), fechas, auditor líder, programa y proyecto de los que cuelga, y el
@@ -273,6 +293,16 @@ cambiara de organización se llevaría su evidencia al expediente equivocado.
   cliente antes de ir, y después se marca lo que se cumplió — eso va al informe.
   El «auditado» admite un puesto («Jefe de Almacén»): la agenda se manda semanas
   antes de saber quién estará.
+  De aquí salen **dos documentos** `[F03·B6d y B6e]`:
+  - **Imprimir la agenda** — el `F-SG-11`, que se le manda al cliente *antes* de
+    la visita, por correo y con copia a los jefes inmediatos. Un renglón sin
+    auditor asignado se imprime con las iniciales del equipo completo.
+  - **Asistencia**, en cada renglón — el `F-SG-03`, la hoja de firmas de esa
+    reunión. `P-SG-03` §5.4.1 exige por escrito la de apertura.
+    ⚠️ **Sale prellenada**: evento, objetivo, fecha, lugar y los puestos que la
+    app ya sabe, con la columna de firma en blanco y seis renglones de sobra. Se
+    firma con pluma en la sala y vuelve como foto adjunta a la auditoría. Una
+    hoja vacía es un PDF que cualquiera saca de un Word.
 
 ### Lista de verificación
 **Se genera desde el alcance.** Elegidas las normas, la lista sale con una entrada

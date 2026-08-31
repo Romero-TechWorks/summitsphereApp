@@ -8,6 +8,10 @@
 > falta es **imprimirlo**: es un entregable que el cliente recibe, no una pantalla.
 >
 > Los «huecos» numerados que se citan aquí están en el [índice y análisis](README.md).
+>
+> ✅ **Se imprime desde el 31 ago 2026** (F03·B6e), con el botón *Imprimir la
+> agenda* de la pestaña Agenda. La plantilla es
+> `src/lib/plantillas/planeacionAgenda.ts`.
 
 ---
 

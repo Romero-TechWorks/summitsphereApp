@@ -1769,6 +1769,7 @@ export type Database = {
       programa_auditorias: {
         Row: {
           actualizado_en: string
+          alcance: string | null
           anio: number
           aprobado_en: string | null
           aprobado_por_id: string | null
@@ -1783,6 +1784,7 @@ export type Database = {
         }
         Insert: {
           actualizado_en?: string
+          alcance?: string | null
           anio: number
           aprobado_en?: string | null
           aprobado_por_id?: string | null
@@ -1797,6 +1799,7 @@ export type Database = {
         }
         Update: {
           actualizado_en?: string
+          alcance?: string | null
           anio?: number
           aprobado_en?: string | null
           aprobado_por_id?: string | null
@@ -1829,6 +1832,86 @@ export type Database = {
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizaciones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      programa_procesos: {
+        Row: {
+          actualizado_en: string
+          auditorias_requeridas: number | null
+          creado_en: string
+          creado_por: string | null
+          id: string
+          meses: Json
+          nc_previas: number
+          nota: string | null
+          orden: number
+          org_id: string
+          proceso_id: string
+          programa_id: string
+          puntos: number | null
+          valor: number
+        }
+        Insert: {
+          actualizado_en?: string
+          auditorias_requeridas?: number | null
+          creado_en?: string
+          creado_por?: string | null
+          id?: string
+          meses?: Json
+          nc_previas?: number
+          nota?: string | null
+          orden?: number
+          org_id: string
+          proceso_id: string
+          programa_id: string
+          puntos?: number | null
+          valor: number
+        }
+        Update: {
+          actualizado_en?: string
+          auditorias_requeridas?: number | null
+          creado_en?: string
+          creado_por?: string | null
+          id?: string
+          meses?: Json
+          nc_previas?: number
+          nota?: string | null
+          orden?: number
+          org_id?: string
+          proceso_id?: string
+          programa_id?: string
+          puntos?: number | null
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "programa_procesos_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "programa_procesos_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizaciones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "programa_procesos_proceso_id_fkey"
+            columns: ["proceso_id"]
+            isOneToOne: false
+            referencedRelation: "procesos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "programa_procesos_programa_id_fkey"
+            columns: ["programa_id"]
+            isOneToOne: false
+            referencedRelation: "programa_auditorias"
             referencedColumns: ["id"]
           },
         ]
@@ -2455,6 +2538,7 @@ export type Database = {
         Args: { p_auditoria: string }
         Returns: number
       }
+      meses_de_programa_validos: { Args: { p: Json }; Returns: boolean }
       mis_organizaciones: { Args: never; Returns: string[] }
       org_de_la_ruta: { Args: { p_ruta: string }; Returns: string }
       pgp_armor_headers: {

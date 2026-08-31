@@ -25,8 +25,12 @@ import {
   TINTA,
   esc,
   escParrafos,
+  membrete,
+  pieConfidencial,
+  rotulo as etiqueta,
   tintaDeHallazgo,
   tintaDeVeredicto,
+  tituloSeccion as titulo,
 } from '@/lib/plantillas/impresion'
 import { etiquetaDe } from '@/lib/cartera/catalogos'
 import { TIPOS_AUDITORIA, TIPOS_HALLAZGO } from '@/lib/auditorias/catalogos'
@@ -55,7 +59,11 @@ import { PAPELES_AUDITOR } from '@/lib/auditorias/catalogos'
  * firma renumere sus formatos, se cambia aquí. La identidad —razón social,
  * logotipo— sí sale de `config_firma`, porque ésa la edita el dueño.
  */
-const FORMATO = { codigo: 'F-SG-12', version: '0' } as const
+const FORMATO = {
+  nombre: 'Reporte Final de Auditoría Interna',
+  codigo: 'F-SG-12',
+  version: '0',
+} as const
 
 export type DatosInforme = {
   auditoria: AuditoriaEnLista
@@ -81,14 +89,6 @@ function horario(renglon: RenglonAgenda): string {
   const fin = hora(renglon.hora_fin)
   if (inicio && fin) return `${inicio} – ${fin}`
   return inicio || fin
-}
-
-function titulo(texto: string): string {
-  return `<h2 style="font-size:15px;color:${TINTA.navy};margin:22px 0 8px;padding-bottom:5px;border-bottom:2px solid ${TINTA.verde}">${esc(texto)}</h2>`
-}
-
-function etiqueta(texto: string): string {
-  return `<div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:${TINTA.dim};margin-bottom:2px">${esc(texto)}</div>`
 }
 
 /**
@@ -218,23 +218,7 @@ export function informeDeAuditoriaHtml({
     : 'Sin fechas'
 
   // ── el membrete ──────────────────────────────────────────────────────────
-  const logo = firma?.logotipo_url
-    ? `<img src="${esc(firma.logotipo_url)}" alt="" style="height:34px;width:auto" />`
-    : ''
-
-  const encabezado = `<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding-bottom:8px;border-bottom:2px solid ${TINTA.verde};margin-bottom:18px">
-    <div style="display:flex;gap:10px;align-items:center;min-width:0">
-      ${logo}
-      <div>
-        <div style="font-size:14px;font-weight:600">${esc(firma?.razon_social, 'Summit-Sphere')}</div>
-        <div style="font-size:11px;color:${TINTA.dim}">${[esc(firma?.telefono, ''), esc(firma?.correo, '')].filter(Boolean).join(' · ')}</div>
-      </div>
-    </div>
-    <div style="text-align:right;font-size:11px;color:${TINTA.dim};flex-shrink:0">
-      <div style="font-weight:600;color:${TINTA.navy};font-size:12px">Reporte Final de Auditoría Interna</div>
-      <div>${esc(FORMATO.codigo)} · versión ${esc(FORMATO.version)}</div>
-    </div>
-  </div>`
+  const encabezado = membrete(firma, FORMATO)
 
   // ── identificación ───────────────────────────────────────────────────────
   const identificacion = `<div class="bloque" style="display:flex;gap:26px;flex-wrap:wrap;margin-bottom:6px">
@@ -403,18 +387,11 @@ export function informeDeAuditoriaHtml({
   </div>`
 
   // ── pie ──────────────────────────────────────────────────────────────────
-  //
-  // ⚠️ La leyenda es de SUMMIT, no la del formato original: aquélla protege al
-  // cliente de sus propios empleados; ésta protege el expediente que la firma le
-  // entrega a su cliente.
   const emitido = auditoria.informe_emitido_en
-    ? `Informe emitido el ${esc(formatDate(auditoria.informe_emitido_en))}.`
+    ? `Informe emitido el ${formatDate(auditoria.informe_emitido_en)}.`
     : 'Documento preliminar: el informe todavía no ha sido emitido formalmente.'
 
-  const pie = `<div style="margin-top:26px;padding-top:8px;border-top:1px solid ${TINTA.borde};font-size:10px;line-height:1.5;color:${TINTA.dim}">
-    <p style="margin:0 0 3px">${emitido}</p>
-    <p style="margin:0">Este documento contiene información confidencial de ${esc(cliente)}, elaborada por ${esc(firma?.razon_social, 'Summit-Sphere')} en el marco de sus servicios de consultoría. Queda prohibida su reproducción total o parcial y su entrega a terceros sin autorización expresa de ambas partes.</p>
-  </div>`
+  const pie = pieConfidencial(cliente, firma, emitido)
 
   return [
     encabezado,

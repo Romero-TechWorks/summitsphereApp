@@ -89,14 +89,15 @@ esos dos valores. El catálogo se adelantó al formato.
 | Campo del formato | Dónde caerá | Estado |
 |---|---|---|
 | Corrección / Acción Inmediata | `acciones` con `tipo = 'correccion'` | Planeado F04·B1 |
-| Análisis de Causa Raíz | Los 5 porqués, estructurados | Planeado F04·B1. ⚠️ La firma usa **5 porqués** (F-SG-07), no Ishikawa |
-| «Formato de Análisis de Causa» | Referencia al F-SG-07 | ❌ Ese formato no llegó |
+| Análisis de Causa Raíz | `acciones.causa_analisis` (jsonb) | F04·B1. ✅ La forma exacta la define [F-SG-07 §3](F-SG-07_analisis_causa_raiz.md): cinco pares con **evidencia por cada porqué** |
+| «Formato de Análisis de Causa» | Referencia al F-SG-07 | ✅ **Llegó** el 31 ago 2026 — [ficha](F-SG-07_analisis_causa_raiz.md). Los dos se imprimen en pareja |
 | Acción(es) Correctiva(s) × 4 | `acciones` con `tipo = 'accion_correctiva'` | Planeado F04·B1 |
 | — Responsable | `acciones.responsable` | Planeado |
 | — Evidencia | `adjuntos` con `accion_id` | ⚠️ `adjuntos` **no tiene `accion_id`** todavía. Es la FK que falta, y F04·B2 dice justo eso: «conectarla a las acciones» |
 | — Fecha | `acciones.fecha_compromiso` | Planeado. Por defecto **15 días hábiles** (P-SG-03 §5.5) |
-| **¿Actualizar Análisis de Riesgo?** SI/NO + especifique | — | ❌ **No planeado.** Ver §4 |
-| **¿Cambios en el SGC?** SI/NO + especifique | — | ❌ **No planeado.** Ver §4 |
+| **¿Actualizar Análisis de Riesgo?** SI/NO + especifique | `acciones.nuevo_riesgo` + `_desc` (+ `riesgo_id`) | ⚠️ Sigue sin estar en el plan, pero **F-SG-07 lo pide también** → ya no es opcional. Ver §4 y [F-SG-07 §6](F-SG-07_analisis_causa_raiz.md) |
+| **¿Cambios en el SGC?** SI/NO + especifique | `acciones` + enlace a `documentos` | ⚠️ Sólo lo pide este formato. Ver §4 |
+| *(sólo en F-SG-07)* **¿Se requieren recursos?** | `acciones.requiere_recursos` + `_desc` | Descubierto el 31 ago 2026. Es el campo que decide si la acción se puede ejecutar |
 | No Conformidad aceptada ☐ Sí ☐ No | — | ❌ No planeado. Ver §4 |
 | ¿Fue efectiva? | Verificación de eficacia | ✅ Planeado F04·B1, y bien: «una acción no se cierra sin esto» |
 | Fecha Cierre | `hallazgos.cerrado_en` | ✅ Ya existe, lo sella la base |
@@ -123,15 +124,23 @@ no dentro: o `auditoria_id` se afloja a nullable con una `fuente` que lo expliqu
 o las NC de otras fuentes viven en otra tabla. Lo primero es más simple y no
 rompe nada existente; lo segundo duplica todo el ciclo de acciones.
 
-**2 · `puesto_responsable`.** El formato pide el **puesto**, no la persona
-—«Encargado de Almacén»— por la misma razón que la agenda de F-SG-11: se llena
-antes de saber quién. `contactos` tiene la persona; habría que imprimir su puesto
-o dejar un texto libre paralelo, como `auditoria_agenda.auditado`.
+**2 · `puesto_responsable`.** ✅ **Resuelto sin esquema nuevo** (31 ago 2026). El
+formato pide el **puesto**, no la persona —«Encargado de Almacén»— por la misma
+razón que la agenda de F-SG-11: se llena antes de saber quién. Y resultó que las
+dos columnas ya existían: `contactos.puesto` cuando se sabe quién es, y el texto
+libre de `auditoria_agenda.auditado` cuando todavía no. F-SG-07 lo confirma por
+partida cuádruple —sus cuatro firmas piden Nombre **y** Puesto— y tampoco necesita
+`usuarios.puesto`: el nuestro se deriva del papel en la auditoría
+([F-SG-07 §7](F-SG-07_analisis_causa_raiz.md)).
 
 **3 · Las dos preguntas de impacto**, y son las interesantes:
 
 > ¿Es necesario **actualizar el Análisis de Riesgo**? SI / NO + especifique
 > ¿Es necesario **realizar cambios en el SGC**? SI / NO + especifique
+
+⚠️ **F-SG-07 pregunta la primera con otras palabras** —«¿Existe un nuevo riesgo
+para el modelo del SGC?»— y añade una tercera, «¿se requieren recursos?». Que dos
+formatos independientes pidan lo mismo lo saca del terreno de la idea buena.
 
 ⚠️ **No están planeadas en ninguna fase, y enlazan hacia atrás con la Fase 02.**
 La primera apunta a `riesgos`, que ya existe; la segunda, a `documentos` y

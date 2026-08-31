@@ -22,11 +22,48 @@ de dominio cuelga de una `org_id`. Ver §Reglas críticas, regla 1.
 ## Estado actual — lee esto antes de pedir nada
 
 - ⚠️ **HAY UNA MIGRACIÓN ESCRITA Y SIN APLICAR, Y ES LA ÚNICA:**
-  `20260830120000_informe_de_auditoria.sql` — tarea `D05`, la de F03·B5. Es la más
-  pequeña de todas: `auditorias.objetivo` y el trigger `sellar_emision_informe()`.
-  Probada en Docker con las **doce anteriores en orden**: **18 comprobaciones**,
-  once de ellas de regresión. `src/types/database.ts` está regenerado desde ese
-  esquema (tres líneas: `objetivo` en `Row`, `Insert` y `Update`).
+  `20260831120000_programa_anual_por_proceso.sql` — tarea `D06`, la de F03·B6.
+  Añade `programa_auditorias.alcance` y la tabla `programa_procesos`, que es donde
+  vive la regla de frecuencia del `F-SG-09`. Probada en Docker con las **trece
+  anteriores en orden**: **47 comprobaciones**, nueve de ellas de regresión.
+  `src/types/database.ts` está regenerado desde ese esquema.
+  ✅ **Es puramente aditiva**: una columna nullable y una tabla nueva. El build que
+  ya está en línea no las conoce y sigue funcionando igual, así que se puede
+  aplicar sin ventana de mantenimiento y sin avisar a los testers.
+  **Lo que hay que saber:**
+  - ⚠️ **MANDA LA HOJA DE CÁLCULO, NO EL TEXTO DEL PROCEDIMIENTO.** `P-SG-03` §5.2
+    dice «valor × NC = cantidad de auditorías»; el `F-SG-09` que la firma llena
+    cada año calcula `puntos = valor × NC` y `auditorías = 1 si puntos ≤ 5, si no
+    2`. Con 4 NC en un proceso de servicio, el texto pide **8** y la hoja pide
+    **2**. Decisión del dueño (31 ago 2026), y **va en un CHECK**: un 8 en esa
+    columna sería la prosa colándose por una captura manual. Vale como precedente:
+    cuando un formato de trabajo y la prosa del procedimiento discrepen, gana el
+    formato.
+  - **El valor de un proceso se GUARDA, no se deriva de `procesos.tipo`.** Nuestro
+    enum es `estrategico/operativo/soporte` y el del formato es «del servicio» vs
+    «de soporte»: en el ejemplo de la firma, Compras y Transporte valen 1 aunque
+    serían operativos, y el propio SGC vale 1. Es un juicio de la firma sobre ese
+    cliente. La pantalla lo **propone**; la columna guarda lo que se decidió.
+  - **`nc_previas` también se guarda**, aunque la pantalla lo traiga de
+    `hallazgosDeLaCartera()` **en memoria y sin clave de caché nueva**. Un programa
+    aprobado es evidencia: si el número se recalculara solo, anular un hallazgo en
+    noviembre reescribiría lo que la Dirección firmó en enero.
+  - ⚠️ **Los meses van en una columna `jsonb`, no en una tabla hija.** Una tabla
+    `(renglón, mes)` necesitaría un índice único que no es la PK, y ahí la cola
+    resuelve sus `upsert` por la PK (§6.1). Además marcar seis meses serían seis
+    operaciones de la cola en vez de una.
+  - **`puntos` y `auditorias_requeridas` son columnas generadas** y son seguras:
+    enteros y un `case` sobre enteros son IMMUTABLE, al revés que `fecha::text`.
+    La copia de la fórmula en `src/lib/auditorias/programaAnual.ts` existe **sólo**
+    para que el número salga sin señal en la fila optimista; la base es la
+    autoridad.
+
+- ✅ **LAS TRECE ANTERIORES ESTÁN APLICADAS.** La última fue
+  `20260830120000_informe_de_auditoria.sql` —tarea `D05`, la de
+  F03·B5— el 30 ago 2026. Es la más pequeña de todas: `auditorias.objetivo` y el
+  trigger `sellar_emision_informe()`. Se probó en Docker con las **doce
+  anteriores en orden**: **18 comprobaciones**, once de ellas de regresión.
+  `src/types/database.ts` sale de ese esquema.
   **Lo que hay que saber:**
   - **`objetivo` no es `alcance`.** El objetivo dice *para qué* se audita y el
     alcance *qué* se audita, y los dos formatos de la firma abren con «Objetivo».
@@ -37,9 +74,6 @@ de dominio cuelga de una `org_id`. Ver §Reglas críticas, regla 1.
     cambiarlo. Ahora lo sella el servidor, y **descarta cualquier fecha que mande
     el navegador**: emitir es de oficina, y el plazo de una semana de `P-SG-03`
     §5.4.5 se mide contra ella. Reemitir vuelve a sellar; retractar (null) no.
-  - ⚠️ **La app funciona sin la migración, a medias y sin romperse**: el informe se
-    imprime igual, la sección «Objetivo» sale vacía y «Marcar como emitido» falla
-    al guardar. No hay que bloquear nada esperándola.
 
 - ✅ **LA PARTICIÓN DE PRUEBAS ESTÁ APLICADA** (30 ago 2026, por el dueño):
   `20260825120000_particion_de_pruebas.sql` y
@@ -146,7 +180,18 @@ de dominio cuelga de una `org_id`. Ver §Reglas críticas, regla 1.
   sin justificación, tarea con evidencia obligatoria sin adjunto, organización
   con documentos). Los tipos generados desde ese esquema salieron **idénticos**
   a `src/types/database.ts`.
-- **LA FASE 03 ESTÁ COMPLETA POR EL LADO DEL CÓDIGO (`B0`–`B5`).** `/auditorias`
+- **LA FASE 03 ESTÁ COMPLETA POR EL LADO DEL CÓDIGO (`B0`–`B6`).** `B6` se abrió
+  el 31 ago 2026 al transcribir los tres formatos de la segunda tanda —`F-SG-09`,
+  `F-SG-07` y `F-SG-03`— y cerró cuatro huecos que no se podían ver sin ellos: el
+  alcance del programa anual, la parrilla de frecuencia por proceso, y la
+  impresión del `F-SG-09`, el `F-SG-03` y el `F-SG-11`.
+  ⚠️ **Con la lista de asistencia, las reuniones de apertura y clausura dejan de
+  ser un hueco de evidencia**: `P-SG-03` §5.4.1 las exige por escrito y hasta hoy
+  la app no tenía forma de demostrar que ocurrieron.
+  ⚠️ **Y se imprime PRELLENADA, no en blanco.** Evento, objetivo, fecha, lugar y
+  los puestos que la app ya sabe; en blanco sólo la columna FIRMA y seis renglones
+  de sobra. Una parrilla vacía es un PDF que cualquiera saca de un Word — misma
+  lección que las casillas ☐ del `F-SG-06`. `/auditorias`
   es el dominio, con dos pestañas —Auditorías y Programa anual— y su ruta de
   detalle `/auditorias/[id]`, que dentro lleva **ocho**: Plan · Alcance · Lista de
   verificación · Equipo · Agenda · Recorrido · Hallazgos · **Informe**, y el
@@ -316,7 +361,11 @@ de dominio cuelga de una `org_id`. Ver §Reglas críticas, regla 1.
 - **Lo imprimible vive en `src/lib/plantillas/`, devuelve una CADENA y no
   consulta.** `impresion.ts` tiene la paleta **en hexadecimal** —la ventana de
   impresión no hereda `globals.css`, docs/05 §6—, `esc()` para escapar **cada**
-  interpolación, el armazón `@page` y la apertura de la ventana.
+  interpolación, el armazón `@page`, la apertura de la ventana y, desde B6, el
+  **membrete y el pie compartidos** (`membrete()`, `pieConfidencial()`,
+  `tituloSeccion()`, `rotulo()`). Salieron de `informeAuditoria.ts` cuando hubo un
+  segundo documento que los quería idénticos: un membrete escrito cuatro veces
+  acaba distinto en cada entregable.
   ⚠️ **La misma cadena se enseña en pantalla dentro de un `<iframe sandbox>`
   vacío**: un solo renderizador, así que lo que se ve es lo que sale por la
   impresora, y el documento queda sin permisos. `esc()` no es opcional — ahí no
@@ -801,7 +850,9 @@ src/
   lib/sistemas/        → catálogos de la Fase 02
   lib/auditorias/      → catálogos · precarga · informe  [Fase 03]
   lib/asistente/       → proveedor, esquemas Zod, instrucciones, herramientas
-  lib/plantillas/      → impresion.ts + informeAuditoria.ts  [F03·B5]
+  lib/plantillas/      → impresion.ts + los cuatro formatos de la firma:
+                         informeAuditoria [B5] · programaAnual · listaAsistencia
+                         · planeacionAgenda  [B6]
   lib/utils/           → helpers puros
   types/database.ts    → todos los tipos
 worker/index.js        → oyentes push del service worker
