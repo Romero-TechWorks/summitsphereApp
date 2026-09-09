@@ -1027,11 +1027,123 @@ resto del ciclo de acciones.
 > **2 semanas.** Cierra el ciclo: un hallazgo sin acción es un hallazgo perdido.
 > **Al terminar esta fase la app entra a producción y la firma trabaja en ella.**
 
-## F04·B1 — Acciones correctivas
+## F04·B0 — La fuente de la no conformidad  ✅ *migración escrita y probada, 2 sep 2026*
+
+> **Va ANTES que `acciones`, y ése es el punto.** Una acción cuelga de un
+> hallazgo. Si el hallazgo todavía no sabe nacer de una queja, medio ciclo de
+> acciones nace amputado y hay que rehacerlo con la fase encima.
+
+Cierra el **hueco 6** del [índice de formatos](formatos_informeAuditorias/README.md),
+abierto desde el 30 ago 2026. `hallazgos.auditoria_id` era NOT NULL, así que
+**toda** NC colgaba de una auditoría — y el `F-SG-06` pregunta «Fuente de la NC»
+de primero, porque una NC nace igual de una queja del cliente, de un servicio no
+conforme, de la revisión por la dirección o de un indicador bajo meta.
+
+- `auditoria_id` pasa a **nullable**; `fuente_nc` NOT NULL con **once valores** y
+  `fuente_detalle` al lado.
+- ⚠️ **Los once valores no se inventaron.** Salen del catálogo documental del
+  cliente que trajo el `F-SG-05` (2 sep 2026): nueve de once tienen un formato
+  con nombre y número detrás —`F-SG-08` quejas, `F-SG-14` servicio no conforme,
+  `F-SG-18` revisión por la dirección, `F-SG-26` seguimiento interno—. Eso es la
+  diferencia entre un CHECK que aguanta y uno que hay que abrir con otra
+  migración en tres meses.
+- **Tres CHECK**, y el que importa es el segundo: `auditoria_id is not null` ⟺ la
+  fuente es una de las tres de auditoría. El `F-SG-12` se arma filtrando por
+  `auditoria_id`; sin ese candado, una NC de una queja se imprimiría como
+  hallazgo de auditoría.
+- **Serie de folio propia**: `NC-2026-007`, por organización y año, con la misma
+  regla de **renumerar en vez de rechazar**. Y como cuelga de `org_id`, la
+  partición de pruebas sale gratis.
+- `resolver_org_del_hallazgo()`, `sellar_folio_hallazgo()` y
+  `registrar_historial_hallazgo()` se amplían; `heredar_org_de_la_auditoria()`
+  **no se toca** (la comparten seis tablas más).
+
+⚠️ **Lo que B0 NO trae, a propósito: pantalla.** No hay forma de levantar una NC
+sin auditoría todavía — eso es B1. Aquí sólo se pone el esquema en su sitio para
+que B1 se escriba una vez. Es aditiva: el build que ya está en línea no conoce las
+columnas nuevas y sigue insertando igual.
+
+## F04·B1 — Acciones correctivas  ✅ *código listo, 8 sep 2026*
+
+> Se destrabó el 7 sep 2026 al llegar `P-SG-05`, el único de los ocho
+> procedimientos del cliente que faltaba. La migración es
+> `20260908120000_acciones_y_ciclo_de_mejora.sql` — **74 comprobaciones** en
+> Docker con las quince anteriores en orden y datos sembrados antes.
+
+**Lo construido:** la tabla `acciones` con su ciclo completo, el análisis de causa
+del `F-SG-07` en `hallazgos`, el tablero `/acciones` con el contador
+ABIERTA/CERRADA del `F-SG-17`, la ficha de la acción con avance, reprogramación y
+verificación de eficacia, y el widget `acciones_semana` conectado. De paso entran
+con esquema —**sin pantalla todavía**— `planes_mejora`, `cambios_sgc` y `quejas`:
+metidas en esta migración cuestan cero y aparte costarían otra.
+
+⚠️ **Cinco decisiones que el plan no tenía y que salieron de los formatos:**
+
+1. **El análisis de causa vive en el HALLAZGO, no en la acción**, al revés de lo
+   que decía `docs/04`. La razón que decide: un análisis puede concluir que **no
+   se requieren acciones correctivas** —`F-SG-07` §4—, y ahí no tendría dónde
+   vivir. Ver `docs/04` · Fase 04.
+2. **`tareas` no se creó.** Ninguno de los cinco formatos del ciclo tiene
+   sub-pasos, y el `F-SG-16` enseña que cuando un conjunto de acciones necesita
+   planeación la respuesta es un **contenedor con más acciones**. Regla 11.
+3. **`acciones_historial` tampoco**: `registrar_bitacora()` ya guarda `antes` y
+   `despues` completos, y `audit_logs` es inmutable.
+4. **Dos series de folio por acción.** La nuestra (`ACC-2026-105`) y la del
+   cliente (`AC-FA-01-25`, `P-SG-05` §5.2), que se compone sola desde
+   `procesos.codigo` y **se cuenta por proceso**. Decisión del dueño, 8 sep 2026.
+5. **La pantalla no ofrece «cerrar».** Sólo «verificar eficacia», que cierra si el
+   resultado es `eficaz`. Ofrecer el atajo sería institucionalizar el error más
+   común de los SGC reales.
+
+## F04·B1 — el detalle  ✅ *destrabado: `P-SG-05` llegó el 7 sep 2026*
+
+> **El procedimiento que gobierna esta fase ya está en el repositorio.** Ficha en
+> [`P-SG-05_procedimiento_acciones_correctivas.md`](formatos_informeAuditorias/P-SG-05_procedimiento_acciones_correctivas.md),
+> con el mapeo campo por campo y las ocho columnas que faltan.
+>
+> ✅ **`E00` está aplicada** (7 sep 2026), así que no hay nada bloqueando.
+>
+> ⚠️ **Pero este bloque necesita su propia migración** —`acciones`,
+> `planes_mejora`, `cambios_sgc`, `quejas`— **y tiene que llevar dentro los huecos
+> 15 y 17–19** del [catálogo](formatos_informeAuditorias/README.md): los cuatro
+> valores que le faltan a `fuente_nc` (`incumplimiento_legal` es el núcleo de la
+> Fase 05), `hallazgos.nc_origen_id`, `hallazgos.aceptada` y las columnas nuevas
+> de `acciones`. **Todo es aditivo y ahí cuesta cero; aparte cuesta otra
+> migración.**
+>
+> ⚠️ **Y una decisión del dueño con fecha de caducidad** (hueco 16): el folio real
+> del cliente es `AC-FA-01-25` —tipo de acción + proceso + consecutivo **por
+> proceso** + año, y es el folio de la *acción*—, no `NC-2026-007`. `B0` se aplicó
+> sin pantalla, así que **hoy ninguna fila usa la rama `NC-`**; en cuanto este
+> bloque la tenga, hay folios emitidos y un folio emitido no se recalcula.
 
 - `acciones`: nace de un hallazgo (o sola, como acción de mejora). Tipo
   (`correccion`, `accion_correctiva`, `preventiva`, `mejora`), responsable, fecha
   compromiso, estado.
+  ✅ **Los cuatro tipos quedan confirmados por tres fuentes independientes**:
+  `P-SG-05` §5.3 (corrección inmediata), §5.5 (correctiva), `F-SG-17` col.
+  `PREV / CORR` (preventiva) y el `F-SG-16` (mejora).
+  ⚠️ **Y `correccion` lleva su PROPIA `fecha_compromiso`** — `P-SG-02` §5.2b:
+  «implementar y validar corrección/acción inmediata **con fecha de
+  vencimiento**». No es un campo de texto del hallazgo.
+- ⚠️ **Ocho columnas más, todas con formato detrás**: `proceso_id` y `avance_pct`
+  (`F-SG-17` cols. F y M — el avance de una NC es el **promedio** del de sus
+  acciones), `monitoreo` (col. N), `fecha_compromiso_original` + motivo de
+  reprogramación (`P-SG-05` §5.6: justificar la demora, y **escalar a Dirección**
+  si hay reincidencia o queja de cliente), `requiere_recursos` + detalle (§5.5 y
+  `F-SG-07`), `fecha_origen` (`F-SG-20`, distinta de `creado_en`) y
+  `plan_mejora_id`.
+- ⚠️ **Dos columnas en `hallazgos`**: `nc_origen_id` —si las acciones no fueron
+  efectivas se levanta un `F-SG-06` **nuevo** enlazado, no se reabre el viejo
+  (§5.7)— y `aceptada`, porque el auditado puede **rechazar** la NC (`F-SG-06`
+  «No Conformidad aceptada Sí/No»), que no es lo mismo que anularla (regla 13).
+- **Dos tablas contenedoras**, y las tres bocas escriben en las mismas `acciones`:
+  `planes_mejora` (`F-SG-16`: alcance, objetivo, año y calendario **P/R** en
+  `jsonb`, misma decisión que `D06`) y `cambios_sgc` (`F-SG-24`, con **tres**
+  disparadores — acción correctiva, solicitud de cambio documental y sugerencia).
+- **Y una fuente de NC con tabla propia**: `quejas` (`F-SG-08`), con dos series de
+  folio anuales del cliente, `Q-XX-ZZ` y `S-XX-ZZ`. ⚠️ **Una queja procedente
+  genera NC; una sugerencia procedente NO** — va al `F-SG-24` o al `F-SG-16`.
 - **Análisis de causa**: 5 porqués, guardados estructurados y no como un párrafo.
   ISO 9001 §10.2 lo exige y un auditor externo lo revisa. ⚠️ **La forma exacta la
   fijó `F-SG-07`** (31 ago 2026): cinco pares pregunta/respuesta **cada uno con su
@@ -1039,9 +1151,25 @@ resto del ciclo de acciones.
   preguntas de impacto —¿nuevo riesgo para el SGC? ¿se requieren recursos?—. La
   firma **no usa Ishikawa**: se queda como opción sin plantilla impresa. Ficha en
   `docs/formatos_informeAuditorias/F-SG-07_analisis_causa_raiz.md`.
-- `tareas`: los pasos concretos de la acción, con su responsable y su fecha.
+- ~~`tareas`: los pasos concretos de la acción~~ → **no se creó**, ver arriba.
 - **Verificación de eficacia**: fecha, quién verificó, evidencia y veredicto.
   Una acción no se cierra sin esto. Es el error más común en los SGC reales.
+  ⚠️ **Y son DOS fechas** (`P-SG-05` §5.7): la programada se fija *después* de
+  concluir las acciones, y la real es cuando se comprobó.
+- **Reprogramar exige justificar la demora, con un motivo NUEVO cada vez**
+  (`P-SG-05` §5.6). Escala a Dirección si hay reincidencia o queja de cliente —
+  eso es aviso y pantalla, no esquema.
+- **El auditado puede RECHAZAR la NC** (`hallazgos.aceptada`). No es `anulado`:
+  anular es del auditor, rechazar es del auditado y el hallazgo sigue en pie.
+  ⚠️ **Son DOS fechas, no una** (`P-SG-05` §5.7): la de conclusión de las acciones
+  y la de verificación de la efectividad, que el Coordinador SGC fija *después* de
+  revisar el resultado. Y **quién verifica depende del origen**: si la NC vino de
+  auditoría interna lo hace el **Auditor Interno**, que retroalimenta al
+  Coordinador SGC; en los demás casos, el Coordinador SGC.
+- ⚠️ **El plazo de 15 días hábiles es sólo del análisis de causa** (`P-SG-05`
+  §5.4). El escalonado 15/30/60/90 por tipo de hallazgo de `E03` es criterio de
+  Summit, no del cliente: se queda como **valor por defecto configurable** en
+  `config_firma.plazos_default`, no como regla.
 
 ## F04·B2 — Adjuntos  → **movido a F02·B2b** (21 ago 2026)
 
@@ -1058,6 +1186,15 @@ que respalda su verificación de eficacia.
 - Categorías: hallazgo asignado, acción por vencer, acción vencida, documento por
   aprobar, vencimiento normativo próximo, resumen diario.
 - Preferencias por usuario y por categoría.
+- ⚠️ **`P-SG-08` §5.5 trae la matriz de comunicación del cliente, y no coincide
+  con esta lista** (hueco 27). Faltan cuatro categorías que el cliente sí pide
+  —resultados de indicadores (**mensual**), queja de cliente recibida (por evento,
+  **a Dirección**), resultados de satisfacción y documento publicado o cambiado—
+  y el cliente **no pide resumen diario**: pide **«Estado de las NC» bimestral**.
+  [Ficha](formatos_informeAuditorias/P-SG-08_comunicacion.md).
+- ⚠️ **El destinatario no siempre es una cuenta de la app.** «Toda la
+  organización», «responsables de proceso» y «Dirección» son roles del cliente:
+  el aviso va a `contactos` con su `puesto`, que existe desde `F01·B1`.
 
 ## F04·B4 — Cron de vencimientos
 
@@ -1078,9 +1215,16 @@ que respalda su verificación de eficacia.
 
 ### Tareas del dueño — Fase 04
 
-`E01` Generar las llaves VAPID y cargarlas en Vercel. `E02` Definir `CRON_SECRET`.
-`E03` Decidir los plazos por defecto de cada tipo de hallazgo. `E04` **Declarar la
-app en producción** y migrar al equipo.
+`E00` ✅ **HECHA** (7 sep 2026): `20260902120000_fuente_de_no_conformidad.sql`
+aplicada, después de `20260831120000`. Las quince migraciones están en `local =
+remote`. ⚠️ **Lo que quedó fuera y va en la migración de `B1`**: los huecos 15 y
+17–19 del catálogo —los cuatro valores que faltan en `fuente_nc`,
+`hallazgos.nc_origen_id`, `hallazgos.aceptada` y las tres columnas de `acciones`—.
+Y el hueco 16, el folio `AC-FA-01-25`, que **es decisión del dueño y caduca en
+cuanto `B1` tenga pantalla**. `E01` Generar las llaves VAPID y cargarlas en Vercel.
+`E02` Definir `CRON_SECRET`. `E03` ✅ **Decidido el 2 sep 2026: días HÁBILES**, como
+dice `P-SG-03` §5.5 — 15 / 30 / 60 / 90 para NC mayor, NC menor, observación y
+oportunidad de mejora. `E04` **Declarar la app en producción** y migrar al equipo.
 
 ---
 
@@ -1099,6 +1243,17 @@ app en producción** y migrar al equipo.
 - Evaluación de cumplimiento por requisito: cumple / no cumple / parcial / no
   aplica, con evidencia.
 - Semáforo por NOM y por sitio.
+- ✅ **La metodología de evaluación de riesgo de seguridad ya está especificada**
+  (7 sep 2026): la **Matriz IPERC** del cliente, en `P-SG-04` §5.4 y `F-OP-14`.
+  `NIP = A + B + C + D` (personas expuestas, procedimiento, capacitación,
+  exposición; 1–3 cada uno), `Nivel de Riesgo = NIP × Severidad` → 4–36, con
+  cuatro bandas (RM 1-4 · RT 5-10 · RA 11-20 · **RE 21-36, que prohíbe el
+  trabajo**), la jerarquía de controles en cinco columnas —eliminación,
+  sustitución, ingeniería, administrativo, EPP— y **la evaluación repetida después
+  del control** (riesgo residual).
+  ⚠️ **Y trae `REQUISITO LEGAL` por renglón de peligro**, que es exactamente la
+  matriz de aplicabilidad enganchada al peligro que la motiva.
+  [Ficha](formatos_informeAuditorias/P-SG-04_riesgos_y_oportunidades.md) §6.
 
 ## F05·B2 — Vencimientos y obligaciones
 

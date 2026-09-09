@@ -314,15 +314,48 @@ violar ninguna política. Hay cuatro de estos triggers:
 | `heredar_org_del_documento()` | `documento_versiones`, `documento_clausulas` |
 | `heredar_org_del_indicador()` | `mediciones` |
 | `heredar_org_del_adjunto()` | `adjuntos`, **a partir del campo dominante** — y su `coalesce` lleva el mismo orden que `CAMPOS_DOMINANTES` en el cliente. Desde F03 la rama de `hallazgo_id` va entre la de la tarea y la del documento |
-| `heredar_org_de_la_auditoria()` | alcance, equipo, agenda, `auditoria_items` y `hallazgos`  [F03] |
+| `heredar_org_de_la_auditoria()` | alcance, equipo, agenda y `auditoria_items`  [F03] |
+| `resolver_org_del_hallazgo()` | `hallazgos`  [F04·B0] — ver abajo |
+| `resolver_org_de_la_accion()` | `acciones`  [F04·B1] — del hallazgo, del plan o del cambio; de la propia fila cuando es una mejora suelta |
+| `heredar_org_del_cambio()` | `cambios_sgc_documentos`  [F04·B1] |
 | `heredar_org_del_hallazgo()` | `hallazgos_historial`  [F03] |
+
+⚠️ **`hallazgos` es la excepción desde F04·B0, y el candado CAMBIA DE SITIO, no se
+afloja.** Con `auditoria_id` nullable —una NC nace igual de una queja— ya no
+siempre hay fila padre de la que heredar. `resolver_org_del_hallazgo()` la saca de
+la auditoría cuando la hay, y cuando no, la manda la fila y **la valida la política
+de INSERT**: `with check (public.puedo_editar_org(org_id))`, que es la que siempre
+decidió quién escribe dónde. Lo que se añade encima es que en un UPDATE de una NC
+sin auditoría **la `org_id` ya no se mueve** —cambiarla llevaría el hallazgo al
+expediente de otro cliente y dejaría su historial en el de origen—, que es
+exactamente lo que el `WITH CHECK` por sí solo no impide.
+
+⚠️ **Y `heredar_org_de_la_auditoria()` NO se tocó.** La comparten seis tablas más
+y en todas ellas la auditoría es obligatoria de verdad: aflojarla ahí sería abrir
+seis puertas para arreglar una. La función nueva es sólo para `hallazgos`, y **el
+trigger conserva su nombre** (`hallazgos_org`) porque de su lugar alfabético
+depende que `hallazgos_valida` compare contra una `org_id` ya puesta.
 
 Y cuatro guardas del mismo tipo, que comprueban que una fila referenciada sea
 **del mismo cliente**: `validar_sitio_del_proyecto()`,
 `validar_contacto_de_la_org()` (el dueño de un proceso), y desde la Fase 03
 `validar_referencia_de_la_org()` —el sitio, el proceso o el contacto que toca una
 fila de auditoría— y `validar_contexto_de_la_auditoria()` —su proyecto y su
-programa—. Ninguna la puede hacer una clave foránea ni un CHECK, porque tienen que
+programa—.
+
+⚠️ **`validar_referencia_de_la_org()` ganó dos ramas en F04·B1**, `contacto_id` y
+`proyecto_id`, porque `quejas` referencia un contacto y `cambios_sgc` un proyecto.
+Mira las columnas con `to_jsonb`, así que **la ampliación es aditiva**: las cinco
+tablas que ya la usaban no tienen ninguna de las dos y no cambian de
+comportamiento. No servía `validar_contexto_de_la_auditoria()`: lee
+`new.programa_id` directo, y en una tabla que no lo tiene revienta en tiempo de
+ejecución.
+
+⚠️ **`acciones` valida además que sus TRES padres sean del mismo cliente.** Con
+dos clientes asignados, una acción de un hallazgo del A podría colgar del plan de
+mejora del B sin violar ninguna política: el `WITH CHECK` sólo comprueba que la
+organización sea una de las tuyas, no que sea la de la fila padre. Lo mira
+`resolver_org_de_la_accion()`. Ninguna la puede hacer una clave foránea ni un CHECK, porque tienen que
 mirar otra tabla.
 
 ⚠️ **El orden de los triggers `BEFORE` importa y Postgres los dispara en orden

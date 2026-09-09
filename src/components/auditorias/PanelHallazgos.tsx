@@ -286,6 +286,7 @@ export default function PanelHallazgos({ auditoria }: { auditoria: AuditoriaEnLi
             hallazgo={enPantalla}
             orgId={auditoria.org_id}
             esSocio={esSocio}
+            claveLista={clave}
             alEditar={() => {
               setViendo(null)
               setEdicion({ modo: 'editar', hallazgo: enPantalla })

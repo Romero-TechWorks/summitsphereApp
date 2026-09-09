@@ -22,14 +22,111 @@ de dominio cuelga de una `org_id`. Ver §Reglas críticas, regla 1.
 ## Estado actual — lee esto antes de pedir nada
 
 - ⚠️ **HAY UNA MIGRACIÓN ESCRITA Y SIN APLICAR, Y ES LA ÚNICA:**
+  `20260908120000_acciones_y_ciclo_de_mejora.sql` — tarea `E05`, la de **F04·B1**.
+  Las **quince anteriores** están aplicadas (7 sep 2026, `local = remote` en
+  `npx supabase migration list --linked`).
+  Crea `acciones`, `planes_mejora`, `cambios_sgc`, `cambios_sgc_documentos` y
+  `quejas`; le añade a `hallazgos` el análisis de causa del `F-SG-07`, las tres
+  preguntas de impacto, la aceptación del auditado y el enlace de reincidencia;
+  amplía `fuente_nc` de once a quince valores; y le da a `adjuntos` su `accion_id`.
+  Probada en Docker con las **quince anteriores en orden y con datos sembrados
+  ANTES**: **74 comprobaciones**, veinte de regresión. `src/types/database.ts` está
+  regenerado desde ese esquema.
+  ✅ **Es aditiva**: tablas y columnas nuevas con default, y un CHECK que se
+  **amplía** — ampliar nunca rechaza una fila que antes pasaba.
+  ⚠️ **Para que el folio del cliente funcione hace falta que el dueño llene
+  `procesos.codigo`** con las dos letras de `P-SG-01` §5.2 (`FA`, `OP`, `SG`…).
+  Hoy está vacío en los doce procesos; mientras siga así, las acciones llevan sólo
+  nuestro folio y la app funciona igual. Tabla completa en `docs/09` · `E05`.
+  **Cinco decisiones de diseño que salieron de los formatos, no del plan:**
+  - ⚠️ **EL ANÁLISIS DE CAUSA VIVE EN `hallazgos`, NO EN `acciones`**, al revés de
+    lo que decía `docs/04`. Lo que decide es el `F-SG-07` §4: **un análisis puede
+    concluir que no se requieren acciones correctivas**, y ahí no tendría dónde
+    vivir. También es uno por NC en el papel, y colgarlo de `acciones` obligaría a
+    decidir a cuál de las cinco estrategias pertenece.
+  - ⚠️ **`tareas` NO se creó**, y `docs/02` la anotaba. Ninguno de los cinco
+    formatos del ciclo tiene sub-pasos, y el `F-SG-16` enseña que cuando un
+    conjunto de acciones necesita planeación la respuesta del cliente es un
+    **contenedor con más acciones**. Regla 11.
+  - ⚠️ **`acciones_historial` tampoco.** `registrar_bitacora()` ya guarda `antes` y
+    `despues` completos en `audit_logs`, que es inmutable con los dos candados de
+    la regla 13: la justificación de cada reprogramación queda ahí entera.
+  - **Dos series de folio por acción, y NO compiten**: `ACC-2026-105` (nuestro, por
+    organización y año) y `AC-FA-01-25` (del cliente, `P-SG-05` §5.2, **por
+    proceso**). El hueco 16 se resolvió leyendo con cuidado: el del cliente es el
+    folio de la ACCIÓN y el nuestro el del hallazgo. El del cliente **se rellena en
+    cuanto hay proceso con código y ya no se reescribe**.
+  - **Las tres preguntas de impacto son del HALLAZGO**, no de la acción: los dos
+    formatos las hacen una vez por NC. Y llevan CHECK que exige la descripción
+    cuando el booleano es cierto.
+  ⚠️ **Y la pantalla NO ofrece «cerrar» una acción.** Sólo «verificar eficacia»,
+  que cierra si el resultado es `eficaz`. `parcial` sigue abierta y `no_eficaz` no
+  reabre —`P-SG-05` §5.7 manda levantar una NC nueva enlazada—. Ofrecer el atajo
+  sería institucionalizar el error más común de los SGC reales.
+
+- ✅ **LA ÚLTIMA APLICADA ES LA FASE 04, PASO 0:**
+  `20260902120000_fuente_de_no_conformidad.sql` — tarea `E00`, la de **F04·B0**,
+  aplicada el 7 sep 2026.
+  Afloja `hallazgos.auditoria_id` a nullable y añade `fuente_nc` + `fuente_detalle`:
+  una no conformidad también nace de una queja, un incidente o un indicador.
+  Probada en Docker con las **catorce anteriores en orden y con datos sembrados
+  ANTES de aplicarla** —el camino real, no una base vacía—: **41 comprobaciones**,
+  veinte de ellas de regresión. `src/types/database.ts` está regenerado desde ese
+  esquema.
+  ✅ **Es aditiva**: aflojar un NOT NULL nunca rechaza una fila que antes pasaba, y
+  las dos columnas nuevas tienen default.
+  ✅ **Sus once valores de `fuente_nc` se ampliaron a quince en `B1`** (hueco 15):
+  cubrían cinco de las nueve etapas de `P-SG-05` §5.1, y entraron
+  `incumplimiento_legal` —el núcleo de la Fase 05—, `informacion_documentada`,
+  `capacitacion` y `satisfaccion_cliente`.
+  **Lo que hay que saber:**
+  - ⚠️ **VA ANTES QUE `acciones`, y ése es todo el punto.** Una acción cuelga de un
+    hallazgo. Si el hallazgo todavía no sabe nacer de una queja, medio ciclo de
+    acciones nace amputado y hay que rehacerlo con la fase encima. Por eso es un
+    bloque propio (`B0`) y no parte de `B1`.
+  - **Los valores de `fuente_nc` NO se inventaron.** Salen del catálogo
+    documental del cliente que trajo el `F-SG-05`; nueve de once tienen un formato
+    con nombre y número detrás (`F-SG-08` quejas, `F-SG-14` servicio no conforme,
+    `F-SG-18` revisión por la dirección, `F-SG-26` seguimiento interno). Eso es la
+    diferencia entre un CHECK que aguanta y uno que hay que abrir en tres meses.
+  - ⚠️ **El CHECK de coherencia compara contra las TRES fuentes de auditoría, no
+    contra `auditoria_interna` a secas.** `auditorias.tipo` ya incluye
+    `certificacion_acompanamiento` y `proveedor`: con la versión simple, un
+    hallazgo de un acompañamiento a certificación —que ya existe en la base— habría
+    sido imposible de guardar. Y el relleno **deriva** la fuente de `auditorias.tipo`
+    en vez de poner todo en interna, por lo mismo.
+  - **Dos series de folio, y se cuentan distinto.** `AUD-2026-014/H-03` es el
+    consecutivo de la **firma** (por eso `A10` tuvo que partirlo a mano con
+    `DEMO-`); `NC-2026-007` es el consecutivo del **cliente** —«la séptima NC de
+    esta planta este año», que es lo que su Coordinador del SGC lleva en el
+    `F-SG-17`—. Como cuelga de `org_id`, **la partición sale gratis**; el prefijo
+    `DEMO-NC-` se conserva sólo para poder contestar «¿esto es del cliente o es de
+    mentira?». Las dos ramas **renumeran en vez de rechazar**.
+  - ⚠️ **La `org_id` CAMBIA DE SITIO, no se afloja.**
+    `heredar_org_de_la_auditoria()` **no se tocó** —la comparten seis tablas más y
+    ahí la auditoría sí es obligatoria—; `hallazgos` estrena
+    `resolver_org_del_hallazgo()`, y quien valida la organización que manda la fila
+    es la política de INSERT, que es la que siempre decidió. **El trigger conserva
+    su nombre** (`hallazgos_org`): de su lugar alfabético depende que
+    `hallazgos_valida` compare contra una `org_id` ya puesta.
+  - **El historial ahora sigue también `fuente_nc`, `fuente_detalle` y
+    `auditoria_id`.** Reclasificar la fuente mueve el hallazgo dentro o fuera del
+    informe de una auditoría; sin esos renglones, una NC podría entrar al `F-SG-12`
+    de una auditoría ya emitida sin rastro de que antes era una queja.
+  - ⚠️ **B0 NO trae pantalla, a propósito.** No hay forma de levantar una NC sin
+    auditoría todavía — eso es `B1`. Lo único que queda pendiente del lado del
+    cliente es `siguienteConsecutivo`, que cuenta por auditoría: con la serie por
+    organización necesita otra clave, y esa clave tiene que entrar en
+    `piezasDeLaPrecarga()` o el folio no sale sin red. No urge mientras no haya
+    pantalla; el día que la haya, es lo primero.
+
+- ✅ **LA ANTERIOR ES `D06`, TAMBIÉN APLICADA** (7 sep 2026):
   `20260831120000_programa_anual_por_proceso.sql` — tarea `D06`, la de F03·B6.
   Añade `programa_auditorias.alcance` y la tabla `programa_procesos`, que es donde
   vive la regla de frecuencia del `F-SG-09`. Probada en Docker con las **trece
   anteriores en orden**: **47 comprobaciones**, nueve de ellas de regresión.
   `src/types/database.ts` está regenerado desde ese esquema.
-  ✅ **Es puramente aditiva**: una columna nullable y una tabla nueva. El build que
-  ya está en línea no las conoce y sigue funcionando igual, así que se puede
-  aplicar sin ventana de mantenimiento y sin avisar a los testers.
+  ✅ **Es puramente aditiva**: una columna nullable y una tabla nueva.
   **Lo que hay que saber:**
   - ⚠️ **MANDA LA HOJA DE CÁLCULO, NO EL TEXTO DEL PROCEDIMIENTO.** `P-SG-03` §5.2
     dice «valor × NC = cantidad de auditorías»; el `F-SG-09` que la firma llena
@@ -58,7 +155,58 @@ de dominio cuelga de una `org_id`. Ver §Reglas críticas, regla 1.
     para que el número salga sin señal en la fila optimista; la base es la
     autoridad.
 
-- ✅ **LAS TRECE ANTERIORES ESTÁN APLICADAS.** La última fue
+- ✅ **LLEGÓ `P-SG-05` Y LA FASE 04 SE DESTRABA** (7 sep 2026, cuarta tanda). El
+  dueño entregó **una carpeta con 60 archivos: el SGC completo del cliente**, y
+  dentro va el procedimiento de acciones correctivas que detenía `F04·B1` desde
+  el 2 sep. ✅ **`F04·B1` se construyó el 8 sep 2026**: `/acciones` ya es el
+  tablero del `F-SG-17`, con la ficha de la acción, el análisis de causa del
+  `F-SG-07` en la ficha del hallazgo y el widget `acciones_semana` conectado.
+  Falta pantalla para planes de mejora, cambios de SGC y quejas —tienen esquema—,
+  y la impresión del `F-SG-06`/`F-SG-07` en pareja.
+  Los `.docx`/`.xlsx` **no se commitean** (36 MB, ya en `.gitignore`); su
+  sustituto son **doce fichas nuevas** en `docs/formatos_informeAuditorias/`, con
+  el índice y el registro de huecos en su `README`.
+  ⚠️ **DOS DECISIONES DEL DUEÑO, Y `E00` YA NO LAS CUBRE** —se aplicó el 7 sep—.
+  Van en la migración de `B1`, que hay que escribir igual: **metidas ahí cuestan
+  cero, olvidadas cuestan otra migración**:
+  - **El CHECK de `fuente_nc` cubre CINCO de las NUEVE etapas** que `P-SG-05` §5.1
+    tabula. Caen en `otro`: **incumplimiento legal** —que es el núcleo de la
+    Fase 05—, información documentada, capacitación y satisfacción del cliente
+    (que **no** es una queja: es el `F-SG-13` bajo meta). La novena, «acciones que
+    no fueron efectivas», no es una fuente sino una **NC enlazada a otra NC**
+    (`hallazgos.nc_origen_id`, §5.7). Ampliar el CHECK es aditivo: no rechaza
+    ninguna fila que antes pasaba.
+  - **El folio real del cliente es `AC-FA-01-25`, no `NC-2026-007`**: tipo de
+    acción + dos letras del proceso + consecutivo **por proceso** + año, y es el
+    folio de **la acción**, no del hallazgo. Mismo caso que la clave `AI-01-25`,
+    que acabó en `auditorias.titulo`.
+    ⚠️ **Ésta caduca y la otra no.** `B0` se aplicó **sin pantalla**, a propósito,
+    así que hoy ninguna fila usa la rama `NC-`. En cuanto `B1` la tenga, hay
+    folios emitidos — y un folio emitido no se recalcula.
+  **Lo que `P-SG-05` aporta y no se sabía:** la corrección inmediata es una acción
+  propia **con su propia fecha de vencimiento** (`P-SG-02` §5.2b); los **15 días
+  hábiles** son sólo del análisis de causa —el 15/30/60/90 de `E03` es criterio de
+  Summit, no del cliente—; el equipo de análisis es una **lista** de participantes;
+  el seguimiento lo hace el **Auditor Interno** cuando la NC viene de auditoría y
+  el Coordinador SGC en los demás casos; **reprogramar una fecha exige justificar
+  la demora**, y **escala a Dirección** si hay reincidencia o queja de cliente; y
+  la verificación de eficacia tiene **una segunda fecha** que se fija *después* de
+  concluir las acciones.
+  ✅ **Y llegaron los dos formatos que faltaban**: `F-SG-16` Plan de Mejora
+  —⚠️ **no es «acciones con tipo mejora»**: es un contenedor con calendario anual
+  P/R, la misma parrilla del `F-SG-09`— y `F-SG-24` Gestión de Cambios, que tiene
+  **tres disparadores, no uno**: la acción correctiva, la **solicitud de cambio de
+  un documento** (`P-SG-01` §5.7, que es Fase 02) y la sugerencia de cliente.
+  ⚠️ **La tanda también toca las Fases 02, 05 y 06**, y eso no estaba previsto:
+  `P-SG-04` trae **cuatro escalas de riesgo distintas** —y la de proceso **no es
+  un producto, es un lookup asimétrico**—, `P-SG-06` trae objetivos compuestos y
+  medición **por evento** en vez de por calendario, `P-SG-01` trae la codificación
+  `A-BB-##` y las copias controladas, la **Matriz IPERC** completa es `F05·B1`, y
+  `P-SG-08` **es la especificación de las categorías de aviso de `F04·B3`** —donde
+  el cliente pide mensual, bimestral y por evento, y **no pide resumen diario**—.
+  Los catorce huecos nuevos están tabulados como 15–28 en el `README` del catálogo.
+
+- ✅ **LAS TRECE ANTERIORES YA LO ESTABAN.** La última de ellas fue
   `20260830120000_informe_de_auditoria.sql` —tarea `D05`, la de
   F03·B5— el 30 ago 2026. Es la más pequeña de todas: `auditorias.objetivo` y el
   trigger `sellar_emision_informe()`. Se probó en Docker con las **doce
@@ -536,7 +684,8 @@ de dominio cuelga de una `org_id`. Ver §Reglas críticas, regla 1.
   —que es lo primero que la firma abre cada mañana— sigue diciendo «llega en la
   Fase 03» con la fase entregada, y eso se lee como que la fase no está. Pasó con
   la 02 y la 03 y se arregló el 30 ago 2026. Quedan **dos** placeholders y los dos
-  son de verdad: `acciones_semana` [F04] y `vencimientos_criticos` [F05].
+  son de verdad: ~~`acciones_semana`~~ (conectado el 8 sep 2026, F04·B1) y
+  `vencimientos_criticos` [F05]. **Queda uno.**
 - **El indicador de conexión sólo aparece cuando tiene algo que decir**
   (`EstadoConexion` en la Navbar): sin conexión, con cola pendiente o con algo
   rechazado. En verde y vacío no se pinta — un indicador permanente deja de
@@ -558,7 +707,7 @@ de dominio cuelga de una `org_id`. Ver §Reglas críticas, regla 1.
 | `docs/08_SEGURIDAD_Y_RLS.md` | Roles, políticas, secretos |
 | `docs/09_TAREAS_DEL_DUENO.md` | Pasos manuales y **técnicos** del dueño (Supabase, Vercel, Cloudflare) |
 | `docs/11_TAREAS_DEL_CLIENTE.md` | Lo que el cliente **captura dentro de la app**, paso a paso y sin jerga |
-| `docs/formatos_informeAuditorias/` | Los formatos de auditoría de la firma (`P-SG-03`, `F-SG-11`, `F-SG-12`, `F-SG-06`), transcritos y mapeados al modelo |
+| `docs/formatos_informeAuditorias/` | **El catálogo documental del cliente** —68 archivos en cuatro tandas, la última con el SGC completo (7 sep 2026)—, transcrito y mapeado al modelo en 20 fichas. El `README` es su índice y lleva el registro de huecos. ⚠️ El nombre de la carpeta es histórico: ya no son sólo formatos de auditoría |
 | `guias/*` | Montaje de la infraestructura |
 
 **Regla de oro:** si un cambio afecta lo descrito en cualquiera de estos
@@ -849,6 +998,7 @@ src/
   lib/documentos/      → zip · docx · pdf · markdown · convertir  [F02·B2]
   lib/sistemas/        → catálogos de la Fase 02
   lib/auditorias/      → catálogos · precarga · informe  [Fase 03]
+  lib/acciones/        → catálogos del ciclo de mejora  [F04·B1]
   lib/asistente/       → proveedor, esquemas Zod, instrucciones, herramientas
   lib/plantillas/      → impresion.ts + los cuatro formatos de la firma:
                          informeAuditoria [B5] · programaAnual · listaAsistencia

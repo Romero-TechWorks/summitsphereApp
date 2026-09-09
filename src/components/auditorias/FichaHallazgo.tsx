@@ -24,6 +24,8 @@ import Button from '@/components/ui/Button'
 import Skeleton from '@/components/ui/Skeleton'
 import Textarea from '@/components/ui/Textarea'
 import PanelAdjuntos from '@/components/adjuntos/PanelAdjuntos'
+import AnalisisCausa from '@/components/acciones/AnalisisCausa'
+import AccionesDelHallazgo from '@/components/acciones/AccionesDelHallazgo'
 
 /** A dónde puede ir un hallazgo desde donde está. Anular sale aparte. */
 const SIGUIENTES: Readonly<Record<string, string[]>> = {
@@ -52,12 +54,19 @@ export default function FichaHallazgo({
   hallazgo,
   orgId,
   esSocio,
+  claveLista,
   alEditar,
   alCambiarEstado,
 }: {
   hallazgo: HallazgoConContexto
   orgId: string
   esSocio: boolean
+  /**
+   * La lista de la caché donde vive este hallazgo. El análisis de causa escribe
+   * en el propio hallazgo, así que necesita saber qué lista actualizar en sitio
+   * — la de una auditoría o la del tablero del lunes.
+   */
+  claveLista: readonly unknown[]
   alEditar: () => void
   alCambiarEstado: (estado: string, motivo: string) => Promise<void>
 }) {
@@ -194,6 +203,20 @@ export default function FichaHallazgo({
           </div>
         </div>
       )}
+
+      {/* ── El ciclo de mejora [F04·B1] ───────────────────────────────────
+          ⚠️ **El orden es el del `F-SG-06`, y no es decorativo**: primero el
+          análisis de causa, después las acciones. En el papel de la firma los dos
+          bloques de acción están separados *por* el análisis, porque una acción
+          correctiva escrita antes de saber la causa es una corrección disfrazada
+          — que es exactamente lo que ISO 9001 §10.2 va a buscar. */}
+      <section>
+        <AnalisisCausa hallazgo={hallazgo} claveLista={claveLista} />
+      </section>
+
+      <section>
+        <AccionesDelHallazgo hallazgo={hallazgo} />
+      </section>
 
       {/* ── La evidencia ──────────────────────────────────────────────────── */}
       <section>

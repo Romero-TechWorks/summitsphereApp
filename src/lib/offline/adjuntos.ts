@@ -57,8 +57,11 @@ export const BUCKET_EVIDENCIAS = 'evidencias'
  */
 export const CAMPOS_DOMINANTES = [
   'tarea_etapa_id',
-  // 'tarea_id',      → Fase 04
-  // 'accion_id',     → Fase 04
+  // ⚠️ `accion_id` va ANTES que `hallazgo_id`: la evidencia que cierra una acción
+  // correctiva es de la acción, aunque la acción cuelgue de una NC. El
+  // `coalesce` de `heredar_org_del_adjunto()` lleva este mismo orden — si los dos
+  // discrepan, la fila viaja con un campo y la base la cuelga de otro.
+  'accion_id',
   'hallazgo_id',
   'item_id',
   'documento_id',

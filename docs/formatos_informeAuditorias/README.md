@@ -1,6 +1,12 @@
-# Formatos de auditoría de la firma — análisis y mapeo
+# Catálogo documental del cliente — análisis y mapeo
 
-Summit entregó **siete** archivos de trabajo, en dos tandas. La primera, el
+> ⚠️ **La carpeta se llama `formatos_informeAuditorias` por historia, no por
+> alcance.** Nació con los siete formatos de auditoría; desde la cuarta tanda
+> (7 sep 2026) contiene **el sistema de gestión completo de GRUPO ATELIER** —
+> 60 documentos que tocan las Fases 02 a 06. No se renombra porque `docs/02`,
+> `docs/04`, `docs/09` y `CLAUDE.md` la citan por su ruta.
+
+Summit entregó **68** archivos de trabajo, en cuatro tandas. La primera, el
 30 ago 2026: el procedimiento que gobierna todo el ciclo y tres formatos. En sus
 palabras:
 
@@ -12,9 +18,28 @@ palabras:
 
 La segunda, el **31 ago 2026**: tres de los cuatro documentos que la sección
 «Faltan cuatro documentos» de [`P-SG-03`](P-SG-03_procedimiento.md) §8 pedía por
-orden de utilidad. Llegaron **F-SG-07**, **F-SG-09** y **F-SG-03**; ⚠️ **sigue sin
-llegar `P-SG-05`**, el procedimiento de control de acciones correctivas, que es el
-que gobierna la Fase 04 entera.
+orden de utilidad. Llegaron **F-SG-07**, **F-SG-09** y **F-SG-03**.
+
+La tercera, el **2 sep 2026**: **F-SG-05**, la ficha técnica de proceso, en un
+`.pptx` de doce diapositivas. Es el primero que **no es un formato de auditoría**
+—su modelo es el de la Fase 02— pero trae el catálogo documental completo del
+cliente, y con él la lista de valores de `fuente_nc`, que es lo único que faltaba
+para cerrar el hueco 6. Ver [su ficha](F-SG-05_ficha_tecnica_de_proceso.md) §5.
+
+La cuarta, el **7 sep 2026**: **una carpeta con 60 archivos** — el SGC entero del
+cliente. Trae los ocho procedimientos `P-SG-01`…`P-SG-08`, los tres de operación
+`P-OP-01`…`P-OP-03`, los 26 formatos `F-SG-*`, los 21 `F-OP-*`, el manual
+`M-SG-01`, la política, el alcance y el mapa de procesos.
+
+✅ **Y trae `P-SG-05`, que es lo que destraba la Fase 04.** El bloque `F04·B1`
+estaba detenido desde el 2 sep 2026 esperando exactamente ese archivo —decisión
+del dueño ese mismo día—. Ficha en
+[`P-SG-05_procedimiento_acciones_correctivas.md`](P-SG-05_procedimiento_acciones_correctivas.md).
+
+⚠️ **Y trae una decisión que hay que tomar ANTES de aplicar `E00`**: el CHECK de
+`fuente_nc` cubre cinco de las nueve etapas que `P-SG-05` §5.1 tabula, y el folio
+real del cliente es `AC-FA-01-25`, no `NC-2026-007`. Ver §«Lo que la cuarta tanda
+cambia» al final.
 
 **Los `.docx` y `.xlsx` originales no se commitean.** Estos Markdown son su
 sustituto fiel y completo: todo lo que hace falta para escribir el código está
@@ -30,6 +55,24 @@ original, el dueño lo tiene.
 | [`F-SG-09_programa_anual.md`](F-SG-09_programa_anual.md) | `F-SG-09 …xlsx` | Programa anual. **Trae la regla de frecuencia, con fórmulas** |
 | [`F-SG-07_analisis_causa_raiz.md`](F-SG-07_analisis_causa_raiz.md) | `F-SG-07 …docx` | 5 ¿Por qué? **Le da forma a `causa_analisis`. Es F04·B1** |
 | [`F-SG-03_lista_de_asistencia.md`](F-SG-03_lista_de_asistencia.md) | `F-SG-03 …docx` | Lista de asistencia. **Puro imprimir, sin modelo** |
+| [`F-SG-05_ficha_tecnica_de_proceso.md`](F-SG-05_ficha_tecnica_de_proceso.md) | `F-SG-05 …pptx` | Ficha técnica de proceso. **Fase 02**, y trae el catálogo documental del cliente |
+
+### Cuarta tanda — 7 sep 2026
+
+| Archivo | Cubre | Fase |
+|---|---|---|
+| [`P-SG-05_procedimiento_acciones_correctivas.md`](P-SG-05_procedimiento_acciones_correctivas.md) | `P-SG-05` | **F04 · el que gobierna la fase** |
+| [`F-SG-17_base_de_datos_nc.md`](F-SG-17_base_de_datos_nc.md) | `F-SG-17` | **F04** · el tablero de seguimiento |
+| [`F-SG-16_plan_de_mejora.md`](F-SG-16_plan_de_mejora.md) | `F-SG-16` | **F04** · plan anual de acciones |
+| [`F-SG-24_gestion_de_cambios.md`](F-SG-24_gestion_de_cambios.md) | `F-SG-24` | **F04** (+F02) · cambios al SGC y a documentos |
+| [`P-SG-02_servicio_no_conforme.md`](P-SG-02_servicio_no_conforme.md) | `P-SG-02` · `F-SG-14` | **F04** · fuente de NC |
+| [`P-SG-07_satisfaccion_quejas_y_sugerencias.md`](P-SG-07_satisfaccion_quejas_y_sugerencias.md) | `P-SG-07` · `F-SG-08` · `F-SG-10` · `F-SG-13` | **F04** (quejas) + F06 (encuesta) |
+| [`P-SG-08_comunicacion.md`](P-SG-08_comunicacion.md) | `P-SG-08` · `F-SG-25` | **F04·B3** · las categorías de notificación |
+| [`P-SG-06_medicion_indicadores_y_mejora.md`](P-SG-06_medicion_indicadores_y_mejora.md) | `P-SG-06` · `F-SG-15` · `F-SG-19` | F02 · indicadores y objetivos |
+| [`P-SG-04_riesgos_y_oportunidades.md`](P-SG-04_riesgos_y_oportunidades.md) | `P-SG-04` · `F-SG-21` · `F-SG-22` · `F-SG-23` · `F-OP-14` | F02 (riesgos) + **F05 (IPERC)** |
+| [`P-SG-01_control_documental.md`](P-SG-01_control_documental.md) | `P-SG-01` · `F-SG-01` · `F-SG-02` | F02 · control documental |
+| [`F-SG-18_revision_por_la_direccion.md`](F-SG-18_revision_por_la_direccion.md) | `F-SG-18` · `F-SG-20` | F06 · y **consume a todos los demás** |
+| [`serie_OP_operacion.md`](serie_OP_operacion.md) | `P-OP-01/02/03` · `F-OP-01`…`F-OP-20` · `M-SG-01` · alcance | Fuera de alcance, **con dos excepciones** |
 
 ---
 
@@ -76,7 +119,12 @@ campo por campo. Tres aciertos que se confirman leyendo los originales:
 
 ### Huecos reales
 
-Están detallados en la ficha de cada formato. En resumen:
+Están detallados en la ficha de cada formato. En resumen.
+
+⚠️ **Cómo se citan.** El resto de la documentación —`CLAUDE.md`, `docs/02`,
+`docs/04`— los llama **«hueco 6», «hueco 15»…** y ese número es la **primera
+columna** de esta tabla. No hay otro sitio donde busquen: si vienes de una
+referencia a un «hueco N», es este renglón N.
 
 | # | Hueco | Dónde | Resolución |
 |---|---|---|---|
@@ -85,19 +133,41 @@ Están detallados en la ficha de cada formato. En resumen:
 | 3 | `informe_emitido_en` no lo sellaba nadie | `auditorias` | ✅ `sellar_emision_informe()`, en la misma migración |
 | 4 | **F-SG-03 Lista de Asistencia no llegó** | Apertura y cierre, exigidas por §6.1 y §6.3 | ✅ **Cerrado** (31 ago 2026): [ficha](F-SG-03_lista_de_asistencia.md) y construido en F03·B6d. Se imprime prellenado desde la pestaña Agenda |
 | 5 | **F-SG-09 Programa Anual y su regla de frecuencia** | P-SG-03 §5.2 | ✅ **Cerrado** (31 ago 2026): [ficha](F-SG-09_programa_anual.md), `programa_procesos` en `20260831120000` y la parrilla en F03·B6b/B6c |
-| 6 | `fuente_nc` y `puesto_responsable` | F-SG-06 | ⚠️ `puesto_responsable` **resuelto**: `contactos.puesto` y `auditoria_agenda.auditado` ya lo cubren (F-SG-07 §7, F-SG-03 §3). **`fuente_nc` sigue abierto y hay que decidirlo antes de la Fase 04** |
+| 6 | `fuente_nc` y `puesto_responsable` | F-SG-06 | ⚠️ `puesto_responsable` **resuelto**: `contactos.puesto` y `auditoria_agenda.auditado` ya lo cubren (F-SG-07 §7, F-SG-03 §3). ✅ **`fuente_nc` CERRADO el 2 sep 2026** (F04·B0) y **aplicado el 7 sep 2026** (tarea `E00`): once valores derivados del catálogo documental del cliente ([F-SG-05 §5](F-SG-05_ficha_tecnica_de_proceso.md)), probado en Docker con 41 comprobaciones. ⚠️ **Once no bastan** — ver hueco 15 |
 | 7 | ¿Actualizar análisis de riesgo? ¿Cambios al SGC? | F-SG-06 | ✅ **Confirmado por un segundo formato** (F-SG-07 §6), que además añade *¿se requieren recursos?*. Cuatro columnas en `acciones`, especificadas |
 | 8 | Varios auditores por renglón de agenda | `auditoria_agenda.auditor_id` es uno | ✅ Resuelto al imprimir el F-SG-11 (B6e): si viene vacío se imprimen las iniciales del equipo entero. Sin tocar el esquema |
 | 9 | **La identidad de la firma no estaba en ninguna clave de caché** | Apareció al escribir B5 | ✅ `src/lib/queries/firma.ts` y la undécima pieza de la precarga. Sin ella el informe salía **sin membrete**, delante del cliente |
-| 10 | **`programa_auditorias.alcance` no existe** | F-SG-09 lo pide junto a criterios y objetivo | ✅ **Cerrado**: columna añadida en `20260831120000` (`D06`) y capturable en el formulario del programa |
+| 10 | **`programa_auditorias.alcance` no existe** | F-SG-09 lo pide junto a criterios y objetivo | ✅ **Cerrado**: columna añadida en `20260831120000` (`D06`), **aplicada el 7 sep 2026**, y capturable en el formulario del programa |
+| 11 | **«Responsabilidad y Autoridad»: puesto + competencia** | F-SG-05 | ⚠️ Sin modelo. Es el perfil de puesto, y enlaza con el `F-RH-03` del cliente. **Se decide con la Fase 05**, donde `dnc` y `asistentes` le dan uso el mismo día — antes sería un interruptor muerto (regla 11) |
+| 12 | **«Recursos» del proceso** | F-SG-05 | ⚠️ Sin modelo. Una columna `recursos text` en `procesos`. Nada aguas abajo lo consulta: va con la Fase 02 el día que se imprima la ficha |
+| 13 | **«Interacción» proceso↔proceso y proceso↔parte interesada** | F-SG-05 | ⚠️ Sin modelo, y **aplazado con motivo**: el original lo captura de forma asimétrica y mezclando puestos con procesos. Se **deriva** del grafo de entradas/salidas, no se captura dos veces |
+| 14 | **`entradas`/`salidas` son listas de documentos, no párrafos** | F-SG-05 | ⚠️ Hoy son `text` y la mitad de sus renglones son códigos de documento. Es el grafo del SGC. **No urge**: el `text` imprime igual |
+| 15 | **El CHECK de `fuente_nc` cubre 5 de las 9 etapas** | P-SG-05 §5.1 | ✅ **CERRADO** en `20260908120000` (F04·B1): quince valores, las nueve etapas cubiertas. Entraron `incumplimiento_legal` (núcleo de F05), `informacion_documentada`, `capacitacion` y `satisfaccion_cliente`. `E00` **ya está aplicada** (7 sep 2026): va en la migración de `F04·B1`, que hay que escribir igual — coste cero si entra ahí, otra migración si se olvida |
+| 16 | **El folio del cliente es `AC-FA-01-25`, no `NC-2026-007`** | P-SG-05 §5.2 | ✅ **CERRADO** (8 sep 2026, decisión del dueño): **son cosas distintas** — el del cliente es de la ACCIÓN y el nuestro del hallazgo, así que conviven. `acciones.folio_cliente` lo compone la base desde `procesos.codigo`, por proceso y año. ⚠️ Requiere que el dueño llene `procesos.codigo` (tarea `E05`). Contexto original: Tipo + proceso + consecutivo **por proceso** + año, y es de la **acción**, no del hallazgo. `E00` ya está aplicada, pero **`B0` no trajo pantalla**: sin forma de levantar una NC sin auditoría, la rama `NC-` no la usa ninguna fila todavía. Sigue siendo barato **hasta que `F04·B1` tenga pantalla**. Decisión del dueño |
+| 17 | **Una NC nace de otra NC por reincidencia** | P-SG-05 §5.7 | ✅ **CERRADO**: `hallazgos.nc_origen_id`, con CHECK de que no sea ella misma. `hallazgos.nc_origen_id`. Si las acciones no fueron efectivas se levanta un F-SG-06 **nuevo**, no se reabre el viejo |
+| 18 | **`hallazgos.aceptada`** | F-SG-06 «No Conformidad aceptada Sí/No» | ✅ **CERRADO**: tres estados (NULL = no se ha preguntado) y motivo obligatorio al rechazar. El auditado puede **rechazar** la NC. No es `anulado` (regla 13): anular es del auditor, rechazar es del auditado |
+| 19 | **`acciones` necesita `proceso_id`, `avance_pct` y `monitoreo`** | F-SG-17 cols. F, M, N | ✅ **CERRADO**, las tres. Sin `avance_pct` no hay promedio por NC ni tablero `acciones_semana` |
+| 20 | **Reprogramar `fecha_compromiso` exige motivo y escala** | P-SG-05 §5.6 | ✅ **CERRADO en el esquema**: `sellar_accion()` exige un motivo NUEVO en cada demora y sella la fecha original; cada una queda en `audit_logs`. ⚠️ **La escalada a Dirección sigue abierta**: es aviso (F04·B3), no esquema. Justificación ante Coord. SGC; **ante Dirección** si hay reincidencia o queja de cliente. Es historial, no un `update` |
+| 21 | **`proceso_etapas`** | P-SG-04 §5.1.1 · F-SG-23 · F-SG-14 · P-SG-05 §5.1 | ⚠️ Tres formatos piden «etapa del proceso». **Una tabla sirve a los tres.** Fase 02 |
+| 22 | **El nivel de riesgo de proceso NO es un producto** | F-SG-23 · P-SG-04 §5.1.2.1 | ⚠️ Es un **lookup** asimétrico 1–9 (Alto×Bajo=4, Bajo×Alto=5). Columna generada con `CASE`. Fase 02 |
+| 23 | **Cuatro escalas de riesgo distintas** | P-SG-04 | ⚠️ Proceso (A/M/B→1-9) · Contexto (1-4 ×→1-16) · Parte interesada (A/M/B directa) · IPERC ((A+B+C+D)×sev→4-36). Fases 02 y 05 |
+| 24 | **`documentos` sin código, vigencia ni retención** | P-SG-01 §5.2, §5.5, §5.6 · F-SG-01 | ⚠️ `codigo` `A-BB-##`, `proxima_revision`, `tiempo_archivo`, `almacenamiento`, y **copias controladas** con su recuperación. Fase 02 |
+| 25 | **Un objetivo es un indicador compuesto de otros** | F-SG-19 nota 1 | ⚠️ «Nivel de Servicio = promedio de los indicadores 2, 4, 8 y 10». Tabla N:N, valor calculado. Fase 02 |
+| 26 | **`mediciones.periodo` asume calendario** | F-SG-19 col. PERIODO | ⚠️ Nueve de once indicadores miden **«al finalizar un proyecto»**. Dos proyectos cerrados el mismo mes chocarían contra el índice único (§6.1). Fase 02 |
+| 27 | **Las categorías de aviso del plan no son las del cliente** | P-SG-08 §5.5 | ⚠️ Faltan indicadores (mensual), queja recibida (por evento, **a Dirección**), satisfacción y documento publicado. Y el cliente no pide «resumen diario». **F04·B3** |
+| 28 | **La plantilla de listas de verificación necesita una tercera clave** | F-OP-03…F-OP-13 | ⚠️ Hoy es por norma y por giro. Once listas del mismo giro y la misma norma, distintas **por actividad**. F03·B2, no urge |
 
 **Los tres primeros se resolvieron al construir B5**, y el noveno apareció ahí
 mismo (30 ago 2026). **La segunda tanda cerró el 7 y entregó los documentos del 4
 y el 5** (31 ago 2026), dejó el 6 a medias y destapó el 10.
 
-✅ **`F03·B6` los cerró el 31 ago 2026** (huecos 4, 5, 8 y 10). De los diez, el
-único que sigue abierto es el **6 a medias**: `fuente_nc`, que es una decisión de
-la Fase 04 y arrastra el ciclo de acciones entero.
+✅ **`F03·B6` los cerró el 31 ago 2026** (huecos 4, 5, 8 y 10). De los diez
+primeros, el único que seguía abierto era el **6 a medias**: `fuente_nc`. **El
+F-SG-05 lo especificó el 2 sep 2026** y es el primer trabajo de la Fase 04.
+
+⚠️ **Los cuatro nuevos (11–14) los abre el F-SG-05 y ninguno es de la Fase 04.**
+Tres son de la Fase 02 y uno de la 05. Se listan aquí para que no se
+redescubran tarde, no para hacerlos ahora.
 
 ---
 
@@ -107,14 +177,28 @@ la Fase 04 y arrastra el ciclo de acciones entero.
 |---|---|---|
 | **F-SG-11** Planeación y Agenda | F03·B1 ✅ + **B6e** ✅ | Se imprime desde la pestaña Agenda: se manda al cliente antes de la visita |
 | **F-SG-12** Reporte Final | **F03·B5** ✅ | **Construido** el 30 ago 2026: la pestaña Informe. Especificación en su ficha |
-| **F-SG-06** Reporte de NC | F03·B4 ✅ (mitad) + **F04·B1** | La mitad de arriba ya existe en `hallazgos`. La de abajo —causa raíz, acciones, cierre— es la Fase 04 |
+| **F-SG-06** Reporte de NC | F03·B4 ✅ (mitad) + **F04·B0** ✅ + **F04·B1** | La mitad de arriba ya existe en `hallazgos`, y su **primer campo** —«Fuente de la NC»— desde F04·B0. La de abajo —causa raíz, acciones, cierre— es B1 |
 | **F-SG-07** 5 ¿Por qué? | **F04·B1** | ✅ Llegó. [Ficha](F-SG-07_analisis_causa_raiz.md) — define `causa_analisis`, el bloque «cierre del ciclo» y las dos preguntas de impacto |
 | **F-SG-09** Programa Anual | F03·B1 ✅ + **B6a·B6b·B6c** ✅ | [Ficha](F-SG-09_programa_anual.md). La parrilla vive en `?programa=<id>` y se imprime |
 | **F-SG-17** Base de Datos de NC | F03·B4 ✅ + F04 | Es el tablero del lunes (`TableroHallazgos`) más el seguimiento de la Fase 04 |
 | **F-SG-03** Lista de Asistencia | **F03·B6d** ✅ + F05 (capacitación) | [Ficha](F-SG-03_lista_de_asistencia.md) — cero esquema. Un botón por renglón de la agenda |
+| **F-SG-05** Ficha Técnica de Proceso | **F02** (+ aporta a F04) | [Ficha](F-SG-05_ficha_tecnica_de_proceso.md). Cinco de sus nueve bloques ya existen; abre los huecos 11–14. **Lo que aporta a la Fase 04 es `fuente_nc`** |
+| **F-SG-16** Plan de Mejora | F04 | ✅ **Llegó** (7 sep 2026). [Ficha](F-SG-16_plan_de_mejora.md). ⚠️ **No es «acciones con tipo mejora»**: es un contenedor con calendario anual P/R, la misma forma que el `F-SG-09` |
+| **F-SG-24** Gestión de Cambios en SGC y Procesos | F04 (+F02) | ✅ **Llegó** (7 sep 2026). [Ficha](F-SG-24_gestion_de_cambios.md). ⚠️ **Tres disparadores, no uno**: acción correctiva, **solicitud de cambio de un documento** (`P-SG-01` §5.7) y sugerencia de cliente |
 | Perfil de auditor (P-SG-03 §7) | F06·B3 | Alta de usuarios. Puede validar quién es elegible como `lider` |
-| Plazo de 15 días hábiles | F04 (`E03`) | Va a `config_firma.plazos_default`, que ya existe como columna |
-| **P-SG-05** Control de Acciones Correctivas | F04 | ❌ **Sigue sin llegar.** Es el que gobierna la Fase 04 |
+| Plazo de 15 días hábiles | F04 (`E03`) | Va a `config_firma.plazos_default`, que ya existe como columna. ⚠️ **`P-SG-05` §5.4 los confirma sólo para el análisis de causa**; el 15/30/60/90 por tipo de hallazgo es criterio de Summit, no del cliente |
+| **P-SG-05** Procedimiento para Acciones Correctivas | **F04** | ✅ **LLEGÓ** (7 sep 2026) y **destraba `F04·B1`**. [Ficha](P-SG-05_procedimiento_acciones_correctivas.md) |
+| **F-SG-17** Base de Datos de NC | F03·B4 ✅ + **F04** | ✅ **Llegó**. [Ficha](F-SG-17_base_de_datos_nc.md). Aporta `proceso`, `% de avance` y `cliente INT/EXT` |
+| **P-SG-02** Servicio No Conforme + **F-SG-14** | F04 | ✅ **Llegó**. [Ficha](P-SG-02_servicio_no_conforme.md). «Toda salida no conforme **es** una NC» |
+| **P-SG-07** Satisfacción + **F-SG-08/10/13** | F04 (quejas) + F06 (encuesta) | ✅ **Llegó**. [Ficha](P-SG-07_satisfaccion_quejas_y_sugerencias.md). Dos series de folio nuevas |
+| **P-SG-08** Comunicación | **F04·B3** | ✅ **Llegó**. [Ficha](P-SG-08_comunicacion.md). **Es la especificación de las categorías de aviso** |
+| **P-SG-06** Medición + **F-SG-15/19** | F02 | ✅ **Llegó**. [Ficha](P-SG-06_medicion_indicadores_y_mejora.md). Objetivos compuestos y periodo por evento |
+| **P-SG-04** Riesgos + **F-SG-21/22/23** + **F-OP-14** | F02 + **F05** | ✅ **Llegó**. [Ficha](P-SG-04_riesgos_y_oportunidades.md). **Cuatro escalas distintas** y la Matriz IPERC completa |
+| **P-SG-01** Control Documental + **F-SG-01/02** | F02 | ✅ **Llegó**. [Ficha](P-SG-01_control_documental.md). Codificación, vigencia, retención y copias controladas |
+| **F-SG-18** Revisión por la Dirección + **F-SG-20** | F06 | ✅ **Llegó**. [Ficha](F-SG-18_revision_por_la_direccion.md). **Doce de sus dieciséis entradas ya salen de la app** |
+| Serie **`OP`** (23 documentos) | — | ✅ **Llegó**. [Ficha](serie_OP_operacion.md). **Fuera de alcance salvo la Matriz IPERC** y lo que valida de F03·B2 |
+| **`P-CO-02`** Selección y Evaluación de Proveedores | F04 | ❌ **No ha llegado.** Respalda `fuente_nc = 'evaluacion_proveedor'`, el indicador 6 y la entrada 4g del `F-SG-18` |
+| **`P-RH-01`** + **`F-RH-03/04`** Recursos Humanos | **F05** | ❌ **No han llegado.** Son el hueco 11 y el respaldo de `dnc`, `sesiones` y `asistentes` |
 
 ---
 
@@ -164,3 +248,208 @@ fórmulas literales, en [F-SG-09 §3.1](F-SG-09_programa_anual.md).
 Vale como precedente para lo que venga: **cuando un formato de trabajo y la prosa
 del procedimiento discrepen, gana el formato.** El papel que se llena todos los
 días está probado; el párrafo que lo describe se escribió una vez.
+
+---
+
+## La tercera tanda — qué cambió el 2 sep 2026
+
+Un solo documento, **F-SG-05 Ficha Técnica de Proceso**, y llegó en la carpeta de
+la Fase 04. Conviene decir lo mismo que se dijo de la segunda, porque otra vez
+decide en qué orden se trabaja:
+
+- **Su modelo es de la Fase 02, no de la 04.** Es el mapa de procesos del
+  cliente: `procesos`, `riesgos`, `indicadores` y `documentos.proceso_id`. Cinco
+  de sus nueve bloques ya están cubiertos, tres de ellos por tablas enteras. **El
+  modelo aguantó un formato que no había visto.**
+- **Lo que sí destraba la Fase 04 es `fuente_nc`.** El hueco 6 llevaba abierto
+  desde el 30 ago no porque faltara decidir el esquema, sino porque no se sabía
+  **qué valores lleva la lista sin inventarlos**. El catálogo documental del
+  cliente los da: nueve de los diez valores propuestos tienen un formato con
+  nombre y número detrás.
+- **Y confirma que faltan tres documentos de la Fase 04, no uno.** Además del
+  `P-SG-05`, el cliente tiene **`F-SG-16` Plan de Mejora** y **`F-SG-24` Gestión
+  de Cambios en SGC y Procesos**. El segundo importa: es el destino de la segunda
+  pregunta de impacto del `F-SG-06`, así que `cambio_sgc = true` no es una casilla
+  informativa — **dispara otro documento**.
+
+### Lo que este documento enseña sobre los formatos de la firma
+
+⚠️ **Tiene seis erratas** (§8 de su ficha): una diapositiva copiada a la que no le
+cambiaron el bloque de salidas, códigos mal escritos, tres procesos sin indicador
+y un bloque de «Interacción» que mezcla puestos con procesos y no es simétrico.
+
+El precedente del `F-SG-09` sigue en pie —**cuando el formato y la prosa del
+procedimiento discrepen, gana el formato**— pero éste le pone el límite: **el
+formato tampoco es infalible.** Cuando dos fichas del mismo formato se
+contradicen entre sí, se pregunta. Y sobre todo: **no se digitaliza un bloque cuya
+captura manual garantiza el error** — que es exactamente por qué la «Interacción»
+se aplaza y se deriva del grafo de entradas y salidas en vez de capturarse.
+
+---
+
+## La cuarta tanda — qué cambió el 7 sep 2026
+
+**60 archivos de golpe: el sistema de gestión completo del cliente.** Es la tanda
+que más cambia el plan, y no por volumen sino por tres cosas concretas.
+
+### 1 · ✅ Llegó `P-SG-05` y la Fase 04 se destraba
+
+Era el único documento que faltaba de los ocho procedimientos, y el que gobierna
+la fase entera. `F04·B1` estaba detenido por decisión del dueño desde el 2 sep.
+**Se puede empezar.**
+
+Lo que trae que no se sabía, en [su ficha](P-SG-05_procedimiento_acciones_correctivas.md):
+la tabla de nueve etapas donde nace una NC, el folio `AC-FA-01-25`, la corrección
+inmediata como acción propia con su fecha, los 15 días hábiles del análisis de
+causa, el equipo de trabajo como **lista** de participantes, el seguimiento a
+cargo del **Auditor Interno** cuando la NC viene de auditoría, la justificación
+obligatoria de una demora —que **escala a Dirección** si hay reincidencia o queja
+de cliente—, la **segunda fecha** de verificación de eficacia fijada *después* de
+concluir las acciones, y la NC nueva por reincidencia cuando las acciones no
+fueron efectivas.
+
+Y llegaron sus cinco referencias completas —`F-SG-06`, `F-SG-07`, `F-SG-16`,
+`F-SG-17` y el manual—. **Es el primer procedimiento del cliente cuyo árbol de
+referencias está entero en el repositorio.**
+
+### 2 · ⚠️ Dos decisiones, y `E00` ya no las cubre
+
+**Las quince migraciones están aplicadas** (7 sep 2026, `local = remote` en
+`npx supabase migration list --linked`), `20260902120000` incluida. Así que estas
+dos ya **no** caben en `E00`: van en la migración de `F04·B1`, que hay que
+escribir de todas formas para `acciones`, `planes_mejora`, `cambios_sgc` y
+`quejas`. **Metidas ahí cuestan cero; olvidadas cuestan una migración aparte.**
+
+**(a) El CHECK de `fuente_nc` cubre cinco de las nueve etapas de `P-SG-05` §5.1.**
+Caen en `otro`: **incumplimiento legal** —el núcleo de la Fase 05—, información
+documentada, capacitación y satisfacción del cliente (que no es lo mismo que una
+queja: es el `F-SG-13` bajo meta). Y la novena, «acciones que no son efectivas»,
+no es una fuente sino una **NC enlazada a otra NC**, que pide
+`hallazgos.nc_origen_id`. Los cuatro valores son **aditivos**: ampliar un CHECK no
+rechaza ninguna fila que antes pasaba.
+
+**(b) El folio del cliente es `AC-FA-01-25`, no `NC-2026-007`.** Tipo de acción +
+proceso + consecutivo **por proceso** + año, y es el folio de **la acción**, no
+del hallazgo. Mismo caso que el hueco 2: nuestro folio manda para el expediente,
+pero el del cliente tiene que caber en algún lado — como cupo la clave `AI-01-25`
+en `auditorias.titulo`. **Decisión del dueño.**
+
+⚠️ **Ésta tiene fecha de caducidad y la otra no.** `B0` se aplicó sin pantalla —a
+propósito—, así que **hoy ninguna fila usa la rama `NC-`**: no hay forma de
+levantar una NC sin auditoría. En cuanto `F04·B1` la tenga, empiezan a existir
+folios emitidos, y un folio emitido **no se recalcula** (misma regla que
+`sellar_folio_hallazgo()` ya aplica al mover un hallazgo de auditoría). Conviene
+confirmarlo con `select count(*) from hallazgos where auditoria_id is null;`
+antes de decidir.
+
+### 3 · El SGC entero encaja mejor de lo esperado, y en más fases de las previstas
+
+De los 60 documentos, **48 son del SGC** (series `SG` y los procedimientos) y
+**23 son de operación de una constructora** (serie `OP`), que queda fuera de
+alcance salvo la Matriz IPERC. Repartidos por fase:
+
+| Fase | Qué aporta la tanda |
+|---|---|
+| **F02** documental | Codificación `A-BB-##`, vigencia y próxima revisión, tiempo de archivo, copias controladas, solicitud de cambio previa. [Ficha](P-SG-01_control_documental.md) |
+| **F02** procesos | La columna **`etapa`**, que piden tres formatos distintos. [Ficha](P-SG-04_riesgos_y_oportunidades.md) §4 |
+| **F02** riesgos | **Cuatro metodologías de evaluación distintas**, y sólo dos son productos. [Ficha](P-SG-04_riesgos_y_oportunidades.md) §1 |
+| **F02** indicadores | Objetivos compuestos por lista, periodo **por evento** («al finalizar un proyecto»), dos procesos por indicador. [Ficha](P-SG-06_medicion_indicadores_y_mejora.md) §3 |
+| **F03** listas | Once listas de oficio confirman `auditoria_items` y piden una **tercera clave de plantilla: por actividad**. [Ficha](serie_OP_operacion.md) §3.2 |
+| **F04** acciones | Todo lo de §1, más `proceso_id`, `avance_pct`, monitoreo, recursos y plan de mejora |
+| **F04** fuentes | Quejas con **dos series de folio** (`Q-XX-ZZ`, `S-XX-ZZ`), servicio no conforme, indicador, incidente con protocolo |
+| **F04·B3** avisos | **La matriz de comunicación del cliente**, con doce renglones y sus cadencias reales. [Ficha](P-SG-08_comunicacion.md) |
+| **F05** cumplimiento | **La Matriz IPERC completa**, con NIP = A+B+C+D, jerarquía de controles, riesgo residual y **requisito legal por peligro**. [Ficha](P-SG-04_riesgos_y_oportunidades.md) §6 |
+| **F06** reportes | La Revisión por la Dirección, cuyas **doce de dieciséis entradas ya salen de consultas que existen**. [Ficha](F-SG-18_revision_por_la_direccion.md) |
+| **F08** automatización | **Microsoft Teams está en el procedimiento del cliente** — justificación de negocio del módulo apagado |
+
+### 4 · ✅ Lo que la tanda VALIDA de lo ya construido
+
+- **`F02·B3`**: el `Alcance del SGC` trae dos exclusiones reales —7.1.5.2 y 8.3—
+  **con su justificación**, que es el caso de prueba de la migración palabra por
+  palabra. [Ficha](serie_OP_operacion.md) §5.
+- **`F02·B2`**: `P-SG-01` confirma el ciclo, la jubilación de la versión anterior
+  y la decisión de **no sellar** `elaboro_id` / `reviso_id`.
+- **`F03·B2`**: las once listas de oficio tienen exactamente la forma de
+  `auditoria_items`, veredicto ternario incluido.
+- **`F04`**: `acciones.tipo` con cuatro valores queda confirmado por tres fuentes
+  independientes (§5.3 corrección, §5.5 correctiva, `F-SG-17` col. `PREV/CORR`,
+  `F-SG-16` mejora).
+- **La verificación de eficacia es transversal**: `F-SG-21`, `F-SG-22` y `F-SG-23`
+  cierran con la misma tripleta que `acciones.eficacia_*`.
+
+### 5 · Lo que sigue faltando
+
+> 📋 **La lista completa, lista para mandar, está en
+> [`DOCUMENTOS_POR_PEDIR.md`](DOCUMENTOS_POR_PEDIR.md)** — los **45** que faltan,
+> derivados de la `F-SG-01` (105 en el catálogo, 60 entregados), en tres bloques
+> por lo que desbloquean, más las tres preguntas que hay que hacerle al cliente.
+
+Lo que bloquea algo, en resumen:
+
+| Falta | Por qué importa | Fase |
+|---|---|---|
+| **`P-CO-02`** Selección y Evaluación de Proveedores | Es el respaldo de `fuente_nc = 'evaluacion_proveedor'`, del indicador 6 y de la entrada 4g del `F-SG-18`. Lo citan `P-SG-06`, `P-OP-02` y `P-OP-03` | F04 |
+| **`P-RH-01`** Recursos Humanos y Competencia | Es el **hueco 11** (responsabilidad, autoridad y competencia del `F-SG-05`) y el respaldo de `dnc` y `asistentes` | **F05** |
+| `F-RH-03` Descripción de Puesto | El perfil de puesto al que apunta el hueco 11 | F05 |
+| `F-RH-04` Programa de Capacitación | Es literalmente `F05·B3` | **F05** |
+| `P-CO-01` Compras · `P-AM-01` Transporte y Almacén · `P-MT-01` Mantenimiento · `P-AD-01/02` · `P-CN-01` · `P-CM-01` · `P-DS-01` | Procesos del cliente. **Sólo hacen falta si se audita ese proceso** | — |
+| Los diagramas de flujo | **Cinco procedimientos** (`P-SG-02`, `P-SG-04`, `P-SG-05`, `P-SG-06`, `P-SG-07`) dicen «Diagrama de flujo del proceso» y **la página está vacía en el `.docx`** | — |
+
+⚠️ **Los diagramas vacíos no son un descuido nuestro: están vacíos en el
+original.** Si Summit los tiene aparte, valen para el asistente de la Fase 07;
+si no los tiene, **es un hallazgo que la firma le puede levantar a su cliente**.
+
+### 6 · Erratas del cliente encontradas en esta tanda
+
+El precedente del `F-SG-05` —«el formato tampoco es infalible»— se confirma:
+
+| Dónde | Dice | Debe decir |
+|---|---|---|
+| `P-OP-01` §5.1 | `F-SG-14` Matriz IPERC | `F-OP-14` |
+| `P-SG-08` §5.4 | informe en la `F-SG-26` Minuta de Junta de Calidad | `F-SG-20` |
+| `P-SG-07` encabezado | `P-SGC-07` | `P-SG-07` |
+| `F-SG-26` r17, r21, r22 | `F-OP-13` catálogo · `F-OP-12` carta responsiva · `F-OP-20` recursos | `F-OP-17` · `F-OP-15` · `F-OP-16` |
+| `F-SG-21` hoja EV-INT | `F-SG-20` en el encabezado | `F-SG-21` |
+| `F-SG-15` fila 10 | dieciséis encabezados de mes, con `ABR`, `MAY`, `JUN` y `JUL` repetidos | doce |
+| Nombre de la empresa | «GRUPO ATELIER» y «ATELIER TEA» según el documento | — |
+
+**Ninguna se corrige en la app**: se transcriben tal cual y se anotan. Corregir
+en silencio el documento del cliente es exactamente lo que un auditor no debe
+hacer.
+
+
+---
+
+## La Fase 04 quedó construida — 8 sep 2026
+
+`F04·B1` se escribió el día siguiente a recibir `P-SG-05`. La migración
+`20260908120000_acciones_y_ciclo_de_mejora.sql` cierra **los huecos 15, 17, 18 y
+19 enteros y el 20 a medias**, y crea las cuatro tablas que la cuarta tanda
+destapó: `acciones`, `planes_mejora`, `cambios_sgc` y `quejas`.
+
+### Lo que los formatos cambiaron del plan, y no al revés
+
+Cinco decisiones de diseño salieron de leer los documentos del cliente, no de lo
+que `docs/02` y `docs/04` tenían escrito:
+
+1. **El análisis de causa vive en el HALLAZGO.** `docs/04` lo ponía en `acciones`.
+   Lo que decide es el `F-SG-07` §4: un análisis puede concluir que **no se
+   requieren acciones correctivas**, y ahí no tendría dónde vivir.
+2. **`tareas` no se creó.** Ninguno de los cinco formatos del ciclo tiene
+   sub-pasos, y el `F-SG-16` enseña que la respuesta del cliente a «esto necesita
+   planeación» es un contenedor con más acciones.
+3. **`acciones_historial` tampoco**: `audit_logs` ya guarda `antes`/`despues`.
+4. **Los dos folios conviven** porque son de cosas distintas — el hueco 16 se
+   resolvió leyendo con cuidado, no eligiendo.
+5. **Las tres preguntas de impacto son del hallazgo, no de la acción**: los dos
+   formatos las hacen una vez por NC.
+
+### Lo que sigue faltando de la Fase 04
+
+| Falta | Por qué |
+|---|---|
+| **Pantalla** de planes de mejora, cambios de SGC y quejas | El esquema está; una pestaña vacía es peor que ninguna |
+| **Impresión** del `F-SG-06` y el `F-SG-07` | Se imprimen **en pareja**: el primero referencia al segundo |
+| **Impresión** del `F-SG-16` | Lleva firmas de Elaboró y Aprobó: es un entregable |
+| La **escalada a Dirección** de `P-SG-05` §5.6 | Es una categoría de aviso — `F04·B3`, y el hueco 27 dice que las del plan no son las del cliente |
+| **`P-CO-02`** Selección y Evaluación de Proveedores | Respalda `fuente_nc = 'evaluacion_proveedor'` |

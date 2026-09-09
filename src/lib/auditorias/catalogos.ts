@@ -163,6 +163,74 @@ export const ESTADOS_HALLAZGO: readonly Opcion[] = [
 export const ESTADOS_ABIERTOS_HALLAZGO: readonly string[] = ['abierto', 'en_accion', 'verificado']
 
 /**
+ * `hallazgos.fuente_nc` — **de dónde salió la no conformidad** [F04·B0 + B1].
+ *
+ * ⚠️ Los quince valores NO se inventaron: catorce salen de las nueve etapas que
+ * `P-SG-05` §5.1 tabula y del catálogo documental del cliente, y cada uno tiene
+ * un formato con nombre y número detrás. Cambiar esta lista sin cambiar el CHECK
+ * de `hallazgos_fuente_valida` deja la pantalla ofreciendo un valor que la base
+ * rechaza — y al revés, un valor que la base acepta y la pantalla no sabe pintar.
+ *
+ * ⚠️ **Las tres primeras exigen auditoría y las doce restantes la prohíben.** Lo
+ * impone `hallazgos_fuente_coherente`, no la pantalla: el informe `F-SG-12` se
+ * arma filtrando por `auditoria_id`, así que una NC de una queja con auditoría
+ * saldría impresa como hallazgo de auditoría.
+ */
+export const FUENTES_NC: readonly Opcion[] = [
+  { valor: 'auditoria_interna',       etiqueta: 'Auditoría interna' },
+  { valor: 'auditoria_externa',       etiqueta: 'Auditoría externa' },
+  { valor: 'auditoria_proveedor',     etiqueta: 'Auditoría a proveedor' },
+  { valor: 'queja_cliente',           etiqueta: 'Queja de cliente' },
+  { valor: 'servicio_no_conforme',    etiqueta: 'Servicio no conforme' },
+  { valor: 'revision_direccion',      etiqueta: 'Revisión por la Dirección' },
+  { valor: 'seguimiento_interno',     etiqueta: 'Seguimiento interno' },
+  { valor: 'indicador',               etiqueta: 'Indicador bajo meta' },
+  { valor: 'satisfaccion_cliente',    etiqueta: 'Satisfacción del cliente' },
+  { valor: 'evaluacion_proveedor',    etiqueta: 'Evaluación de proveedor' },
+  { valor: 'informacion_documentada', etiqueta: 'Información documentada' },
+  { valor: 'capacitacion',            etiqueta: 'Capacitación' },
+  { valor: 'incumplimiento_legal',    etiqueta: 'Incumplimiento legal' },
+  { valor: 'incidente',               etiqueta: 'Incidente' },
+  { valor: 'otro',                    etiqueta: 'Otra' },
+]
+
+/** Las tres que cuelgan de una auditoría. Es la partición del CHECK, en TS. */
+export const FUENTES_DE_AUDITORIA: readonly string[] = [
+  'auditoria_interna', 'auditoria_externa', 'auditoria_proveedor',
+]
+
+/**
+ * La ayuda que se pinta al elegir la fuente, con el formato del cliente que la
+ * respalda. Es la misma idea que `CRITERIO_HALLAZGO`: lo que hace que dos
+ * personas clasifiquen igual no es un manual, es el texto que está a la vista
+ * mientras se elige.
+ */
+export const CRITERIO_FUENTE: Readonly<Record<string, string>> = {
+  queja_cliente:
+    'La puso un cliente por teléfono, correo o en persona, y se determinó que procede. Va con su folio de queja (F-SG-08).',
+  satisfaccion_cliente:
+    'La encuesta de fin de proyecto quedó por debajo del objetivo. NO es una queja: nadie llamó a reclamar (F-SG-13).',
+  servicio_no_conforme:
+    'Un servicio salió fuera de los requisitos y se detectó después de entregarlo (P-SG-02 §5.1).',
+  indicador:
+    'Un indicador de proceso o un objetivo de calidad quedó por debajo de su meta (F-SG-15).',
+  informacion_documentada:
+    'Un procedimiento o un registro está desactualizado o falta.',
+  capacitacion:
+    'Personal sin la capacitación necesaria para las funciones que desempeña.',
+  incumplimiento_legal:
+    'Desviación en un parámetro o requisito de la legislación aplicable — NOM, licencia, dictamen o permiso.',
+  revision_direccion:
+    'Se detectó durante la Revisión por la Dirección (F-SG-18).',
+  seguimiento_interno:
+    'Salió del checklist de seguimiento interno (F-SG-26), no de una auditoría formal.',
+  evaluacion_proveedor:
+    'De la evaluación periódica de un proveedor, sin auditoría de por medio (P-CO-02).',
+  incidente:
+    'Un accidente, un cuasi-accidente o una emergencia.',
+}
+
+/**
  * Los tramos de antigüedad de un hallazgo abierto, del más urgente al menos.
  *
  * ⚠️ Vive aquí y no en la pantalla porque lo leen **dos**: el tablero del lunes
@@ -195,6 +263,14 @@ export const CAMPOS_HISTORIAL: Readonly<Record<string, string>> = {
   fecha_compromiso: 'Fecha compromiso',
   responsable_contacto_id: 'Responsable del cliente',
   motivo_anulacion: 'Motivo de anulación',
+  // F04·B0 — los escribe el trigger desde el 2 sep 2026.
+  fuente_nc: 'Fuente de la NC',
+  fuente_detalle: 'Detalle de la fuente',
+  auditoria_id: 'Auditoría',
+  // F04·B1
+  aceptada: 'Aceptada por el auditado',
+  causa_raiz: 'Causa raíz',
+  nc_origen_id: 'NC de origen (reincidencia)',
 }
 
 export function campoDelHistorial(campo: string): string {

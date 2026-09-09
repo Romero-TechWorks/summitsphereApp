@@ -239,7 +239,16 @@ export default function TableroHallazgos() {
                       key={hallazgo.id}
                       Icono={IconoAlerta}
                       // Lleva a su auditoría: el expediente del hallazgo vive ahí.
-                      href={`/auditorias/${hallazgo.auditoria_id}?tab=hallazgos`}
+                      // ⚠️ Desde la Fase 04 una NC puede no venir de ninguna
+                      // (`fuente_nc`), y entonces no hay a dónde llevar todavía:
+                      // sin `href` la fila deja de ser pulsable, que es mejor que
+                      // un enlace a `/auditorias/null`. El expediente propio de
+                      // una NC llega con `/acciones` en F04·B1.
+                      href={
+                        hallazgo.auditoria_id
+                          ? `/auditorias/${hallazgo.auditoria_id}?tab=hallazgos`
+                          : undefined
+                      }
                       titulo={
                         <>
                           <span className="mono" style={{ color: 'var(--texto-dim)', marginRight: 8 }}>

@@ -14,8 +14,185 @@ export type Database = {
   }
   public: {
     Tables: {
+      acciones: {
+        Row: {
+          actualizado_en: string
+          avance_pct: number
+          cambio_sgc_id: string | null
+          cerrada_en: string | null
+          cerrada_por_id: string | null
+          consecutivo: number
+          consecutivo_cliente: number | null
+          creado_en: string
+          creado_por: string | null
+          descripcion: string
+          eficacia_evidencia: string | null
+          eficacia_fecha_programada: string | null
+          eficacia_resultado: string | null
+          eficacia_verificada_en: string | null
+          eficacia_verificada_por_id: string | null
+          estado: string
+          fecha_compromiso: string
+          fecha_compromiso_original: string | null
+          folio: string
+          folio_cliente: string | null
+          hallazgo_id: string | null
+          id: string
+          meses: Json | null
+          monitoreo: string | null
+          motivo_cambio: string | null
+          motivo_reprogramacion: string | null
+          org_id: string
+          plan_mejora_id: string | null
+          proceso_id: string | null
+          responsable_contacto_id: string | null
+          responsable_id: string | null
+          tipo: string
+        }
+        Insert: {
+          actualizado_en?: string
+          avance_pct?: number
+          cambio_sgc_id?: string | null
+          cerrada_en?: string | null
+          cerrada_por_id?: string | null
+          consecutivo: number
+          consecutivo_cliente?: number | null
+          creado_en?: string
+          creado_por?: string | null
+          descripcion: string
+          eficacia_evidencia?: string | null
+          eficacia_fecha_programada?: string | null
+          eficacia_resultado?: string | null
+          eficacia_verificada_en?: string | null
+          eficacia_verificada_por_id?: string | null
+          estado?: string
+          fecha_compromiso: string
+          fecha_compromiso_original?: string | null
+          folio: string
+          folio_cliente?: string | null
+          hallazgo_id?: string | null
+          id?: string
+          meses?: Json | null
+          monitoreo?: string | null
+          motivo_cambio?: string | null
+          motivo_reprogramacion?: string | null
+          org_id: string
+          plan_mejora_id?: string | null
+          proceso_id?: string | null
+          responsable_contacto_id?: string | null
+          responsable_id?: string | null
+          tipo?: string
+        }
+        Update: {
+          actualizado_en?: string
+          avance_pct?: number
+          cambio_sgc_id?: string | null
+          cerrada_en?: string | null
+          cerrada_por_id?: string | null
+          consecutivo?: number
+          consecutivo_cliente?: number | null
+          creado_en?: string
+          creado_por?: string | null
+          descripcion?: string
+          eficacia_evidencia?: string | null
+          eficacia_fecha_programada?: string | null
+          eficacia_resultado?: string | null
+          eficacia_verificada_en?: string | null
+          eficacia_verificada_por_id?: string | null
+          estado?: string
+          fecha_compromiso?: string
+          fecha_compromiso_original?: string | null
+          folio?: string
+          folio_cliente?: string | null
+          hallazgo_id?: string | null
+          id?: string
+          meses?: Json | null
+          monitoreo?: string | null
+          motivo_cambio?: string | null
+          motivo_reprogramacion?: string | null
+          org_id?: string
+          plan_mejora_id?: string | null
+          proceso_id?: string | null
+          responsable_contacto_id?: string | null
+          responsable_id?: string | null
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "acciones_cambio_sgc_id_fkey"
+            columns: ["cambio_sgc_id"]
+            isOneToOne: false
+            referencedRelation: "cambios_sgc"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "acciones_cerrada_por_id_fkey"
+            columns: ["cerrada_por_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "acciones_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "acciones_eficacia_verificada_por_id_fkey"
+            columns: ["eficacia_verificada_por_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "acciones_hallazgo_id_fkey"
+            columns: ["hallazgo_id"]
+            isOneToOne: false
+            referencedRelation: "hallazgos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "acciones_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizaciones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "acciones_plan_mejora_id_fkey"
+            columns: ["plan_mejora_id"]
+            isOneToOne: false
+            referencedRelation: "planes_mejora"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "acciones_proceso_id_fkey"
+            columns: ["proceso_id"]
+            isOneToOne: false
+            referencedRelation: "procesos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "acciones_responsable_contacto_id_fkey"
+            columns: ["responsable_contacto_id"]
+            isOneToOne: false
+            referencedRelation: "contactos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "acciones_responsable_id_fkey"
+            columns: ["responsable_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       adjuntos: {
         Row: {
+          accion_id: string | null
           creado_en: string
           creado_por: string | null
           documento_id: string | null
@@ -32,6 +209,7 @@ export type Database = {
           titulo: string | null
         }
         Insert: {
+          accion_id?: string | null
           creado_en?: string
           creado_por?: string | null
           documento_id?: string | null
@@ -48,6 +226,7 @@ export type Database = {
           titulo?: string | null
         }
         Update: {
+          accion_id?: string | null
           creado_en?: string
           creado_por?: string | null
           documento_id?: string | null
@@ -64,6 +243,13 @@ export type Database = {
           titulo?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "adjuntos_accion_id_fkey"
+            columns: ["accion_id"]
+            isOneToOne: false
+            referencedRelation: "acciones"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "adjuntos_creado_por_fkey"
             columns: ["creado_por"]
@@ -748,6 +934,180 @@ export type Database = {
           },
         ]
       }
+      cambios_sgc: {
+        Row: {
+          accion_origen_id: string | null
+          actualizado_en: string
+          alcance: string | null
+          ambito: string
+          autorizado_en: string | null
+          autorizado_por_id: string | null
+          creado_en: string
+          creado_por: string | null
+          descripcion: string | null
+          elaborado_por_id: string | null
+          estado: string
+          fecha: string | null
+          id: string
+          justificacion: string | null
+          nombre: string
+          numero: string | null
+          org_id: string
+          origen: string
+          proyecto_id: string | null
+          recursos: string | null
+          revisado_por_id: string | null
+          riesgos: string | null
+        }
+        Insert: {
+          accion_origen_id?: string | null
+          actualizado_en?: string
+          alcance?: string | null
+          ambito?: string
+          autorizado_en?: string | null
+          autorizado_por_id?: string | null
+          creado_en?: string
+          creado_por?: string | null
+          descripcion?: string | null
+          elaborado_por_id?: string | null
+          estado?: string
+          fecha?: string | null
+          id?: string
+          justificacion?: string | null
+          nombre: string
+          numero?: string | null
+          org_id: string
+          origen?: string
+          proyecto_id?: string | null
+          recursos?: string | null
+          revisado_por_id?: string | null
+          riesgos?: string | null
+        }
+        Update: {
+          accion_origen_id?: string | null
+          actualizado_en?: string
+          alcance?: string | null
+          ambito?: string
+          autorizado_en?: string | null
+          autorizado_por_id?: string | null
+          creado_en?: string
+          creado_por?: string | null
+          descripcion?: string | null
+          elaborado_por_id?: string | null
+          estado?: string
+          fecha?: string | null
+          id?: string
+          justificacion?: string | null
+          nombre?: string
+          numero?: string | null
+          org_id?: string
+          origen?: string
+          proyecto_id?: string | null
+          recursos?: string | null
+          revisado_por_id?: string | null
+          riesgos?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cambios_sgc_accion_origen_fkey"
+            columns: ["accion_origen_id"]
+            isOneToOne: false
+            referencedRelation: "acciones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cambios_sgc_autorizado_por_id_fkey"
+            columns: ["autorizado_por_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cambios_sgc_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cambios_sgc_elaborado_por_id_fkey"
+            columns: ["elaborado_por_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cambios_sgc_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizaciones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cambios_sgc_proyecto_id_fkey"
+            columns: ["proyecto_id"]
+            isOneToOne: false
+            referencedRelation: "proyectos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cambios_sgc_revisado_por_id_fkey"
+            columns: ["revisado_por_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cambios_sgc_documentos: {
+        Row: {
+          cambio_id: string
+          creado_en: string
+          documento_id: string
+          id: string
+          nota: string | null
+          org_id: string
+        }
+        Insert: {
+          cambio_id: string
+          creado_en?: string
+          documento_id: string
+          id?: string
+          nota?: string | null
+          org_id: string
+        }
+        Update: {
+          cambio_id?: string
+          creado_en?: string
+          documento_id?: string
+          id?: string
+          nota?: string | null
+          org_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cambios_sgc_documentos_cambio_id_fkey"
+            columns: ["cambio_id"]
+            isOneToOne: false
+            referencedRelation: "cambios_sgc"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cambios_sgc_documentos_documento_id_fkey"
+            columns: ["documento_id"]
+            isOneToOne: false
+            referencedRelation: "documentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cambios_sgc_documentos_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizaciones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       config_firma: {
         Row: {
           actualizado_en: string
@@ -1128,11 +1488,20 @@ export type Database = {
       }
       hallazgos: {
         Row: {
+          aceptada: boolean | null
+          aceptada_motivo: string | null
           actualizado_en: string
-          auditoria_id: string
+          auditoria_id: string | null
+          cambio_sgc_id: string | null
+          causa_analisis: Json | null
+          causa_fecha: string | null
+          causa_metodo: string | null
+          causa_participantes: string | null
+          causa_raiz: string | null
           cerrado_en: string | null
           cerrado_por_id: string | null
           clausula_id: string
+          cliente_tipo: string | null
           consecutivo: number
           creado_en: string
           creado_por: string | null
@@ -1142,23 +1511,44 @@ export type Database = {
           evidencia_objetiva: string
           fecha_compromiso: string | null
           folio: string
+          fuente_detalle: string | null
+          fuente_nc: string
           id: string
           item_id: string | null
           motivo_anulacion: string | null
           motivo_cambio: string | null
+          nc_origen_id: string | null
+          nuevo_riesgo: boolean
+          nuevo_riesgo_desc: string | null
           org_id: string
           proceso_id: string | null
+          requiere_acciones: boolean
+          requiere_cambio_sgc: boolean
+          requiere_cambio_sgc_desc: string | null
+          requiere_mas_informacion: boolean
+          requiere_recursos: boolean
+          requiere_recursos_desc: string | null
           requisito_incumplido: string | null
           responsable_contacto_id: string | null
+          riesgo_id: string | null
           sitio_id: string | null
           tipo: string
         }
         Insert: {
+          aceptada?: boolean | null
+          aceptada_motivo?: string | null
           actualizado_en?: string
-          auditoria_id: string
+          auditoria_id?: string | null
+          cambio_sgc_id?: string | null
+          causa_analisis?: Json | null
+          causa_fecha?: string | null
+          causa_metodo?: string | null
+          causa_participantes?: string | null
+          causa_raiz?: string | null
           cerrado_en?: string | null
           cerrado_por_id?: string | null
           clausula_id: string
+          cliente_tipo?: string | null
           consecutivo: number
           creado_en?: string
           creado_por?: string | null
@@ -1168,23 +1558,44 @@ export type Database = {
           evidencia_objetiva: string
           fecha_compromiso?: string | null
           folio: string
+          fuente_detalle?: string | null
+          fuente_nc?: string
           id?: string
           item_id?: string | null
           motivo_anulacion?: string | null
           motivo_cambio?: string | null
+          nc_origen_id?: string | null
+          nuevo_riesgo?: boolean
+          nuevo_riesgo_desc?: string | null
           org_id: string
           proceso_id?: string | null
+          requiere_acciones?: boolean
+          requiere_cambio_sgc?: boolean
+          requiere_cambio_sgc_desc?: string | null
+          requiere_mas_informacion?: boolean
+          requiere_recursos?: boolean
+          requiere_recursos_desc?: string | null
           requisito_incumplido?: string | null
           responsable_contacto_id?: string | null
+          riesgo_id?: string | null
           sitio_id?: string | null
           tipo?: string
         }
         Update: {
+          aceptada?: boolean | null
+          aceptada_motivo?: string | null
           actualizado_en?: string
-          auditoria_id?: string
+          auditoria_id?: string | null
+          cambio_sgc_id?: string | null
+          causa_analisis?: Json | null
+          causa_fecha?: string | null
+          causa_metodo?: string | null
+          causa_participantes?: string | null
+          causa_raiz?: string | null
           cerrado_en?: string | null
           cerrado_por_id?: string | null
           clausula_id?: string
+          cliente_tipo?: string | null
           consecutivo?: number
           creado_en?: string
           creado_por?: string | null
@@ -1194,14 +1605,26 @@ export type Database = {
           evidencia_objetiva?: string
           fecha_compromiso?: string | null
           folio?: string
+          fuente_detalle?: string | null
+          fuente_nc?: string
           id?: string
           item_id?: string | null
           motivo_anulacion?: string | null
           motivo_cambio?: string | null
+          nc_origen_id?: string | null
+          nuevo_riesgo?: boolean
+          nuevo_riesgo_desc?: string | null
           org_id?: string
           proceso_id?: string | null
+          requiere_acciones?: boolean
+          requiere_cambio_sgc?: boolean
+          requiere_cambio_sgc_desc?: string | null
+          requiere_mas_informacion?: boolean
+          requiere_recursos?: boolean
+          requiere_recursos_desc?: string | null
           requisito_incumplido?: string | null
           responsable_contacto_id?: string | null
+          riesgo_id?: string | null
           sitio_id?: string | null
           tipo?: string
         }
@@ -1211,6 +1634,13 @@ export type Database = {
             columns: ["auditoria_id"]
             isOneToOne: false
             referencedRelation: "auditorias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hallazgos_cambio_sgc_id_fkey"
+            columns: ["cambio_sgc_id"]
+            isOneToOne: false
+            referencedRelation: "cambios_sgc"
             referencedColumns: ["id"]
           },
           {
@@ -1242,6 +1672,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "hallazgos_nc_origen_id_fkey"
+            columns: ["nc_origen_id"]
+            isOneToOne: false
+            referencedRelation: "hallazgos"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "hallazgos_org_id_fkey"
             columns: ["org_id"]
             isOneToOne: false
@@ -1260,6 +1697,13 @@ export type Database = {
             columns: ["responsable_contacto_id"]
             isOneToOne: false
             referencedRelation: "contactos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hallazgos_riesgo_id_fkey"
+            columns: ["riesgo_id"]
+            isOneToOne: false
+            referencedRelation: "riesgos"
             referencedColumns: ["id"]
           },
           {
@@ -1663,6 +2107,83 @@ export type Database = {
             columns: ["creado_por"]
             isOneToOne: false
             referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      planes_mejora: {
+        Row: {
+          actualizado_en: string
+          alcance: string | null
+          anio: number
+          aprobado_en: string | null
+          aprobado_por_id: string | null
+          creado_en: string
+          creado_por: string | null
+          elaborado_por_id: string | null
+          estado: string
+          id: string
+          objetivo: string | null
+          org_id: string
+          programa_de: string | null
+        }
+        Insert: {
+          actualizado_en?: string
+          alcance?: string | null
+          anio: number
+          aprobado_en?: string | null
+          aprobado_por_id?: string | null
+          creado_en?: string
+          creado_por?: string | null
+          elaborado_por_id?: string | null
+          estado?: string
+          id?: string
+          objetivo?: string | null
+          org_id: string
+          programa_de?: string | null
+        }
+        Update: {
+          actualizado_en?: string
+          alcance?: string | null
+          anio?: number
+          aprobado_en?: string | null
+          aprobado_por_id?: string | null
+          creado_en?: string
+          creado_por?: string | null
+          elaborado_por_id?: string | null
+          estado?: string
+          id?: string
+          objetivo?: string | null
+          org_id?: string
+          programa_de?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "planes_mejora_aprobado_por_id_fkey"
+            columns: ["aprobado_por_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planes_mejora_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planes_mejora_elaborado_por_id_fkey"
+            columns: ["elaborado_por_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planes_mejora_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizaciones"
             referencedColumns: ["id"]
           },
         ]
@@ -2097,6 +2618,138 @@ export type Database = {
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizaciones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quejas: {
+        Row: {
+          actualizado_en: string
+          avance_pct: number
+          cambio_sgc_id: string | null
+          cerrada_en: string | null
+          cliente_nombre: string | null
+          consecutivo: number
+          contacto_id: string | null
+          creado_en: string
+          creado_por: string | null
+          descripcion: string
+          estado: string
+          fecha: string
+          folio: string
+          hallazgo_id: string | null
+          id: string
+          observaciones: string | null
+          org_id: string
+          plan_mejora_id: string | null
+          procede: boolean | null
+          proceso_id: string | null
+          responsable_id: string | null
+          tipo: string
+        }
+        Insert: {
+          actualizado_en?: string
+          avance_pct?: number
+          cambio_sgc_id?: string | null
+          cerrada_en?: string | null
+          cliente_nombre?: string | null
+          consecutivo: number
+          contacto_id?: string | null
+          creado_en?: string
+          creado_por?: string | null
+          descripcion: string
+          estado?: string
+          fecha?: string
+          folio: string
+          hallazgo_id?: string | null
+          id?: string
+          observaciones?: string | null
+          org_id: string
+          plan_mejora_id?: string | null
+          procede?: boolean | null
+          proceso_id?: string | null
+          responsable_id?: string | null
+          tipo?: string
+        }
+        Update: {
+          actualizado_en?: string
+          avance_pct?: number
+          cambio_sgc_id?: string | null
+          cerrada_en?: string | null
+          cliente_nombre?: string | null
+          consecutivo?: number
+          contacto_id?: string | null
+          creado_en?: string
+          creado_por?: string | null
+          descripcion?: string
+          estado?: string
+          fecha?: string
+          folio?: string
+          hallazgo_id?: string | null
+          id?: string
+          observaciones?: string | null
+          org_id?: string
+          plan_mejora_id?: string | null
+          procede?: boolean | null
+          proceso_id?: string | null
+          responsable_id?: string | null
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quejas_cambio_sgc_id_fkey"
+            columns: ["cambio_sgc_id"]
+            isOneToOne: false
+            referencedRelation: "cambios_sgc"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quejas_contacto_id_fkey"
+            columns: ["contacto_id"]
+            isOneToOne: false
+            referencedRelation: "contactos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quejas_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quejas_hallazgo_id_fkey"
+            columns: ["hallazgo_id"]
+            isOneToOne: false
+            referencedRelation: "hallazgos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quejas_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizaciones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quejas_plan_mejora_id_fkey"
+            columns: ["plan_mejora_id"]
+            isOneToOne: false
+            referencedRelation: "planes_mejora"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quejas_proceso_id_fkey"
+            columns: ["proceso_id"]
+            isOneToOne: false
+            referencedRelation: "procesos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quejas_responsable_id_fkey"
+            columns: ["responsable_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
             referencedColumns: ["id"]
           },
         ]

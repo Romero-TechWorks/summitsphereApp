@@ -747,11 +747,13 @@ nadie preguntó.
 
 | Columna | Tipo | Nota |
 |---|---|---|
-| `auditoria_id` | uuid FK NOT NULL | ON DELETE **RESTRICT** |
-| `item_id` | uuid FK NULL | ON DELETE SET NULL |
+| `auditoria_id` | uuid FK **NULL** | ON DELETE **RESTRICT**. ⚠️ Aflojado en F04·B0: una NC también nace de una queja, un incidente o un indicador. Ver `fuente_nc` |
+| `fuente_nc` | text NOT NULL CHECK | **[F04·B0]** De dónde salió. Once valores, derivados del catálogo documental del cliente (`F-SG-05` §5): `auditoria_interna` · `auditoria_externa` · `auditoria_proveedor` · `queja_cliente` · `servicio_no_conforme` · `revision_direccion` · `seguimiento_interno` · `indicador` · `evaluacion_proveedor` · `incidente` · `otro` |
+| `fuente_detalle` | text | **[F04·B0]** Qué queja, qué incidente, qué indicador |
+| `item_id` | uuid FK NULL | ON DELETE SET NULL. **CHECK: sólo con auditoría** |
 | `clausula_id` | uuid FK **NOT NULL** | **La cita es obligatoria.** Un hallazgo sin cláusula no es un hallazgo |
 | `consecutivo` | int NOT NULL | El `03` de `H-03` |
-| `folio` | text NOT NULL | `AUD-2026-014/H-03` |
+| `folio` | text NOT NULL | `AUD-2026-014/H-03`, o `NC-2026-007` cuando no nace de una auditoría |
 | `tipo` | text CHECK | `nc_mayor` · `nc_menor` · `observacion` · `oportunidad_mejora` · `conformidad` |
 | `descripcion` | text NOT NULL + CHECK no vacío | |
 | `evidencia_objetiva` | text NOT NULL + CHECK no vacío | Qué se vio, dónde y cuándo |
@@ -772,6 +774,43 @@ hallazgo que no se puede defender delante del cliente.
 cambio y su motivo sean **una sola escritura** de la cola. Sin señal, dos podrían
 llegar desparejadas y el renglón quedaría sin explicación.
 
+⚠️ **Los tres CHECK de `fuente_nc`, y el segundo es el que importa** [F04·B0]:
+la lista cerrada de once valores; **`auditoria_id is not null` ⟺ la fuente es una
+de las tres de auditoría**; e `item_id` sólo con auditoría. El segundo no es
+higiene: el `F-SG-12` se arma filtrando por `auditoria_id`, así que sin él una NC
+de una queja se imprimiría como hallazgo de auditoría, y una NC «de auditoría
+interna» sin auditoría no saldría en ningún informe y desaparecería del expediente
+sin que nadie la borrara. El tercero tapa un agujero que la FK garantizaba sola:
+`validar_referencia_de_la_org()` mira sitio, proceso y contacto — `item_id` nunca
+estuvo en esa lista.
+
+⚠️ **Dos series de folio, y se cuentan distinto** [F04·B0]. El de una auditoría
+—`AUD-2026-014/H-03`— sale del folio de la auditoría, que es **el consecutivo de
+la firma** y por eso `A10` tuvo que partirlo a mano con `DEMO-`. El de una NC sin
+auditoría —`NC-2026-007`— es **el consecutivo del cliente**: «la séptima no
+conformidad de esta planta este año», que es lo que su Coordinador del SGC lleva
+en el `F-SG-17`. Como cuelga de `org_id`, **la partición de pruebas sale gratis**
+—una organización de demostración es otra organización— y el prefijo
+`DEMO-NC-` se conserva sólo para poder contestar «¿esto es del cliente o es de
+mentira?». Las dos ramas **renumeran en vez de rechazar**.
+
+⚠️ **Y el folio se congela al nacer.** `sellar_folio_hallazgo()` es
+`before insert`, no `before insert or update`: mover un hallazgo de una auditoría
+a otra, o desprenderlo de la suya, **no le recalcula el folio**. Es la misma
+decisión que `nc_previas` en el programa anual — un folio ya emitido es lo que el
+cliente tiene en su copia del `F-SG-12`, y reescribirlo en noviembre cambiaría un
+documento que la firma entregó en enero. El rastro queda en
+`hallazgos_historial`, y **B1 tiene que decirlo en pantalla** al reclasificar: un
+folio que miente en silencio es peor que uno corrido.
+
+⚠️ **Y la `org_id` cambia de sitio, no se afloja** [F04·B0].
+`resolver_org_del_hallazgo()` la saca de la auditoría cuando la hay; cuando no, la
+manda la fila y **la valida la política de INSERT**, que es la que siempre decidió
+(`puedo_editar_org(org_id)`). En un UPDATE de una NC sin auditoría, la `org_id` ya
+no se mueve: cambiarla llevaría el hallazgo al expediente de otro cliente y dejaría
+su historial en el de origen. `heredar_org_de_la_auditoria()` **no se tocó** — la
+comparten seis tablas más, y en todas ellas la auditoría sí es obligatoria.
+
 ⚠️ **NO hay `unique (auditoria_id, consecutivo)`, y es la decisión que salva el
 criterio de cierre.** Dos auditores recorriendo la misma planta en modo avión
 levantan los dos un `H-03`; ninguno ve el hallazgo del otro. Con un índice único,
@@ -785,6 +824,12 @@ detalle de edición; un hallazgo perdido no se recupera.
 Cada cambio de un hallazgo, **campo por campo**: `campo`, `antes`, `despues`,
 `motivo`, `hecho_por`, `hecho_en`. Es lo que un organismo certificador viene a
 revisar.
+
+⚠️ **Desde F04·B0 también sigue `fuente_nc`, `fuente_detalle` y `auditoria_id`.**
+Reclasificar la fuente es más delicado que reclasificar el tipo: mueve el hallazgo
+dentro o fuera del informe de una auditoría. Sin esos renglones, una NC podría
+entrar al `F-SG-12` de una auditoría ya emitida sin dejar rastro de que antes era
+una queja.
 
 ⚠️ **Inmutable como `audit_logs`, y con los mismos dos candados.** Lo escribe
 `registrar_historial_hallazgo()` (`SECURITY DEFINER`); la RLS sólo tiene SELECT, y
@@ -811,38 +856,157 @@ comodidad.
 
 # FASE 04 · Acciones y seguimiento
 
+> **B0 aplicado el 7 sep 2026** (`fuente_nc`). **B1 escrito el 8 sep 2026**:
+> `20260908120000_acciones_y_ciclo_de_mejora.sql`, 74 comprobaciones en Docker.
+> Lo gobierna `P-SG-05`, que llegó en la cuarta tanda.
+
 ## `acciones`
+
+Lo que se ejecuta. Cuelga de un hallazgo, de un plan de mejora, de un cambio de
+SGC — **o de nada**, cuando es una mejora suelta.
 
 | Columna | Tipo | Nota |
 |---|---|---|
-| `folio` | text | `ACC-2026-105` |
-| `hallazgo_id` | uuid FK NULL | Puede nacer sola, como mejora |
+| `folio` | text NOT NULL | `ACC-2026-105`, por organización y año. El nuestro |
+| `folio_cliente` | text | `AC-FA-01-25` (`P-SG-05` §5.2): tipo + `procesos.codigo` + consecutivo **por proceso** + año |
+| `hallazgo_id` | uuid FK NULL | ON DELETE **RESTRICT** — el hallazgo es evidencia |
+| `plan_mejora_id` · `cambio_sgc_id` | uuid FK NULL | Los otros dos contenedores |
+| `proceso_id` | uuid FK NULL | `F-SG-17` col. F, y de aquí salen las dos letras del folio del cliente |
 | `tipo` | text CHECK | `correccion` · `accion_correctiva` · `preventiva` · `mejora` |
-| `descripcion` | text | |
-| `responsable_id` | uuid FK usuarios | |
-| `responsable_contacto_id` | uuid FK contactos | Del lado del cliente |
-| `fecha_compromiso` | date NOT NULL | |
+| `descripcion` | text NOT NULL + CHECK no vacío | |
+| `responsable_id` · `responsable_contacto_id` | uuid FK | La firma o el cliente |
+| `fecha_compromiso` | date NOT NULL | ⚠️ **La corrección inmediata TAMBIÉN la lleva** (`P-SG-02` §5.2b) |
+| `fecha_compromiso_original` | date | La sella la base la primera vez que la fecha se mueve |
+| `motivo_reprogramacion` | text | **Obligatorio y distinto del anterior** en cada demora |
 | `estado` | text CHECK | `abierta` · `en_proceso` · `por_verificar` · `cerrada` · `cancelada` |
-| `causa_metodo` | text CHECK | `cinco_porques` · `ishikawa` · `otro` |
-| `causa_analisis` | jsonb | Estructurado, **no un párrafo**. ISO 9001 §10.2 lo exige |
-| `causa_raiz` | text | La conclusión |
-| `eficacia_verificada_en` | date | |
-| `eficacia_verificada_por_id` | uuid FK | |
-| `eficacia_resultado` | text CHECK | `eficaz` · `no_eficaz` · `parcial` |
-| `eficacia_evidencia` | text | |
+| `avance_pct` | int 0..100 | `F-SG-17` col. M |
+| `monitoreo` | text | `F-SG-17` col. N — la nota del Coordinador, distinta de la evidencia |
+| `eficacia_fecha_programada` | date | **La segunda fecha** de `P-SG-05` §5.7, que se fija *después* de concluir |
+| `eficacia_verificada_en` · `_por_id` · `_resultado` · `_evidencia` | | `eficaz` · `no_eficaz` · `parcial` |
+| `meses` | jsonb | El calendario P/R del `F-SG-16`: `{"p":[…12],"r":[…12]}` |
 
 ⚠️ **Una acción no pasa a `cerrada` sin `eficacia_verificada_en` y
 `eficacia_resultado = 'eficaz'`.** Se impone con un CHECK, no con una validación
-del navegador. Es el error más común en los SGC reales.
+del navegador, **y la pantalla no ofrece el atajo**: no hay botón de «cerrar»,
+sólo «verificar eficacia». Es el error más común en los SGC reales, y una app que
+ofrece el botón lo institucionaliza.
 
-## `tareas`
-Los pasos de una acción: descripción, responsable, fecha, estado, orden.
+⚠️ **`parcial` no cierra y `no_eficaz` no reabre.** Si el incumplimiento se
+repite, `P-SG-05` §5.7 manda levantar un `F-SG-06` **nuevo** enlazado con
+`hallazgos.nc_origen_id` — no reabrir el viejo.
 
-⚠️ **`adjuntos` ya no se crea aquí: se adelantó a la Fase 02** (F02·B2b). Lo que
-esta fase agrega es su uso desde las acciones — la evidencia que cierra una
-acción correctiva y la que respalda su verificación de eficacia.
+⚠️ **Reprogramar exige justificar la demora, y el motivo tiene que ser NUEVO.**
+Lo impone `sellar_accion()`: sin eso, una acción movida tres veces enseñaría
+siempre la primera excusa. Cada una queda entera en `audit_logs`, con su fecha.
+`P-SG-05` §5.6 — y si hay reincidencia o queja de cliente, la justificación
+**escala a Dirección**, que es cosa de la pantalla y del aviso, no del esquema.
 
----
+⚠️ **Dos series de folio y se cuentan distinto.** `ACC-2026-105` es por
+organización y año; `AC-FA-01-25` es **por proceso** y lleva el tipo delante. El
+segundo se **rellena en cuanto la acción tiene un proceso con código** —se captura
+primero y se clasifica después— y a partir de ahí **no se reescribe**: es el
+número que el Coordinador ya anotó en su hoja. Sólo `AC` viene del cliente; `AP`,
+`CI` y `AM` son por simetría con la columna `PREV / CORR` del `F-SG-17`.
+
+⚠️ **`tareas` NO se creó, y `docs/02` la anotaba.** Ninguno de los cinco formatos
+que gobiernan este ciclo tiene sub-pasos, y el `F-SG-16` enseña que cuando un
+conjunto de acciones necesita planeación la respuesta del cliente es un
+**contenedor con más acciones**, no una tabla de tareas. Añadirla hoy sería un
+interruptor muerto (regla 11).
+
+⚠️ **Y `acciones_historial` tampoco.** `registrar_bitacora()` ya guarda `antes` y
+`despues` completos en `audit_logs`, que es inmutable con los dos candados de la
+regla 13. La justificación de cada reprogramación queda ahí entera. Una tabla
+paralela sería el mismo hecho en dos sitios.
+
+## `hallazgos` — lo que la Fase 04 le añadió
+
+| Columna | Tipo | Nota |
+|---|---|---|
+| `fuente_nc` | text CHECK | **15 valores** desde B1. Los cuatro nuevos cierran las nueve etapas de `P-SG-05` §5.1: `informacion_documentada`, `capacitacion`, `satisfaccion_cliente`, **`incumplimiento_legal`** |
+| `nc_origen_id` | uuid FK NULL RESTRICT | La NC anterior cuyas acciones no fueron efectivas (§5.7). CHECK: no puede ser ella misma |
+| `aceptada` · `aceptada_motivo` | boolean NULL · text | El auditado puede **rechazar** la NC. ⚠️ **NULL = no se le ha preguntado**, y `false` **no es `anulado`** |
+| `cliente_tipo` | text CHECK | `interno` · `externo` — `F-SG-17` col. I |
+| `causa_metodo` · `causa_analisis` · `causa_raiz` · `causa_participantes` · `causa_fecha` | | El `F-SG-07` |
+| `requiere_mas_informacion` · `requiere_acciones` | boolean | El bloque «Cierre del ciclo» del `F-SG-07` §4 |
+| `nuevo_riesgo`(+`_desc`, `riesgo_id`) · `requiere_cambio_sgc`(+`_desc`, `cambio_sgc_id`) · `requiere_recursos`(+`_desc`) | | Las tres preguntas de impacto |
+
+⚠️ **EL ANÁLISIS DE CAUSA VIVE EN EL HALLAZGO, NO EN LA ACCIÓN**, y este
+documento decía lo contrario. Tres razones, y la tercera decide:
+1. En el papel es **uno por NC**: un `F-SG-07` por cada `F-SG-06`.
+2. Colgarlo de `acciones` obliga a decidir a cuál de las cinco estrategias
+   pertenece — el mismo problema que hizo descartar una tabla `analisis_causa`.
+3. ⚠️ **Un análisis puede concluir que NO se requieren acciones correctivas.** Es
+   una respuesta válida y frecuente del `F-SG-07` §4, y en `acciones` ese análisis
+   no tendría dónde vivir.
+
+⚠️ **Las tres preguntas de impacto también son del hallazgo**: los dos formatos
+las hacen una vez por NC, no una por acción. Y llevan **CHECK que exige la
+descripción cuando el booleano es cierto** — un «sí» sin texto es una casilla que
+alguien palomeó. Es el mecanismo por el que una NC **retroalimenta el sistema de
+gestión** en vez de morir en su propia acción (ISO 9001 §10.2).
+
+⚠️ **`causa_raiz` puede estar legítimamente vacía.** Un análisis con «se requiere
+más información» está *en curso*, no mal llenado. Si la pantalla exigiera la causa
+para guardar, la gente la inventaría — que es el vicio que un análisis existe para
+evitar. Lo que la app impide es **cerrar** con él así.
+
+## `planes_mejora` · F-SG-16
+
+⚠️ **NO es «acciones con tipo = mejora»**, que es lo que el índice del catálogo
+supuso hasta que llegó el formato. Es un **contenedor** con calendario anual
+programado/real, y es **condicional**: `P-SG-05` §5.5 lo pide sólo «cuando las
+acciones requieran una planeación de mayor complejidad».
+
+`org_id`, `alcance`, `objetivo`, `programa_de`, `anio`, `estado`
+(`borrador`·`aprobado`·`cerrado`), `elaborado_por_id`, `aprobado_por_id`/`_en`
+sellados por la base. El calendario cuelga de `acciones.meses`.
+
+⚠️ **jsonb y no tabla hija**, exactamente por lo que decidió `D06` para
+`programa_procesos`: una tabla `(renglón, mes)` necesitaría un índice único que no
+es la PK, y ahí la cola resuelve sus `upsert` por la PK (§6.1). Además marcar seis
+meses serían seis operaciones de la cola en vez de una.
+
+## `cambios_sgc` · `cambios_sgc_documentos` · F-SG-24
+
+⚠️ **Tres disparadores, no uno**, y sólo el primero es de la Fase 04:
+`P-SG-05` §5.5 (al determinar acciones), `P-SG-01` §5.7 (**solicitud de cambio de
+un documento publicado** — Fase 02) y `P-SG-07` §5.5.2 (sugerencia de cliente).
+Se construye entero aquí porque **las tres bocas escriben en la misma tabla**.
+
+`numero`, `proyecto_id`, `nombre`, `descripcion`, `alcance`, `ambito`
+(`sgc`·`procesos`·`otro`), `justificacion`, `riesgos`, `recursos`, `origen`,
+`accion_origen_id`, `estado`, y las tres firmas — `autorizado_*` sellado.
+`cambios_sgc_documentos` es el §IV: qué documentos hay que reeditar.
+
+⚠️ **Aquí convergen las DOS preguntas de impacto del `F-SG-06`.** El §III del
+formato es «Riesgos Identificados»: el cambio al SGC y la actualización de riesgos
+no son dos ramas separadas, son el mismo documento.
+
+## `quejas` · P-SG-07 · F-SG-08
+
+⚠️ **Dos ramas con dos destinos, y esto decide el modelo**: una **queja**
+procedente genera NC y se trata por `P-SG-05`; una **sugerencia** procedente
+**NO** — va a `F-SG-24` o a `F-SG-16`. Lo impone `quejas_nc_solo_de_queja`.
+
+`folio` (`Q-01-25` / `S-01-25`, **tercera serie del cliente**, por organización,
+tipo y año), `tipo`, `fecha`, `contacto_id`, `cliente_nombre`, `descripcion`,
+`proceso_id`, `responsable_id`, `procede` (⚠️ **NULL = sin triar**),
+`hallazgo_id` · `cambio_sgc_id` · `plan_mejora_id`, `avance_pct`, `estado`,
+`cerrada_en`, `observaciones`.
+
+⚠️ **Nada se enlaza mientras `procede` sea NULL**, y una queja improcedente **se
+registra y se cierra** (`P-SG-07` §1): es la prueba de que se atendió. Sólo se
+borra la capturada por error, antes de triarla.
+
+## `adjuntos.accion_id`
+
+La FK que `F04·B2` pedía: «la evidencia que cierra una acción correctiva y la que
+respalda su verificación». ⚠️ **Va antes que `hallazgo_id` en el orden de campo
+dominante** — la evidencia de una acción es de la acción, aunque la acción cuelgue
+de una NC. `CAMPOS_DOMINANTES` y el `coalesce` de `heredar_org_del_adjunto()`
+llevan el mismo orden; si discrepan, la fila viaja con un campo y la base la
+cuelga de otro.
 
 # FASE 05 · Cumplimiento y capacitación
 

@@ -210,6 +210,41 @@ export const queryKeys = {
     historial: (hallazgoId: string) => ['auditorias', 'historial', hallazgoId] as const,
   },
   /**
+   * El ciclo de acciones [F04·B1]: lo que cierra una no conformidad.
+   *
+   * ⚠️ **Vive fuera de `auditorias` a propósito.** Una acción nace igual de una
+   * queja, de un indicador bajo meta o de una mejora suelta —desde `B0` una NC
+   * ya no necesita auditoría—, así que colgarla del dominio de auditorías haría
+   * que invalidar una lista de auditorías tirara acciones que no tienen nada que
+   * ver, y al revés.
+   */
+  acciones: {
+    todo: () => ['acciones'] as const,
+    /**
+     * **Todas las acciones visibles de la cartera**, que es como se trabaja: el
+     * Coordinador del SGC abre «qué vence esta semana», no «qué tiene Planta
+     * Norte».
+     *
+     * ⚠️ Ni el estado, ni el cliente, ni el tipo, ni el texto del buscador entran
+     * en la clave: se descarga la lista una vez y se filtra **en memoria**. Es la
+     * misma decisión que `hallazgosDeLaCartera()` y la que evita que la pantalla
+     * se vacíe al teclear la primera letra sin señal.
+     */
+    lista: () => ['acciones', 'lista'] as const,
+    /**
+     * Las acciones de un hallazgo. Es lo que la ficha del hallazgo pinta debajo
+     * del análisis de causa, y lo que necesita el promedio de avance del
+     * `F-SG-17`.
+     */
+    delHallazgo: (hallazgoId: string) => ['acciones', 'hallazgo', hallazgoId] as const,
+    /** Los planes de mejora de un cliente (F-SG-16). */
+    planes: (orgId: string) => ['acciones', 'planes', orgId] as const,
+    /** Los cambios de SGC de un cliente (F-SG-24). */
+    cambios: (orgId: string) => ['acciones', 'cambios', orgId] as const,
+    /** Las quejas y sugerencias de un cliente (F-SG-08). */
+    quejas: (orgId: string) => ['acciones', 'quejas', orgId] as const,
+  },
+  /**
    * El catálogo de normas. Fuera de `cartera` porque no es de nadie: lo usan
    * también los sistemas de gestión [Fase 02] y las auditorías [Fase 03].
    */

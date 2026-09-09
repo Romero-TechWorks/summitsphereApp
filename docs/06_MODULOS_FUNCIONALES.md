@@ -427,20 +427,65 @@ membrete de la firma.
 
 ---
 
-## Acciones `[Fase 04]`
+## Acciones `[Fase 04 · B1 ✅]`
 
-Cierra el ciclo: un hallazgo sin acción es un hallazgo perdido.
+Cierra el ciclo: un hallazgo sin acción es un hallazgo perdido. Lo gobierna
+`P-SG-05`, el procedimiento de acciones correctivas del cliente.
 
-- Nace de un hallazgo, o sola como acción de mejora.
-- Tipo: **corrección** (apagar el fuego) vs **acción correctiva** (que no vuelva a
-  pasar). La distinción es de norma, no de estilo, y la app la exige.
-- **Análisis de causa** estructurado: 5 porqués o Ishikawa (6M). Guardado como
-  datos, no como un párrafo — ISO 9001 §10.2 lo pide y un auditor externo lo lee.
-- **Tareas** con responsable y fecha.
-- ⚠️ **Verificación de eficacia obligatoria para cerrar.** Fecha, quién verificó,
-  evidencia y veredicto. Sin eso la app no deja cerrar. Es el error más común en
-  los SGC reales: se cierra la acción el día que se hace, sin comprobar meses
-  después que sirvió.
+**`/acciones` no pide elegir cliente**, igual que `/auditorias`: el Coordinador
+del SGC abre «qué vence esta semana», no «qué tiene Planta Norte». Arriba, el
+contador **ABIERTAS / CERRADAS / VENCIDAS** —que es literalmente el encabezado del
+`F-SG-17`—; debajo, la lista agrupada por vencimiento, por cliente o por tipo.
+
+### El ciclo, tal y como se recorre
+
+1. **La corrección inmediata** apaga el fuego. ⚠️ Lleva **su propia fecha de
+   vencimiento** (`P-SG-02` §5.2b): no es un campo de texto del hallazgo.
+2. **El análisis de causa** —5 ¿Por qué?, `F-SG-07`— vive en la ficha del
+   hallazgo, entre la corrección y las acciones correctivas. En el papel de la
+   firma los dos bloques están separados *por* el análisis, y no es decorativo:
+   una acción correctiva escrita antes de saber la causa es una corrección
+   disfrazada.
+   - Cada «por qué» va con **su pregunta, su respuesta y su propia evidencia**.
+     Pregunta y respuesta separadas aunque el papel dé una celda: con un solo
+     cuadro la gente escribe cinco causas sueltas en vez de una cadena.
+   - ⚠️ **Se guarda incompleto a propósito.** Un análisis con «se requiere más
+     información» está *en curso*. Si la pantalla exigiera la causa raíz para
+     guardar, la gente la inventaría.
+   - ⚠️ **«No se requieren acciones correctivas» es una respuesta válida** y la
+     app la ofrece: sin esa casilla, obligaría a inventar una acción para cerrar.
+3. **Las acciones correctivas**, con responsable, proceso y fecha compromiso.
+   El papel tiene cuatro renglones y **eso no es un límite**: es lo que cabe en la
+   hoja.
+4. **El seguimiento**: `% de avance` y una nota de monitoreo, que es lo que el
+   `F-SG-17` lleva en sus columnas M y N. El avance de la NC es **el promedio** de
+   sus acciones, calculado en memoria.
+5. ⚠️ **Reprogramar exige justificar la demora**, y el motivo tiene que ser
+   **nuevo** cada vez (`P-SG-05` §5.6). Si hay reincidencia o queja de cliente, la
+   justificación escala a Dirección.
+6. ⚠️ **Verificación de eficacia obligatoria para cerrar.** Fecha, quién verificó,
+   evidencia y veredicto — y **son dos fechas**: la programada se fija *después*
+   de concluir las acciones. **La pantalla no ofrece un botón de «cerrar»**, sólo
+   «verificar eficacia». Es el error más común en los SGC reales, y una app que
+   ofrece el atajo lo institucionaliza.
+   - `parcial` deja la acción abierta. `no_eficaz` **no la reabre**: se levanta una
+     no conformidad **nueva** enlazada a la anterior (`P-SG-05` §5.7).
+
+### Lo que la ficha del hallazgo ganó
+
+- **El auditado puede rechazar la NC.** No es lo mismo que anularla: anular es que
+  el auditor se equivocó, rechazar es que el cliente discrepa y el hallazgo
+  **sigue en pie**. Rechazar exige motivo.
+- **Las tres preguntas de impacto**: ¿nuevo riesgo? ¿cambios en el SGC? ¿hacen
+  falta recursos? Un «sí» exige la descripción, y el riesgo se **enlaza** — es el
+  punto donde una NC retroalimenta el sistema de gestión en vez de morir en su
+  propia acción correctiva.
+
+### Con esquema y sin pantalla todavía
+
+`planes_mejora` (`F-SG-16`), `cambios_sgc` (`F-SG-24`) y `quejas` (`F-SG-08`)
+existen en la base desde `B1` — metidas en esa migración costaban cero — pero no
+tienen pantalla. Una pestaña vacía es peor que ninguna.
 
 ### Notificaciones
 Push al teléfono: hallazgo asignado, acción por vencer, acción vencida, documento

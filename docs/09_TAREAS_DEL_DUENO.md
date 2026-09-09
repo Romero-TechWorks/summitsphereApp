@@ -35,7 +35,7 @@ no está hecha.
 
 # FASE 00 · Cimientos
 
-### `A01` — Crear las cuentas · **Bloquea: todo** 
+### `A01` — Crear las cuentas · **Bloquea: todo** ✅ **HECHA** 
 
 Cuatro cuentas, **todas con el correo de la firma**
 (`manuel.garcia@summit-sphere.com`), nunca con un correo personal. Si mañana
@@ -464,9 +464,9 @@ Las organizaciones, sus plantas, sus contactos y sus proyectos. Es captura dentr
 de la app, no un panel ni una llave, así que vive con el resto de lo que se captura
 — y allá está con la navegación pantalla por pantalla.
 
-### `B04` — Definir la plantilla de tareas · → **movida a [`11_TAREAS_DEL_CLIENTE.md`](11_TAREAS_DEL_CLIENTE.md) · Paso 7** ✅ **HECHA**
+### `B04` — Definir la plantilla de tareas · → **movida a [`11_TAREAS_DEL_CLIENTE.md`](11_TAREAS_DEL_CLIENTE.md) · Paso 7** 
 
-### `B03` — Subir el catálogo de normas · → **movida a [`11_TAREAS_DEL_CLIENTE.md`](11_TAREAS_DEL_CLIENTE.md) · Paso 4** ✅ **HECHA**
+### `B03` — Subir el catálogo de normas · → **movida a [`11_TAREAS_DEL_CLIENTE.md`](11_TAREAS_DEL_CLIENTE.md) · Paso 4**
 
 ⚠️ **Y hay que rehacerla después de aplicar `A10`.** El catálogo que está cargado
 hoy se marca como parte de la demostración y pasa al lado de pruebas, así que la
@@ -730,7 +730,7 @@ pruebas y que ni `authenticated` ni `service_role` puedan borrar evidencia.
 El bucket `evidencias` se crea con la migración de la Fase 02: los adjuntos se
 adelantaron a F02·B2b. Ver `C04`.
 
-### `D06` — Aplicar la migración del programa anual · **Bloquea: la frecuencia por proceso**
+### `D06` — Aplicar la migración del programa anual · **Bloquea: la frecuencia por proceso** ✅ **HECHA** 
 
 `20260831120000_programa_anual_por_proceso.sql`. Sale de leer el `F-SG-09` que
 mandaste el 31 ago 2026. Añade dos cosas:
@@ -775,7 +775,79 @@ los candados de los hallazgos sigan intactos.
 
 # FASE 04 · Acciones y seguimiento
 
-### `E01` — Generar las llaves de notificación · **Bloquea: los avisos al teléfono**
+### `E00` — Aplicar la migración de la fuente de la NC · **Bloquea: toda la Fase 04** ✅ **HECHA** 
+
+`supabase/migrations/20260902120000_fuente_de_no_conformidad.sql`. Va **después**
+de `20260831120000_programa_anual_por_proceso.sql`, que también está pendiente —
+las migraciones se aplican en orden y ésa es la anterior.
+
+Qué hace: deja que una no conformidad nazca de una queja, un incidente o un
+indicador, y no sólo de una auditoría. Añade `fuente_nc` y `fuente_detalle` a
+`hallazgos`, afloja `auditoria_id`, y le da a esas NC su propia serie de folio
+(`NC-2026-007`, por cliente y año).
+
+✅ **Es aditiva y se puede aplicar sin avisar a nadie.** Aflojar un NOT NULL nunca
+rechaza una fila que antes pasaba, y las dos columnas nuevas tienen valor por
+defecto. El despliegue que ya está en línea no las conoce y sigue funcionando
+exactamente igual — no hay ventana de mantenimiento ni pantalla nueva que probar.
+
+**Probada en Docker** con las catorce anteriores en orden **y con datos sembrados
+antes de aplicarla** —el camino real, no una base vacía—: **41 comprobaciones de
+comportamiento**, veinte de ellas de regresión.
+
+⚠️ **Después de aplicarla, revisa que el relleno haya quedado bien.** La migración
+deriva la fuente de las NC que ya existen a partir del tipo de su auditoría. En el
+editor SQL de Supabase:
+
+```sql
+select a.tipo as tipo_auditoria, h.fuente_nc, count(*)
+  from public.hallazgos h
+  join public.auditorias a on a.id = h.auditoria_id
+ group by 1, 2 order by 1;
+```
+
+Lo esperado: `interna` · `preauditoria` · `seguimiento` → `auditoria_interna`;
+`certificacion_acompanamiento` → `auditoria_externa`; `proveedor` →
+`auditoria_proveedor`. Si alguna auditoría estaba clasificada con un tipo que no
+le tocaba, aquí se ve — y se corrige cambiando el tipo de la auditoría, no la
+fuente del hallazgo.
+
+### `E05` — Aplicar la migración del ciclo de acciones · **Bloquea: `/acciones`**
+
+`supabase/migrations/20260908120000_acciones_y_ciclo_de_mejora.sql`. Es la
+decimosexta y va después de `20260902120000`, que ya está aplicada.
+
+Qué hace: crea `acciones`, `planes_mejora`, `cambios_sgc`,
+`cambios_sgc_documentos` y `quejas`; le añade a `hallazgos` el análisis de causa
+raíz del `F-SG-07`, las tres preguntas de impacto, la aceptación del auditado y el
+enlace de reincidencia; amplía el CHECK de `fuente_nc` de once a quince valores; y
+le da a `adjuntos` su `accion_id`.
+
+✅ **Es aditiva.** Tablas y columnas nuevas con valor por defecto, y un CHECK que
+se **amplía** — ampliar nunca rechaza una fila que antes pasaba. El despliegue que
+ya está en línea no conoce nada de esto y sigue funcionando igual.
+
+**Probada en Docker** con las quince anteriores en orden **y con datos sembrados
+antes de aplicarla**: **74 comprobaciones de comportamiento**, veinte de ellas de
+regresión.
+
+⚠️ **Después de aplicarla, para que el folio del cliente funcione hace falta una
+cosa tuya.** `AC-FA-01-25` toma las dos letras de `procesos.codigo`, y hoy esa
+columna está **vacía en los doce procesos**. Mientras siga vacía, las acciones
+llevan sólo nuestro folio (`ACC-2026-105`) y la app funciona igual — pero el
+Coordinador del SGC del cliente no reconocerá el número. Se llena desde
+`/sistemas?tab=procesos`, con las dos letras de `P-SG-01` §5.2:
+
+| Proceso | Código | Proceso | Código |
+|---|---|---|---|
+| Dirección | `DI` | Facturación | `FA` |
+| Sistema de Gestión de Calidad | `SG` | Contaduría | `CN` |
+| Administración | `AD` | Mantenimiento | `MT` |
+| Operación | `OP` | Recursos Humanos | `RH` |
+| Compras | `CO` | Transporte y Almacén | `AM` |
+| Diseño | `DS` | Comercialización | `CM` |
+
+### `E01` — Generar las llaves de notificación · **Bloquea: los avisos al teléfono**  ✅ **HECHA** 
 
 Un comando que corre el desarrollador y produce dos llaves. Tú las guardas y las
 cargas en Vercel. Paso a paso en [`../guias/03_VERCEL.md`](../guias/03_VERCEL.md).
@@ -785,16 +857,33 @@ cargas en Vercel. Paso a paso en [`../guias/03_VERCEL.md`](../guias/03_VERCEL.md
 Una contraseña larga al azar, generada y guardada en el gestor. Es lo que impide
 que alguien de fuera dispare las tareas automáticas de la app.
 
-### `E03` — Definir los plazos por defecto · **Bloquea: nada, pero decídelo pronto**
+### `E03` — Definir los plazos por defecto · ✅ **DECIDIDO el 2 sep 2026**
 
 Cuántos días tiene un cliente para responder a cada tipo de hallazgo:
 
-| Tipo | Propuesta | Tu decisión |
+| Tipo | Plazo | Unidad |
 |---|---|---|
-| NC mayor | 15 días | |
-| NC menor | 30 días | |
-| Observación | 60 días | |
-| Oportunidad de mejora | 90 días | |
+| NC mayor | 15 | **días hábiles** |
+| NC menor | 30 | **días hábiles** |
+| Observación | 60 | **días hábiles** |
+| Oportunidad de mejora | 90 | **días hábiles** |
+
+⚠️ **Hábiles, no naturales, y no es un detalle.** `P-SG-03` §5.5 lo dice por
+escrito —«15 días hábiles»— y es lo que el cliente va a alegar cuando se le
+reclame un plazo vencido. Un plazo de 15 naturales vence **cinco días antes** que
+uno de 15 hábiles: la app estaría marcando en rojo acciones que según el
+procedimiento de la firma todavía están en tiempo.
+
+**Lo que arrastra, y se construye en F04·B1:** hace falta un calculador de días
+hábiles y un calendario de días festivos oficiales de México. No es difícil, pero
+no es aritmética de fechas y por eso se anota — con la trampa de siempre encima:
+estas fechas son columnas `date` y formatearlas con `new Date()` las corre un día
+(CLAUDE.md · trampas heredadas).
+
+Los cuatro números van a `config_firma.plazos_default`, que ya existe como
+columna. **Todavía no los escribe nadie**: se siembran en B1, junto con el código
+que los lee — un valor de configuración que ninguna pantalla consulta es un
+interruptor muerto (regla 11).
 
 ### `E04` — Declarar la app en producción · **Bloquea: el resto del proyecto**
 

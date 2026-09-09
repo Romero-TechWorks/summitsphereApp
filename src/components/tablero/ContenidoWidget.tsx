@@ -17,6 +17,8 @@ import {
   type AuditoriaEnLista,
 } from '@/lib/queries/auditorias'
 import { listarHallazgosDeLaCartera } from '@/lib/queries/hallazgos'
+import { diasParaVencer, estaVencida, listarAcciones } from '@/lib/queries/acciones'
+import { ESTADOS_ABIERTOS_ACCION } from '@/lib/acciones/catalogos'
 import {
   listarVersionesPorAprobar,
   type VersionPorAprobar,
@@ -50,9 +52,9 @@ import Skeleton from '@/components/ui/Skeleton'
  * ⚠️ **Al cerrar una fase se conectan sus widgets, en el mismo bloque.** Es el
  * cabo que se quedó suelto al terminar la Fase 02 y la 03: el código estaba
  * entero y el tablero seguía diciendo «llega en la Fase 03», que es exactamente
- * lo que un usuario lee como «la fase no está». Hoy quedan dos placeholders y
- * los dos son de verdad — `acciones_semana` [F04] y `vencimientos_criticos`
- * [F05].
+ * lo que un usuario lee como «la fase no está». `acciones_semana` se conectó
+ * con `F04·B1` (8 sep 2026); queda **un** placeholder y es de verdad:
+ * `vencimientos_criticos` [F05].
  */
 /** Los cuatro que salen de la lista de proyectos [F01·B3]. */
 const WIDGETS_DE_CARTERA = new Set([
@@ -78,6 +80,7 @@ export default function ContenidoWidget({ widget }: { widget: Widget }) {
   if (WIDGETS_DE_CARTERA.has(widget.id)) return <WidgetDeCartera widget={widget} />
   if (WIDGETS_DE_AUDITORIA.has(widget.id)) return <WidgetDeAuditorias widget={widget} />
   if (widget.id === 'hallazgos_abiertos') return <HallazgosAbiertos />
+  if (widget.id === 'acciones_semana') return <AccionesDeLaSemana />
   if (widget.id === 'documentos_por_aprobar') return <DocumentosPorAprobar />
 
   return (
@@ -552,6 +555,92 @@ function HallazgosAbiertos() {
         {vencidos > 0
           ? `${vencidos} con la fecha de compromiso vencida.`
           : `${abiertos.length} abiertos, ninguno vencido.`}
+      </span>
+    </Link>
+  )
+}
+
+/**
+ * «Acciones de la semana»: lo que vence en los próximos siete días [F04·B1].
+ *
+ * ⚠️ **Misma consulta que `/acciones`** —`queryKeys.acciones.lista()`— y sin
+ * vista en la base, por lo mismo que su hermano: abrir el dominio deja el
+ * tablero listo y al revés, y el tablero no estrena ni una clave de caché.
+ *
+ * ⚠️ **Las vencidas se cuentan aparte y van primero.** Una acción vencida no es
+ * «una que vence pronto»: es un incumplimiento que la firma tiene que poder
+ * enseñar resuelto, y mezclarla en el mismo número la esconde.
+ */
+function AccionesDeLaSemana() {
+  const { data: acciones = [], isPending, error } = useQuery({
+    queryKey: queryKeys.acciones.lista(),
+    queryFn: listarAcciones,
+  })
+
+  if (isPending) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+        {[0, 1, 2].map((i) => <Skeleton key={i} alto={12} radio={3} />)}
+      </div>
+    )
+  }
+
+  if (error) return <Nota>{mensajeDeError(error)}</Nota>
+
+  const abiertas = acciones.filter((a) => ESTADOS_ABIERTOS_ACCION.includes(a.estado))
+
+  if (abiertas.length === 0) {
+    return (
+      <Nota>
+        {acciones.length === 0
+          ? 'Todavía no se ha levantado ninguna acción.'
+          : 'No queda ninguna acción abierta en la cartera.'}
+      </Nota>
+    )
+  }
+
+  const vencidas = abiertas.filter(estaVencida)
+  const semana = abiertas.filter((a) => !estaVencida(a) && diasParaVencer(a) <= 7)
+  const proximas = [...vencidas, ...semana].slice(0, 4)
+
+  return (
+    <Link
+      href="/acciones"
+      style={{ display: 'flex', flexDirection: 'column', gap: 5, textDecoration: 'none', color: 'inherit' }}
+    >
+      {proximas.length === 0 ? (
+        <span style={{ fontSize: 12.5, color: 'var(--texto-dim)' }}>
+          Nada vence en los próximos siete días.
+        </span>
+      ) : (
+        proximas.map((accion) => {
+          const dias = diasParaVencer(accion)
+          const tarde = estaVencida(accion)
+          return (
+            <span key={accion.id} style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+              <span
+                style={{
+                  flex: 1, minWidth: 0, fontSize: 12.5,
+                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                }}
+              >
+                {accion.descripcion}
+              </span>
+              <span
+                className="mono"
+                style={{ fontSize: 11.5, color: tarde ? 'var(--error)' : 'var(--texto-dim)', flexShrink: 0 }}
+              >
+                {tarde ? `−${-dias} d` : `${dias} d`}
+              </span>
+            </span>
+          )
+        })
+      )}
+
+      <span style={{ fontSize: 11.5, color: vencidas.length > 0 ? 'var(--error)' : 'var(--texto-dim)', marginTop: 2 }}>
+        {vencidas.length > 0
+          ? `${vencidas.length} vencida${vencidas.length === 1 ? '' : 's'} de ${abiertas.length} abiertas.`
+          : `${abiertas.length} abiertas, ninguna vencida.`}
       </span>
     </Link>
   )
