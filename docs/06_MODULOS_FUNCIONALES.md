@@ -481,16 +481,93 @@ contador **ABIERTAS / CERRADAS / VENCIDAS** —que es literalmente el encabezado
   punto donde una NC retroalimenta el sistema de gestión en vez de morir en su
   propia acción correctiva.
 
-### Con esquema y sin pantalla todavía
+### Quejas y sugerencias — `F-SG-08`
 
-`planes_mejora` (`F-SG-16`), `cambios_sgc` (`F-SG-24`) y `quejas` (`F-SG-08`)
-existen en la base desde `B1` — metidas en esa migración costaban cero — pero no
-tienen pantalla. Una pestaña vacía es peor que ninguna.
+**La puerta por la que una no conformidad nace sin auditoría.** Se registran las
+que llegan por teléfono, correo o en persona, con su folio propio: `Q-01-25` para
+quejas y `S-01-25` para sugerencias, dos series separadas.
 
-### Notificaciones
-Push al teléfono: hallazgo asignado, acción por vencer, acción vencida, documento
-esperando aprobación, obligación próxima a vencer, resumen diario. Con
-preferencias por usuario y por categoría.
+⚠️ **Lo primero que hay que decidir es si procede**, y de ahí salen dos caminos
+que no se cruzan:
+
+- Una **queja** procedente **levanta una no conformidad** con `fuente_nc =
+  'queja_cliente'` y sin auditoría detrás. La app pide la cláusula incumplida —la
+  queja dice qué pasó, la cláusula dice qué requisito se rompió— y a partir de ahí
+  es una NC como cualquier otra: análisis de causa, acciones, eficacia.
+- Una **sugerencia** procedente **no genera no conformidad**: se enlaza con un
+  cambio al SGC o con un plan de mejora, según su alcance.
+
+⚠️ **Improcedente no es «borrar»: es cerrar con su explicación**, y la explicación
+es obligatoria. Que alguien se quejara y se le contestara que no procede es
+exactamente lo que un certificador revisa cuando mira satisfacción del cliente.
+
+### Planes de mejora — `F-SG-16`
+
+**No es «acciones de tipo mejora».** Es un contenedor con **calendario anual**:
+una fila por acción y dos líneas de meses, `P` de programado y `R` de real. El
+avance cuenta los meses reales sobre los programados, que es como lo lee la hoja
+del cliente.
+
+Es **condicional**: sólo cuando las acciones correctivas necesitan una planeación
+que no cabe en una fecha compromiso. La mayoría de las no conformidades se cierran
+sin plan. Una vez aprobado, el calendario ya no se edita: lleva firmas al pie.
+
+### Cambios al SGC — `F-SG-24`
+
+Se documenta cuando el sistema de gestión tiene que cambiar. **Nace de tres
+sitios**, y sólo el primero es de esta fase: una acción correctiva que lo pide, una
+solicitud de cambio a un documento publicado, o una sugerencia de cliente que
+procede.
+
+⚠️ **Aquí convergen las dos preguntas de impacto del `F-SG-06`**: para el cliente,
+cambiar el SGC y actualizar los riesgos no son dos cosas — son el mismo documento,
+y su §III es «Riesgos identificados».
+
+### El reporte impreso — `F-SG-06` + `F-SG-07`
+
+Se imprimen **juntos**, desde la ficha del hallazgo. El procedimiento los cita
+siempre en pareja y el primero tiene un campo que apunta al segundo por su código:
+entregar el reporte sin el análisis deja al responsable del proceso con la
+pregunta y sin el método.
+
+⚠️ **Las casillas ☐ salen marcadas, no vacías.** Es la misma lección de la lista
+de asistencia: lo que se imprime en blanco lo llena alguien con pluma delante del
+cliente, y ese dato ya no vuelve a la app.
+
+### Notificaciones `[F04·B3 ✅]`
+
+Se activan en **`/admin?tab=avisos`**.
+
+⚠️ **Se suscribe el APARATO, no la persona.** El teléfono que llevas a planta y la
+computadora de la oficina son dos permisos distintos: activar uno no activa el
+otro. Es lo que evita el «lo activé y no me llega nada», y por eso la pantalla
+enseña la lista de aparatos y no una casilla.
+
+**Lo que llega hoy** —lo demás está en la pantalla, apagado y con su fase—:
+
+| Aviso | Cuándo | De quién es el criterio |
+|---|---|---|
+| Acción por vencer | A 7, 3 y 1 día | Summit |
+| Acción vencida | **Una vez**, el día que vence | Summit |
+| Estado de las no conformidades | **Bimestral** | Del cliente — `P-SG-08` §5.5 |
+| Resumen de la mañana | Diario, y sólo si tienes algo | Summit |
+
+⚠️ **Las categorías salen de la matriz de comunicación del cliente**, no de lo
+que el plan imaginó. Su `P-SG-08` §5.5 tabula doce renglones con cadencias
+reales, y ahí **no hay resumen diario**: el cliente vive en mensual, bimestral y
+por evento. El nuestro se queda porque un consultor con ocho clientes abre la app
+a las 8:00 y necesita saber qué le toca — pero dejó de ser la única cadencia.
+
+⚠️ **Lo que nadie apagó está encendido.** Una categoría nueva que naciera apagada
+no la descubriría nadie.
+
+⚠️ **La acción vencida avisa una sola vez.** Un aviso que se repite todos los días
+se silencia, y con él se silencian los que sí importaban; el seguimiento de una
+vencida es la pantalla, no el teléfono.
+
+⚠️ **Y necesita HTTPS.** Desde una dirección de red local (`192.168…`) no hay
+service worker, así que no hay avisos — ni en Chrome. Se prueba contra la
+dirección de Vercel.
 
 ---
 

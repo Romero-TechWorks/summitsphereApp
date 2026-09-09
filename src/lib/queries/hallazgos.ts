@@ -66,8 +66,14 @@ async function idDeLaSesion(): Promise<string | null> {
  * todavía no puede componerlo: se dice, en vez de inventar un número que después
  * cambia solo.
  */
-export function folioDeHallazgo(hallazgo: Pick<Hallazgo, 'folio' | 'consecutivo'>): string {
+export function folioDeHallazgo(
+  hallazgo: Pick<Hallazgo, 'folio' | 'consecutivo' | 'auditoria_id'>,
+): string {
   if (hallazgo.folio && hallazgo.folio.trim() !== '') return hallazgo.folio
+  // ⚠️ Sin auditoría no hay ni siquiera un `H-03` que enseñar: la serie
+  // `NC-2026-007` la cuenta la base por organización y año, y aquí no se sabe por
+  // cuál va. Decirlo es mejor que inventar un número que va a cambiar.
+  if (hallazgo.auditoria_id === null) return 'Sin folio hasta sincronizar'
   return `H-${String(hallazgo.consecutivo).padStart(2, '0')} · sin folio hasta sincronizar`
 }
 
@@ -177,16 +183,37 @@ export async function crearHallazgo({
   itemId,
   consecutivo,
   folioAuditoria,
+  fuenteNc,
+  fuenteDetalle = null,
   datos,
   contexto,
 }: {
-  auditoriaId: string
+  /**
+   * ⚠️ **Puede ser `null` desde `F04·B0`.** Una no conformidad nace igual de una
+   * queja, de un indicador bajo meta o de un incumplimiento legal. Cuando lo es,
+   * la organización la manda la fila y la valida la política de INSERT.
+   */
+  auditoriaId: string | null
   orgId: string
-  /** De qué punto de la lista salió, si salió de uno. */
+  /**
+   * De qué punto de la lista salió, si salió de uno.
+   * ⚠️ **Tiene que ser `null` sin auditoría**: lo impone
+   * `hallazgos_item_solo_con_auditoria`, porque un punto de una lista de
+   * verificación vive dentro de una auditoría.
+   */
   itemId: string | null
   consecutivo: number
   /** Para componer el folio provisional que se enseña mientras no sincroniza. */
   folioAuditoria: string | null
+  /**
+   * De dónde salió. Con auditoría sale de su tipo (`fuenteDeLaAuditoria()`); sin
+   * ella la elige quien la levanta.
+   *
+   * ⚠️ **Y las dos mitades no se mezclan**: `hallazgos_fuente_coherente` exige
+   * que `auditoria_id is not null` ⟺ la fuente sea una de las tres de auditoría.
+   */
+  fuenteNc: string
+  fuenteDetalle?: string | null
   datos: DatosHallazgo
   contexto: ContextoHallazgo
 }): Promise<ResultadoEscritura<HallazgoConContexto>> {
@@ -196,9 +223,13 @@ export async function crearHallazgo({
   const valores = {
     id,
     auditoria_id: auditoriaId,
-    // La reemplaza `heredar_org_de_la_auditoria()`; el cliente no la decide.
+    // ⚠️ Con auditoría la reemplaza `resolver_org_del_hallazgo()` y el cliente no
+    // la decide; **sin auditoría manda ésta**, y quien dice si vale es la política
+    // de INSERT. El candado no se aflojó: cambió de sitio (F04·B0).
     org_id: orgId,
-    item_id: itemId,
+    item_id: auditoriaId ? itemId : null,
+    fuente_nc: fuenteNc,
+    fuente_detalle: fuenteDetalle,
     consecutivo,
     // ⚠️ Vacío a propósito. `folio` es NOT NULL sin default, así que el tipo
     // generado lo exige — pero quien lo escribe de verdad es
@@ -212,6 +243,9 @@ export async function crearHallazgo({
     creado_por: await idDeLaSesion(),
   }
 
+  // ⚠️ Sin auditoría no se inventa un folio: la serie `NC-2026-007` la cuenta la
+  // base por organización y año, y adelantarla aquí enseñaría un número que el
+  // servidor puede renumerar. Se dice «sin folio» y punto.
   const folioProvisional = folioAuditoria
     ? `${folioAuditoria}/H-${String(consecutivo).padStart(2, '0')}`
     : ''

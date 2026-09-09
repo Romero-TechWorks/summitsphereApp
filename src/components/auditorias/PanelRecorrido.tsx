@@ -24,7 +24,7 @@ import {
   type ItemConContexto,
 } from '@/lib/queries/verificacion'
 import { faltaPorPrecargar, precargarAuditoria, piezasDeLaPrecarga } from '@/lib/auditorias/precarga'
-import { VEREDICTOS_ITEM } from '@/lib/auditorias/catalogos'
+import { VEREDICTOS_ITEM, fuenteDeLaAuditoria } from '@/lib/auditorias/catalogos'
 import { etiquetaDe, tonoDe } from '@/lib/cartera/catalogos'
 import { normalizar } from '@/lib/utils/texto'
 import Aviso from '@/components/ui/Aviso'
@@ -289,6 +289,7 @@ export default function PanelRecorrido({ auditoria }: { auditoria: AuditoriaEnLi
         // otro auditor ya lo usó, la base renumera al llegar.
         consecutivo: siguienteConsecutivo(hallazgos),
         folioAuditoria: auditoria.folio,
+        fuenteNc: fuenteDeLaAuditoria(auditoria.tipo),
         datos,
         contexto,
       })

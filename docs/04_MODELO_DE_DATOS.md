@@ -999,6 +999,76 @@ tipo y año), `tipo`, `fecha`, `contacto_id`, `cliente_nombre`, `descripcion`,
 registra y se cierra** (`P-SG-07` §1): es la prueba de que se atendió. Sólo se
 borra la capturada por error, antes de triarla.
 
+## La serie `NC-` entró en uso el 9 sep 2026
+
+`B0` creó la rama sin pantalla, a propósito. `LevantarNCDeQueja` es la primera que
+la usa, así que **desde esa fecha hay folios `NC-2026-00X` emitidos** — y un folio
+emitido no se recalcula.
+
+⚠️ **El consecutivo NO se calcula en el cliente, al revés que el de una auditoría.**
+`B0` anotaba que `siguienteConsecutivo` necesitaría otra clave en
+`piezasDeLaPrecarga()`; al construir la pantalla resultó más honesto no calcularlo:
+se manda `consecutivo: 0`, lo asigna `sellar_folio_hallazgo()` y la fila optimista
+dice «sin folio hasta sincronizar». **La cuenta local existe porque en la planta no
+hay a quién preguntarle**, y una queja se captura en la oficina — el motivo que la
+hacía obligatoria no aplica aquí.
+
+## `push_suscripciones` · `usuarios.preferencias_aviso`  [F04·B3]
+
+⚠️ **Una fila por APARATO, no por persona**, y es la diferencia que decide si los
+avisos sirven: un consultor trae el teléfono en la planta y la laptop en la
+oficina, y el «vence en 3» tiene que llegarle al que lleva encima.
+
+| Columna | Nota |
+|---|---|
+| `usuario_id` | ON DELETE CASCADE |
+| `endpoint` | **UNIQUE**. Lo emite el navegador y es la identidad de la suscripción |
+| `p256dh` · `auth` | Las dos claves del cifrado de Web Push |
+| `descripcion` | «Chrome Android (teléfono)». Para que una persona distinga cuál quitar |
+| `activa` · `fallos` | ⚠️ Un 404/410 del servicio la **desactiva, no la borra** |
+
+⚠️ **Es la única tabla de dominio sin `org_id`, y no es una fuga**: no cuelga de
+ninguna organización, cuelga de la persona. Su política es
+`usuario_id = auth.uid()` **sin rama de socio** — la suscripción de otro es su
+teléfono, no un dato de un cliente.
+
+⚠️ **Las preferencias son un `jsonb` en `usuarios`, no una tabla.** Una
+`(usuario, categoria)` necesitaría un índice único que no es la PK, y ahí la cola
+resuelve sus `upsert` por la PK (§6.1); además apagar tres categorías es **una**
+escritura. Misma decisión que `config_firma.plantillas` y `acciones.meses`.
+**Lo ausente está ENCENDIDO**: una categoría nueva que naciera apagada no la
+descubriría nadie.
+
+## `notificaciones` — lo que la Fase 04 le añadió
+
+| Columna | Nota |
+|---|---|
+| `categoria` | **Trece valores** desde B3. Los cuatro nuevos y `estado_nc_bimestral` salen de la matriz de `P-SG-08` §5.5 (hueco 27) |
+| `clave_evento` | ⚠️ **La idempotencia del cron.** Describe el HECHO, no el momento: `accion:<id>:vence_3` |
+| `registro_id` | De qué fila habla el aviso |
+
+⚠️ **Índice único parcial sobre `(usuario_id, clave_evento)`.** El cron corre a
+diario; sin él, «vence en 3» se mandaría el día 12, el 13 y el 14. El
+`on conflict do nothing` de la RPC hace el resto.
+⚠️ **No aplica la trampa de §6.1**: `notificaciones` sólo la escribe la RPC, que
+es `SECURITY DEFINER`. Por la cola no pasa nunca.
+
+## `correr_avisos_programados()` · `armar_resumen_diario()`
+
+**Toda la lógica del cron vive aquí y la ruta sólo hace el fan-out**, que es lo
+que `docs/02` fijó. Dos motivos: la función necesita ver las acciones de **todas**
+las organizaciones para contar vencimientos —imposible desde el RLS— y, si mañana
+el cron se dispara desde otro sitio, la lógica no se muda. Las dos van con
+`revoke`: un usuario no las puede llamar.
+
+⚠️ **Las fechas se comparan como `date` y el «hoy» sale de México**, no de UTC: a
+las 19:00 la base ya está en el día siguiente y aquí un día decide si algo está
+vencido.
+
+⚠️ **El «Estado de las NC» bimestral NO es un cron nuevo**: el plan Hobby de
+Vercel da dos y están ocupados. Se cuelga del diario con su comprobación de fecha
+—día 1 de los meses impares—, que es lo que `P-SG-08` §2 dejó anotado.
+
 ## `adjuntos.accion_id`
 
 La FK que `F04·B2` pedía: «la evidencia que cierra una acción correctiva y la que

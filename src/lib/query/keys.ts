@@ -237,12 +237,36 @@ export const queryKeys = {
      * `F-SG-17`.
      */
     delHallazgo: (hallazgoId: string) => ['acciones', 'hallazgo', hallazgoId] as const,
-    /** Los planes de mejora de un cliente (F-SG-16). */
-    planes: (orgId: string) => ['acciones', 'planes', orgId] as const,
-    /** Los cambios de SGC de un cliente (F-SG-24). */
-    cambios: (orgId: string) => ['acciones', 'cambios', orgId] as const,
-    /** Las quejas y sugerencias de un cliente (F-SG-08). */
-    quejas: (orgId: string) => ['acciones', 'quejas', orgId] as const,
+    /** Las acciones de un plan de mejora, con su calendario P/R (F-SG-16). */
+    delPlan: (planId: string) => ['acciones', 'plan', planId] as const,
+    /**
+     * Los planes de mejora (F-SG-16), los cambios de SGC (F-SG-24) y las quejas
+     * (F-SG-08) de **toda la cartera**.
+     *
+     * ⚠️ **Sin `orgId` en la clave, y a propósito.** Es la misma decisión que
+     * `acciones.lista()` y que el tablero del lunes: quien abre esta pantalla
+     * trabaja la semana entera, no un cliente; y una clave por organización
+     * significa una lista que puede faltar en la caché por cada cliente. Se baja
+     * una vez y se filtra en memoria.
+     */
+    planes: () => ['acciones', 'planes'] as const,
+    cambios: () => ['acciones', 'cambios'] as const,
+    quejas: () => ['acciones', 'quejas'] as const,
+  },
+  /**
+   * Los avisos al teléfono [F04·B3].
+   *
+   * ⚠️ **Ninguna lleva `usuarioId` en la clave, y es a propósito**: las dos son
+   * de quien está dentro y la política sólo le deja ver lo suyo. Meter el id
+   * duplicaría la entrada al cambiar de cuenta en el mismo navegador, y la
+   * persistida de la sesión anterior se quedaría ahí colgando.
+   */
+  avisos: {
+    todo: () => ['avisos'] as const,
+    /** Los aparatos suscritos de quien está dentro. */
+    suscripciones: () => ['avisos', 'suscripciones'] as const,
+    /** Qué categorías tiene apagadas. */
+    preferencias: () => ['avisos', 'preferencias'] as const,
   },
   /**
    * El catálogo de normas. Fuera de `cartera` porque no es de nadie: lo usan

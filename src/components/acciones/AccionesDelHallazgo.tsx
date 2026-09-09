@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { queryKeys } from '@/lib/query/keys'
 import { aplicarEscritura } from '@/lib/query/cache'
@@ -15,6 +15,7 @@ import {
 } from '@/lib/queries/acciones'
 import { listarProcesos } from '@/lib/queries/procesos'
 import { listarContactos } from '@/lib/queries/cartera'
+import { listarCambiosSgc, listarPlanesMejora } from '@/lib/queries/mejora'
 import {
   CRITERIO_ACCION,
   ESTADOS_ACCION,
@@ -62,6 +63,15 @@ export default function AccionesDelHallazgo({
   const [procesoId, setProcesoId] = useState(hallazgo.proceso_id ?? '')
   const [contactoId, setContactoId] = useState(hallazgo.responsable_contacto_id ?? '')
   const [fecha, setFecha] = useState('')
+  /**
+   * El contenedor, con su tipo delante: `plan:<id>` o `cambio:<id>`.
+   *
+   * ⚠️ **Un solo desplegable y no dos**, porque son alternativas para la misma
+   * pregunta —«¿esta acción va suelta o dentro de algo?»— y dos selectores
+   * invitarían a rellenar los dos. La base los admite a la vez, pero no hay
+   * ningún caso del cliente en que eso signifique algo.
+   */
+  const [contenedor, setContenedor] = useState('')
 
   const { data: acciones = [], isPending } = useQuery({
     queryKey: clave,
@@ -81,6 +91,30 @@ export default function AccionesDelHallazgo({
     queryFn: () => listarContactos(hallazgo.org_id),
   })
 
+  // Los contenedores del F-SG-16 y el F-SG-24. Se bajan enteros y se filtran en
+  // memoria por cliente, como todo lo demás del dominio.
+  const { data: planes = [] } = useQuery({
+    queryKey: queryKeys.acciones.planes(),
+    queryFn: listarPlanesMejora,
+  })
+
+  const { data: cambios = [] } = useQuery({
+    queryKey: queryKeys.acciones.cambios(),
+    queryFn: listarCambiosSgc,
+  })
+
+  // ⚠️ Sólo los que siguen abiertos y son de ESTE cliente: meter una acción en un
+  // plan aprobado reescribiría un entregable ya firmado, y en el de otro cliente
+  // lo rechaza `resolver_org_de_la_accion()` — mejor no ofrecerlo.
+  const contenedores = useMemo(() => [
+    ...planes
+      .filter((p) => p.org_id === hallazgo.org_id && p.estado === 'borrador')
+      .map((p) => ({ valor: `plan:${p.id}`, etiqueta: `Plan de mejora · ${p.programa_de ?? p.anio}` })),
+    ...cambios
+      .filter((c) => c.org_id === hallazgo.org_id && c.estado !== 'cerrado' && c.estado !== 'rechazado')
+      .map((c) => ({ valor: `cambio:${c.id}`, etiqueta: `Cambio al SGC · ${c.nombre}` })),
+  ], [planes, cambios, hallazgo.org_id])
+
   const promedio = avancePromedio(acciones)
 
   async function guardar() {
@@ -97,9 +131,13 @@ export default function AccionesDelHallazgo({
         monitoreo: null,
       }
 
+      const [clase, id] = contenedor.split(':')
+
       const { fila, encolado } = await crearAccion({
         hallazgoId: hallazgo.id,
         orgId: hallazgo.org_id,
+        planMejoraId: clase === 'plan' ? id : null,
+        cambioSgcId: clase === 'cambio' ? id : null,
         datos,
         contexto: {
           proceso: procesos.find((p) => p.id === procesoId)
@@ -121,9 +159,15 @@ export default function AccionesDelHallazgo({
         ademasInvalidar: [queryKeys.acciones.lista()],
       })
 
+      // El plan de mejora enseña estas mismas filas en su parrilla.
+      if (clase === 'plan') {
+        void cliente.invalidateQueries({ queryKey: queryKeys.acciones.delPlan(id) })
+      }
+
       setCreando(false)
       setDescripcion('')
       setFecha('')
+      setContenedor('')
     } catch (problema) {
       setError(mensajeDeError(problema))
     } finally {
@@ -219,6 +263,20 @@ export default function AccionesDelHallazgo({
               />
             </div>
           </div>
+
+          {contenedores.length > 0 && (
+            <Select
+              etiqueta="¿Va dentro de algo?"
+              marcador="Acción suelta"
+              value={contenedor}
+              onChange={(e) => setContenedor(e.target.value)}
+              ayuda="Un plan de mejora le pone calendario anual; un cambio al SGC la convierte en una de sus actividades. La mayoría van sueltas."
+            >
+              {contenedores.map((c) => (
+                <option key={c.valor} value={c.valor}>{c.etiqueta}</option>
+              ))}
+            </Select>
+          )}
 
           <div style={{ display: 'flex', gap: 8 }}>
             <Button

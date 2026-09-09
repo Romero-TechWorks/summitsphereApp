@@ -2007,34 +2007,40 @@ export type Database = {
       notificaciones: {
         Row: {
           categoria: string
+          clave_evento: string | null
           creado_en: string
           cuerpo: string | null
           enlace: string | null
           id: string
           leida_en: string | null
           org_id: string
+          registro_id: string | null
           titulo: string
           usuario_id: string
         }
         Insert: {
           categoria: string
+          clave_evento?: string | null
           creado_en?: string
           cuerpo?: string | null
           enlace?: string | null
           id?: string
           leida_en?: string | null
           org_id: string
+          registro_id?: string | null
           titulo: string
           usuario_id: string
         }
         Update: {
           categoria?: string
+          clave_evento?: string | null
           creado_en?: string
           cuerpo?: string | null
           enlace?: string | null
           id?: string
           leida_en?: string | null
           org_id?: string
+          registro_id?: string | null
           titulo?: string
           usuario_id?: string
         }
@@ -2622,6 +2628,53 @@ export type Database = {
           },
         ]
       }
+      push_suscripciones: {
+        Row: {
+          activa: boolean
+          auth: string
+          creado_en: string
+          descripcion: string | null
+          endpoint: string
+          fallos: number
+          id: string
+          p256dh: string
+          ultimo_envio_en: string | null
+          usuario_id: string
+        }
+        Insert: {
+          activa?: boolean
+          auth: string
+          creado_en?: string
+          descripcion?: string | null
+          endpoint: string
+          fallos?: number
+          id?: string
+          p256dh: string
+          ultimo_envio_en?: string | null
+          usuario_id: string
+        }
+        Update: {
+          activa?: boolean
+          auth?: string
+          creado_en?: string
+          descripcion?: string | null
+          endpoint?: string
+          fallos?: number
+          id?: string
+          p256dh?: string
+          ultimo_envio_en?: string | null
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_suscripciones_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quejas: {
         Row: {
           actualizado_en: string
@@ -3104,6 +3157,7 @@ export type Database = {
           es_dev: boolean
           id: string
           nombre: string
+          preferencias_aviso: Json
           rol: string
           telefono: string | null
         }
@@ -3117,6 +3171,7 @@ export type Database = {
           es_dev?: boolean
           id: string
           nombre: string
+          preferencias_aviso?: Json
           rol?: string
           telefono?: string | null
         }
@@ -3130,6 +3185,7 @@ export type Database = {
           es_dev?: boolean
           id?: string
           nombre?: string
+          preferencias_aviso?: Json
           rol?: string
           telefono?: string | null
         }
@@ -3186,6 +3242,24 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      armar_resumen_diario: {
+        Args: never
+        Returns: {
+          cuerpo: string
+          titulo: string
+          usuario_id: string
+        }[]
+      }
+      correr_avisos_programados: {
+        Args: never
+        Returns: {
+          categoria: string
+          cuerpo: string
+          enlace: string
+          titulo: string
+          usuario_id: string
+        }[]
+      }
       es_socio: { Args: never; Returns: boolean }
       generar_lista_verificacion: {
         Args: { p_auditoria: string }
@@ -3205,6 +3279,10 @@ export type Database = {
       puedo_borrar_org: { Args: { p_org: string }; Returns: boolean }
       puedo_borrar_proyecto: { Args: { p_proyecto: string }; Returns: boolean }
       puedo_editar_org: { Args: { p_org: string }; Returns: boolean }
+      quiere_aviso: {
+        Args: { p_categoria: string; p_usuario: string }
+        Returns: boolean
+      }
       registrar_inicio_sesion: { Args: never; Returns: undefined }
       soy_dev: { Args: never; Returns: boolean }
     }

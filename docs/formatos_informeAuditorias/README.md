@@ -154,7 +154,7 @@ referencia a un «hueco N», es este renglón N.
 | 24 | **`documentos` sin código, vigencia ni retención** | P-SG-01 §5.2, §5.5, §5.6 · F-SG-01 | ⚠️ `codigo` `A-BB-##`, `proxima_revision`, `tiempo_archivo`, `almacenamiento`, y **copias controladas** con su recuperación. Fase 02 |
 | 25 | **Un objetivo es un indicador compuesto de otros** | F-SG-19 nota 1 | ⚠️ «Nivel de Servicio = promedio de los indicadores 2, 4, 8 y 10». Tabla N:N, valor calculado. Fase 02 |
 | 26 | **`mediciones.periodo` asume calendario** | F-SG-19 col. PERIODO | ⚠️ Nueve de once indicadores miden **«al finalizar un proyecto»**. Dos proyectos cerrados el mismo mes chocarían contra el índice único (§6.1). Fase 02 |
-| 27 | **Las categorías de aviso del plan no son las del cliente** | P-SG-08 §5.5 | ⚠️ Faltan indicadores (mensual), queja recibida (por evento, **a Dirección**), satisfacción y documento publicado. Y el cliente no pide «resumen diario». **F04·B3** |
+| 27 | **Las categorías de aviso del plan no son las del cliente** | P-SG-08 §5.5 | ✅ **CERRADO** en `20260909120000` (F04·B3): trece valores en el CHECK, con las cuatro que faltaban y el «Estado de las NC» **bimestral**. El resumen diario se conserva como criterio de Summit, ya no como única cadencia. Contexto original: Faltan indicadores (mensual), queja recibida (por evento, **a Dirección**), satisfacción y documento publicado. Y el cliente no pide «resumen diario». **F04·B3** |
 | 28 | **La plantilla de listas de verificación necesita una tercera clave** | F-OP-03…F-OP-13 | ⚠️ Hoy es por norma y por giro. Once listas del mismo giro y la misma norma, distintas **por actividad**. F03·B2, no urge |
 
 **Los tres primeros se resolvieron al construir B5**, y el noveno apareció ahí
@@ -444,12 +444,37 @@ que `docs/02` y `docs/04` tenían escrito:
 5. **Las tres preguntas de impacto son del hallazgo, no de la acción**: los dos
    formatos las hacen una vez por NC.
 
+### ✅ La Fase 04·B1 se cerró el 9 sep 2026
+
+Los pendientes que quedaban del 8 sep están construidos:
+
+| Ya está | Dónde |
+|---|---|
+| **Pantalla de quejas y sugerencias**, con sus dos ramas | `PanelQuejas` · pestaña *Quejas y sugerencias* |
+| **Levantar una NC desde una queja procedente** | `LevantarNCDeQueja` — la primera pantalla que usa la rama `NC-` de `B0` |
+| **Enlazar una sugerencia** con un cambio o un plan | `P-SG-07` §5.5.2, cerrado |
+| **Planes de mejora** con la parrilla anual P/R | `PanelPlanesMejora` |
+| **Cambios al SGC** con sus tres orígenes | `PanelCambiosSgc` |
+| **Impresión del `F-SG-06` + `F-SG-07` en pareja** | `src/lib/plantillas/reporteNoConformidad.ts` |
+
+⚠️ **El hueco 16 caducó como estaba previsto.** `B0` se aplicó sin pantalla, así
+que la rama `NC-` no la usaba ninguna fila; desde el 9 sep **hay folios emitidos**
+y ya no se recalculan. La decisión del 8 sep —nuestro folio para el hallazgo, el
+del cliente para la acción— queda firme.
+
+⚠️ **Y apareció un fallo de datos que ya existía y nadie había visto**:
+`crearHallazgo` no mandaba `fuente_nc`, así que la base ponía `auditoria_interna`
+y un hallazgo de un **acompañamiento a certificación** o de una **auditoría a
+proveedor** quedaba contado como interno. Lo arregla `fuenteDeLaAuditoria()`,
+que lo deriva de `auditorias.tipo` — exactamente lo que el relleno de la migración
+hizo con el histórico.
+
 ### Lo que sigue faltando de la Fase 04
 
 | Falta | Por qué |
 |---|---|
-| **Pantalla** de planes de mejora, cambios de SGC y quejas | El esquema está; una pestaña vacía es peor que ninguna |
-| **Impresión** del `F-SG-06` y el `F-SG-07` | Se imprimen **en pareja**: el primero referencia al segundo |
-| **Impresión** del `F-SG-16` | Lleva firmas de Elaboró y Aprobó: es un entregable |
-| La **escalada a Dirección** de `P-SG-05` §5.6 | Es una categoría de aviso — `F04·B3`, y el hueco 27 dice que las del plan no son las del cliente |
+| **Impresión** del `F-SG-16` | Lleva firmas de Elaboró y Aprobó: es un entregable. La parrilla ya está en pantalla |
+| **`F-SG-10`** Registro de Atención a Quejas | El expediente impreso de **una** queja procedente, prellenado desde `organizaciones` + `contactos` |
+| **`cambios_sgc_documentos`** | La tabla existe; falta la pantalla que dice qué documentos hay que reeditar (§IV del formato) |
+| La **escalada a Dirección** de `P-SG-05` §5.6 | La categoría `queja_recibida` ya existe en el CHECK —`P-SG-08` la dirige a Dirección—, pero **falta el disparador**: hoy nadie la genera |
 | **`P-CO-02`** Selección y Evaluación de Proveedores | Respalda `fuente_nc = 'evaluacion_proveedor'` |

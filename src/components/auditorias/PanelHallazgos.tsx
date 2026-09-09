@@ -23,6 +23,7 @@ import {
   ESTADOS_ABIERTOS_HALLAZGO,
   ESTADOS_HALLAZGO,
   TIPOS_HALLAZGO,
+  fuenteDeLaAuditoria,
 } from '@/lib/auditorias/catalogos'
 import { etiquetaDe, tonoDe } from '@/lib/cartera/catalogos'
 import { normalizar } from '@/lib/utils/texto'
@@ -139,6 +140,10 @@ export default function PanelHallazgos({ auditoria }: { auditoria: AuditoriaEnLi
           itemId: null,
           consecutivo: siguienteConsecutivo(hallazgos),
           folioAuditoria: auditoria.folio,
+          // ⚠️ De su TIPO, no el default de la base: un hallazgo de un
+          // acompañamiento a certificación contado como interno falsea el número
+          // que la Dirección del cliente mira.
+          fuenteNc: fuenteDeLaAuditoria(auditoria.tipo),
           datos,
           contexto,
         })
@@ -287,6 +292,7 @@ export default function PanelHallazgos({ auditoria }: { auditoria: AuditoriaEnLi
             orgId={auditoria.org_id}
             esSocio={esSocio}
             claveLista={clave}
+            folioAuditoria={auditoria.folio}
             alEditar={() => {
               setViendo(null)
               setEdicion({ modo: 'editar', hallazgo: enPantalla })

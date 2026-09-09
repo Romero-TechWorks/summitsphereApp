@@ -812,7 +812,7 @@ Lo esperado: `interna` · `preauditoria` · `seguimiento` → `auditoria_interna
 le tocaba, aquí se ve — y se corrige cambiando el tipo de la auditoría, no la
 fuente del hallazgo.
 
-### `E05` — Aplicar la migración del ciclo de acciones · **Bloquea: `/acciones`**
+### `E05` — Aplicar la migración del ciclo de acciones · **Bloquea: `/acciones`** ✅ **HECHA** 
 
 `supabase/migrations/20260908120000_acciones_y_ciclo_de_mejora.sql`. Es la
 decimosexta y va después de `20260902120000`, que ya está aplicada.
@@ -831,12 +831,12 @@ ya está en línea no conoce nada de esto y sigue funcionando igual.
 antes de aplicarla**: **74 comprobaciones de comportamiento**, veinte de ellas de
 regresión.
 
-⚠️ **Después de aplicarla, para que el folio del cliente funcione hace falta una
-cosa tuya.** `AC-FA-01-25` toma las dos letras de `procesos.codigo`, y hoy esa
-columna está **vacía en los doce procesos**. Mientras siga vacía, las acciones
-llevan sólo nuestro folio (`ACC-2026-105`) y la app funciona igual — pero el
-Coordinador del SGC del cliente no reconocerá el número. Se llena desde
-`/sistemas?tab=procesos`, con las dos letras de `P-SG-01` §5.2:
+⚠️ **QUEDA UNA COSA TUYA, Y NO BLOQUEA NADA.** `AC-FA-01-25` toma las dos letras
+de `procesos.codigo`. Llenaste **uno** el 9 sep 2026 para ver el folio funcionando;
+faltan los demás. Mientras estén en blanco, sus acciones llevan sólo nuestro folio
+(`ACC-2026-105`) y la app funciona igual — pero el Coordinador del SGC del cliente
+no reconocerá el número. Se llena desde `/sistemas?tab=procesos`, con las dos
+letras de `P-SG-01` §5.2:
 
 | Proceso | Código | Proceso | Código |
 |---|---|---|---|
@@ -847,12 +847,52 @@ Coordinador del SGC del cliente no reconocerá el número. Se llena desde
 | Compras | `CO` | Transporte y Almacén | `AM` |
 | Diseño | `DS` | Comercialización | `CM` |
 
+### `E06` — Aplicar la migración de avisos y **redesplegar** · **Bloquea: cerrar la Fase 04**
+
+`supabase/migrations/20260909120000_avisos_y_notificaciones.sql`. Es la
+decimoséptima y va después de `20260908120000`, que ya está aplicada.
+
+Qué hace: crea `push_suscripciones` —una fila **por aparato**, no por persona—,
+añade las preferencias de aviso a `usuarios`, amplía las categorías de
+`notificaciones` según la matriz de comunicación del cliente, y crea las dos
+funciones que el cron llama.
+
+✅ **Es aditiva** y no hay ventana de mantenimiento. **Probada en Docker** con las
+dieciséis anteriores en orden y datos sembrados antes: **28 comprobaciones**.
+
+⚠️ **Y hay un segundo paso que no es la migración: REDESPLEGAR.** El archivo
+`vercel.json` es nuevo y es el que declara los dos crons. Vercel **no los
+registra hasta el siguiente despliegue** — es el mismo caso que las variables
+`NEXT_PUBLIC_`, `A09`.
+
+**Cómo comprobar que quedó**, en este orden:
+
+1. En Vercel → *Settings* → *Cron Jobs*: tienen que aparecer los dos.
+2. Dispáralo a mano una vez, con tu `CRON_SECRET`:
+
+   ```
+   curl "https://<tu-dominio>/api/cron/diario?secreto=<CRON_SECRET>"
+   ```
+
+   Contesta `{"ok":true,"generados":N,...}`. Si dice `ok:false`, el `motivo` te
+   dice exactamente qué falta.
+3. Entra a **`/admin`** desde el **teléfono** —tiene que ser la dirección de
+   Vercel, HTTPS: desde `192.168…` no hay avisos— y pulsa **«Activar en este
+   aparato»**.
+4. Vuelve a disparar el cron. Si tienes una acción que vence en 7, 3 o 1 día,
+   llega la notificación.
+
+⚠️ **Los avisos se activan POR APARATO, no por cuenta.** El teléfono que llevas a
+planta y la computadora de la oficina son dos permisos distintos; activar uno no
+activa el otro. Está dicho en la pantalla, pero conviene saberlo antes de
+reportarlo como un fallo.
+
 ### `E01` — Generar las llaves de notificación · **Bloquea: los avisos al teléfono**  ✅ **HECHA** 
 
 Un comando que corre el desarrollador y produce dos llaves. Tú las guardas y las
 cargas en Vercel. Paso a paso en [`../guias/03_VERCEL.md`](../guias/03_VERCEL.md).
 
-### `E02` — Definir el secreto del cron · **Bloquea: los avisos automáticos**
+### `E02` — Definir el secreto del cron · **Bloquea: los avisos automáticos**  ✅ **HECHA** 
 
 Una contraseña larga al azar, generada y guardada en el gestor. Es lo que impide
 que alguien de fuera dispare las tareas automáticas de la app.

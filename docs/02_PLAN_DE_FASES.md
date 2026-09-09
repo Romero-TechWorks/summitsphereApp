@@ -1063,19 +1063,33 @@ sin auditoría todavía — eso es B1. Aquí sólo se pone el esquema en su siti
 que B1 se escriba una vez. Es aditiva: el build que ya está en línea no conoce las
 columnas nuevas y sigue insertando igual.
 
-## F04·B1 — Acciones correctivas  ✅ *código listo, 8 sep 2026*
+## F04·B1 — Acciones correctivas  ✅ *completo, 9 sep 2026*
 
 > Se destrabó el 7 sep 2026 al llegar `P-SG-05`, el único de los ocho
 > procedimientos del cliente que faltaba. La migración es
 > `20260908120000_acciones_y_ciclo_de_mejora.sql` — **74 comprobaciones** en
 > Docker con las quince anteriores en orden y datos sembrados antes.
 
-**Lo construido:** la tabla `acciones` con su ciclo completo, el análisis de causa
-del `F-SG-07` en `hallazgos`, el tablero `/acciones` con el contador
-ABIERTA/CERRADA del `F-SG-17`, la ficha de la acción con avance, reprogramación y
-verificación de eficacia, y el widget `acciones_semana` conectado. De paso entran
-con esquema —**sin pantalla todavía**— `planes_mejora`, `cambios_sgc` y `quejas`:
-metidas en esta migración cuestan cero y aparte costarían otra.
+**Lo construido**, en dos tandas (8 y 9 sep 2026):
+
+- **Acciones**: la tabla con su ciclo completo, el tablero con el contador
+  ABIERTAS / CERRADAS / VENCIDAS del `F-SG-17`, y la ficha con avance,
+  reprogramación justificada y verificación de eficacia.
+- **El análisis de causa** del `F-SG-07` en la ficha del hallazgo, con sus cinco
+  pares pregunta/respuesta/evidencia, el bloque «cierre del ciclo» y las tres
+  preguntas de impacto.
+- **Quejas y sugerencias** (`F-SG-08`), con sus dos ramas: una queja procedente
+  **levanta su no conformidad**; una sugerencia procedente se enlaza con un cambio
+  al SGC o con un plan de mejora.
+- **Planes de mejora** (`F-SG-16`) con la parrilla anual **P/R**, y **cambios al
+  SGC** (`F-SG-24`) con sus tres orígenes.
+- **La impresión del `F-SG-06` y el `F-SG-07`**, en pareja y con las casillas
+  marcadas.
+- El widget `acciones_semana`, conectado.
+
+⚠️ **Y con eso la rama `NC-` deja de ser teórica.** `B0` aflojó
+`hallazgos.auditoria_id` sin pantalla, a propósito; `LevantarNCDeQueja` es la
+primera, así que a partir del 9 sep 2026 **hay folios `NC-2026-00X` emitidos**.
 
 ⚠️ **Cinco decisiones que el plan no tenía y que salieron de los formatos:**
 
@@ -1094,6 +1108,12 @@ metidas en esta migración cuestan cero y aparte costarían otra.
 5. **La pantalla no ofrece «cerrar».** Sólo «verificar eficacia», que cierra si el
    resultado es `eficaz`. Ofrecer el atajo sería institucionalizar el error más
    común de los SGC reales.
+6. **`siguienteConsecutivo` NO se extendió a la serie `NC-`**, y `B0` decía que
+   habría que hacerlo. Resultó más honesto **no calcularlo en el cliente**: se
+   manda `consecutivo: 0`, lo asigna la base y la fila optimista dice «sin folio
+   hasta sincronizar». La cuenta local existe porque en la planta no hay a quién
+   preguntarle; **una queja se captura en la oficina**, así que ese motivo no
+   aplica y no hace falta otra clave en la precarga.
 
 ## F04·B1 — el detalle  ✅ *destrabado: `P-SG-05` llegó el 7 sep 2026*
 
@@ -1179,13 +1199,22 @@ las fotos de campo antes de que llegue esta fase. Lo que queda aquí es
 **conectarla a las acciones**: la evidencia que cierra una acción correctiva y la
 que respalda su verificación de eficacia.
 
-## F04·B3 — Notificaciones push
+## F04·B3 — Notificaciones push  ✅ *código listo, 9 sep 2026*
 
-- VAPID, `worker/index.js` como `customWorkerSrc`, suscripción por usuario y
-  dispositivo.
-- Categorías: hallazgo asignado, acción por vencer, acción vencida, documento por
-  aprobar, vencimiento normativo próximo, resumen diario.
-- Preferencias por usuario y por categoría.
+- VAPID, `worker/index.js` como `customWorkerSrc`, y **suscripción por usuario y
+  por aparato** — `push_suscripciones`, una fila por dispositivo.
+- ⚠️ **Las categorías se rehicieron contra `P-SG-08` §5.5** (hueco 27). La lista
+  de arriba tenía seis y fallaba en tres cosas: el cliente **no pide resumen
+  diario**, «acción por vencer» no está como evento —pide **«Estado de las NC»,
+  bimestral**— y faltaban cuatro que sí pide. Quedan **trece** en el CHECK, de las
+  que **cuatro tienen quien las dispare hoy**; las demás se enseñan apagadas con
+  su fase, en vez de ofrecer un interruptor muerto (regla 11).
+- **Preferencias en `usuarios.preferencias_aviso` (jsonb), no en una tabla**: una
+  tabla `(usuario, categoria)` necesitaría un índice único que no es la PK, y ahí
+  la cola resuelve sus `upsert` por la PK (§6.1).
+- ⚠️ **Lo ausente está ENCENDIDO.** El silencio por omisión es lo que hace inútil
+  un sistema de avisos.
+- La pantalla vive en **`/admin?tab=avisos`**, que dejó de ser `PantallaPendiente`.
 - ⚠️ **`P-SG-08` §5.5 trae la matriz de comunicación del cliente, y no coincide
   con esta lista** (hueco 27). Faltan cuatro categorías que el cliente sí pide
   —resultados de indicadores (**mensual**), queja de cliente recibida (por evento,
@@ -1196,14 +1225,23 @@ que respalda su verificación de eficacia.
   organización», «responsables de proceso» y «Dirección» son roles del cliente:
   el aviso va a `contactos` con su `puesto`, que existe desde `F01·B1`.
 
-## F04·B4 — Cron de vencimientos
+## F04·B4 — Cron de vencimientos  ✅ *código listo, 9 sep 2026*
 
-- `/api/cron/diario` (Vercel Cron): recorre acciones, hallazgos y obligaciones, y
-  dispara los avisos. Toda la lógica vive en la RPC
-  `correr_avisos_programados()`; la ruta sólo hace el fan-out de push.
-- `/api/cron/resumen`: el digest de la mañana para cada consultor.
-- ⚠️ **El plan Hobby de Vercel permite exactamente dos crons.** Están ocupados con
-  esos dos: lo que necesite tiempo se cuelga del diario.
+- `/api/cron/diario` (Vercel Cron): recorre las acciones y dispara los avisos.
+  Toda la lógica vive en la RPC `correr_avisos_programados()`; la ruta sólo hace
+  el fan-out de push. Y va con `revoke`: **un usuario no la puede disparar**.
+- `/api/cron/resumen`: el digest de la mañana. ⚠️ **No escribe en
+  `notificaciones`** — es efímero: se empuja y se olvida. Y **si no tienes nada,
+  no se manda**: un resumen que dice «nada» todos los días es el que hace que se
+  desactiven las notificaciones.
+- ⚠️ **El plan Hobby de Vercel permite exactamente dos crons**, y `vercel.json`
+  los declara. El «Estado de las NC» bimestral de `P-SG-08` **no es un tercero**:
+  se cuelga del diario con su comprobación de fecha dentro de la RPC.
+- ⚠️ **`clave_evento` hace idempotente al cron.** Sin ella, «vence en 3» se
+  mandaría el día 12, el 13 y el 14. Comprobado: correr el cron tres veces no
+  manda tres avisos.
+- Los avisos son **a 7, 3 y 1 día**, y la vencida **una sola vez, el día que
+  vence**. Repetirla a diario la silencia, y con ella las que sí importaban.
 
 ### Criterio de cierre — Fase 04
 

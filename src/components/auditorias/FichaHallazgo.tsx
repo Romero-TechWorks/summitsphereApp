@@ -26,6 +26,7 @@ import Textarea from '@/components/ui/Textarea'
 import PanelAdjuntos from '@/components/adjuntos/PanelAdjuntos'
 import AnalisisCausa from '@/components/acciones/AnalisisCausa'
 import AccionesDelHallazgo from '@/components/acciones/AccionesDelHallazgo'
+import ImprimirReporteNC from '@/components/acciones/ImprimirReporteNC'
 
 /** A dónde puede ir un hallazgo desde donde está. Anular sale aparte. */
 const SIGUIENTES: Readonly<Record<string, string[]>> = {
@@ -55,6 +56,7 @@ export default function FichaHallazgo({
   orgId,
   esSocio,
   claveLista,
+  folioAuditoria,
   alEditar,
   alCambiarEstado,
 }: {
@@ -67,6 +69,8 @@ export default function FichaHallazgo({
    * — la de una auditoría o la del tablero del lunes.
    */
   claveLista: readonly unknown[]
+  /** El folio de la auditoría de la que salió, si salió de una. Va al pie del F-SG-06. */
+  folioAuditoria: string | null
   alEditar: () => void
   alCambiarEstado: (estado: string, motivo: string) => Promise<void>
 }) {
@@ -216,6 +220,10 @@ export default function FichaHallazgo({
 
       <section>
         <AccionesDelHallazgo hallazgo={hallazgo} />
+      </section>
+
+      <section>
+        <ImprimirReporteNC hallazgo={hallazgo} folioAuditoria={folioAuditoria} />
       </section>
 
       {/* ── La evidencia ──────────────────────────────────────────────────── */}

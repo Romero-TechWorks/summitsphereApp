@@ -200,6 +200,23 @@ export const FUENTES_DE_AUDITORIA: readonly string[] = [
 ]
 
 /**
+ * Qué fuente le toca a un hallazgo según el tipo de auditoría de la que sale.
+ *
+ * ⚠️ **No basta con dejar el default de la base.** `hallazgos.fuente_nc` nace en
+ * `auditoria_interna`, y un hallazgo levantado en un **acompañamiento a
+ * certificación** o en una **auditoría a proveedor** pasaría el CHECK de
+ * coherencia —los tres están del lado «con auditoría»— pero quedaría contado como
+ * interno. Es el número que la Dirección del cliente mira, y es exactamente lo
+ * que el relleno de la migración corrigió para el histórico: aquí se evita que
+ * vuelva a pasar con lo nuevo.
+ */
+export function fuenteDeLaAuditoria(tipo: string | null | undefined): string {
+  if (tipo === 'certificacion_acompanamiento') return 'auditoria_externa'
+  if (tipo === 'proveedor') return 'auditoria_proveedor'
+  return 'auditoria_interna'
+}
+
+/**
  * La ayuda que se pinta al elegir la fuente, con el formato del cliente que la
  * respalda. Es la misma idea que `CRITERIO_HALLAZGO`: lo que hace que dos
  * personas clasifiquen igual no es un manual, es el texto que está a la vista

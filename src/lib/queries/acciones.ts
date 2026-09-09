@@ -19,7 +19,7 @@ import { createClient } from '@/lib/supabase/client'
 import { offlineWrite, type ResultadoEscritura } from '@/lib/offline/mutate'
 import { exigirFilas } from '@/lib/supabase/errores'
 import { uuid } from '@/lib/utils/uuid'
-import type { Tables } from '@/types/database'
+import type { Json, Tables } from '@/types/database'
 
 export type Accion = Tables<'acciones'>
 export type PlanMejora = Tables<'planes_mejora'>
@@ -148,13 +148,23 @@ export async function crearAccion({
   hallazgoId,
   orgId,
   planMejoraId,
+  cambioSgcId,
   datos,
   contexto,
 }: {
   hallazgoId: string | null
   /** Obligatoria cuando no hay hallazgo; si lo hay, la base la ignora. */
   orgId: string
+  /**
+   * Los dos **contenedores** del `F-SG-16` y el `F-SG-24`.
+   *
+   * ⚠️ **No son excluyentes con `hallazgoId`**: una acción correctiva que se metió
+   * en un plan de mejora responde igual a su no conformidad. Lo que sí exige la
+   * base es que los tres padres sean del **mismo cliente**
+   * (`resolver_org_de_la_accion()`).
+   */
   planMejoraId?: string | null
+  cambioSgcId?: string | null
   datos: DatosAccion
   contexto: ContextoAccion
 }): Promise<ResultadoEscritura<AccionConContexto>> {
@@ -165,6 +175,7 @@ export async function crearAccion({
     id,
     hallazgo_id: hallazgoId,
     plan_mejora_id: planMejoraId ?? null,
+    cambio_sgc_id: cambioSgcId ?? null,
     org_id: orgId,
     // ⚠️ Vacíos a propósito: `folio` y `consecutivo` son NOT NULL sin default, así
     // que el tipo generado los exige — pero quien los escribe de verdad es
@@ -192,7 +203,6 @@ export async function crearAccion({
     },
     offline: {
       ...valores,
-      cambio_sgc_id: null,
       consecutivo_cliente: null,
       folio_cliente: null,
       fecha_compromiso_original: null,
@@ -446,4 +456,51 @@ export async function cancelarAccion(
     },
     offline: { ...accion, ...valores },
   })
+}
+
+/**
+ * Marcar un mes del calendario del plan de mejora (`F-SG-16`).
+ *
+ * ⚠️ **Los doce meses viajan en UNA escritura, no doce.** Es la misma razón por
+ * la que `programa_procesos` guarda los suyos en un `jsonb`: marcar seis meses
+ * serían seis operaciones de la cola, y sin señal podrían llegar desparejadas.
+ *
+ * ⚠️ Y sólo tiene sentido dentro de un plan: `acciones_meses_solo_con_plan` lo
+ * exige, porque el calendario es del contenedor, no de la acción suelta.
+ */
+export async function marcarMeses(
+  accion: AccionConContexto,
+  meses: { p: boolean[]; r: boolean[] },
+): Promise<ResultadoEscritura<AccionConContexto>> {
+  const valores = { meses: meses as unknown as Json }
+
+  return offlineWrite<AccionConContexto>({
+    tabla: 'acciones',
+    operacion: 'update',
+    etiqueta: `Calendario de ${accion.folio_cliente ?? accion.folio}`,
+    valores,
+    filtro: { id: accion.id },
+    online: async () => {
+      const { data, error } = await createClient()
+        .from('acciones')
+        .update(valores)
+        .eq('id', accion.id)
+        .select(EMBEBIDO)
+      if (error) throw error
+      return exigirFilas(data, 'Guardar el calendario')[0] as AccionConContexto
+    },
+    offline: { ...accion, ...valores },
+  })
+}
+
+/** Las acciones de un plan de mejora, en el orden en que se planearon. */
+export async function listarAccionesDelPlan(planId: string): Promise<AccionConContexto[]> {
+  const { data, error } = await createClient()
+    .from('acciones')
+    .select(EMBEBIDO)
+    .eq('plan_mejora_id', planId)
+    .order('creado_en', { ascending: true })
+
+  if (error) throw error
+  return (data ?? []) as AccionConContexto[]
 }

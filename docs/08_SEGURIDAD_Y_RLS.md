@@ -343,6 +343,21 @@ Y cuatro guardas del mismo tipo, que comprueban que una fila referenciada sea
 fila de auditoría— y `validar_contexto_de_la_auditoria()` —su proyecto y su
 programa—.
 
+⚠️ **`push_suscripciones` es la ÚNICA tabla de dominio sin `org_id`** [F04·B3], y
+no contradice la regla 1: no cuelga de ninguna organización, cuelga de la
+persona. Su política es `usuario_id = auth.uid()` en las cuatro operaciones,
+**sin rama de socio y sin `mis_organizaciones()`** — la suscripción de otro es su
+teléfono, no un dato de un cliente, y un socio no tiene ningún motivo para verla.
+Es también la única que **sí borra**: desuscribirse es quitarle el permiso a un
+aparato, no destruir evidencia.
+
+⚠️ **`correr_avisos_programados()` y `armar_resumen_diario()` corren FUERA del
+RLS** y llevan `revoke` a `public`, `anon` y `authenticated`. Tienen que ver las
+acciones de todas las organizaciones para contar vencimientos —igual que
+`asignar_folio_auditoria()` con los folios—, y por eso sólo las llama
+`/api/cron/*` con `service_role`. **Un usuario autenticado que intente
+`rpc('correr_avisos_programados')` recibe 42501**, y está comprobado.
+
 ⚠️ **`validar_referencia_de_la_org()` ganó dos ramas en F04·B1**, `contacto_id` y
 `proyecto_id`, porque `quejas` referencia un contacto y `cambios_sgc` un proyecto.
 Mira las columnas con `to_jsonb`, así que **la ampliación es aditiva**: las cinco

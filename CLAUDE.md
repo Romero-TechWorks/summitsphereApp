@@ -22,22 +22,78 @@ de dominio cuelga de una `org_id`. Ver §Reglas críticas, regla 1.
 ## Estado actual — lee esto antes de pedir nada
 
 - ⚠️ **HAY UNA MIGRACIÓN ESCRITA Y SIN APLICAR, Y ES LA ÚNICA:**
-  `20260908120000_acciones_y_ciclo_de_mejora.sql` — tarea `E05`, la de **F04·B1**.
-  Las **quince anteriores** están aplicadas (7 sep 2026, `local = remote` en
-  `npx supabase migration list --linked`).
-  Crea `acciones`, `planes_mejora`, `cambios_sgc`, `cambios_sgc_documentos` y
+  `20260909120000_avisos_y_notificaciones.sql` — tarea `E06`, la de **F04·B3+B4**.
+  Es la que **cierra la Fase 04**: su criterio de cierre exige que «el responsable
+  reciba la notificación en su teléfono», y esto es lo único que faltaba.
+  Crea `push_suscripciones` (una fila **por aparato**, no por usuario), añade
+  `usuarios.preferencias_aviso` y `notificaciones.clave_evento`, **amplía el CHECK
+  de categorías según `P-SG-08`** (hueco 27) y crea las dos RPC del cron.
+  Probada en Docker con las **dieciséis anteriores en orden y con datos sembrados
+  ANTES**: **28 comprobaciones**, tres de regresión. `src/types/database.ts` está
+  regenerado y el diff es **puramente aditivo**.
+  ✅ **Es aditiva**: dos tablas, dos columnas con default y un CHECK que se
+  **amplía**.
+  ⚠️ **Y necesita `vercel.json`, que es nuevo**: declara los dos crons. Vercel no
+  los registra hasta el siguiente despliegue.
+  **Lo que hay que saber:**
+  - ⚠️ **LAS CATEGORÍAS SALEN DE `P-SG-08` §5.5, NO DEL PLAN.** La matriz de
+    comunicación del cliente tiene doce renglones con cadencias reales, y la lista
+    de `docs/02` fallaba en tres: el cliente **no pide resumen diario** —vive en
+    mensual, bimestral y por evento—, «acción por vencer» no está como evento
+    —pide **«Estado de las NC», BIMESTRAL**— y **faltaban cuatro** que sí pide.
+    Las nuestras se quedan porque son criterio de Summit y sirven; dejaron de ser
+    las únicas.
+  - ⚠️ **`clave_evento` es lo que hace idempotente al cron.** Corre a diario; sin
+    ella «vence en 3» se mandaría el día 12, el 13 y el 14. La clave describe el
+    HECHO —`accion:<id>:vence_3`—, no el momento, y el índice único parcial hace
+    el resto. **Está comprobado: correr el cron tres veces no manda tres avisos.**
+  - ⚠️ **La acción vencida avisa UNA VEZ, el día que vence**, no todos los días a
+    partir de ahí. Un aviso que se repite se silencia, y con él los que sí
+    importaban. El seguimiento de una vencida es la pantalla, no el teléfono.
+  - **Las preferencias son un `jsonb` en `usuarios`, no una tabla.** Una tabla
+    `(usuario, categoria)` necesitaría un índice único que no es la PK, y ahí la
+    cola resuelve sus `upsert` por la PK (§6.1). Además apagar tres categorías es
+    **una** escritura. Misma decisión que `config_firma.plantillas`.
+  - ⚠️ **Lo ausente está ENCENDIDO**, en `quiere_aviso()` y en la pantalla. El
+    silencio por omisión es lo que hace inútil un sistema de avisos: una categoría
+    nueva que naciera apagada no se enteraría nadie de que existe.
+  - ⚠️ **El plan Hobby de Vercel da DOS crons y están ocupados.** El «Estado de
+    las NC» bimestral **no es un tercero**: se cuelga del diario con su
+    comprobación de fecha dentro de la RPC.
+  - **Toda la lógica vive en `correr_avisos_programados()`**; la ruta sólo hace el
+    fan-out de push. La RPC necesita ver las acciones de **todas** las
+    organizaciones para contar vencimientos —imposible desde el RLS— y va con
+    `revoke`: un usuario no puede dispararla a mano.
+  - ⚠️ **Un 404/410 del servicio de push DESACTIVA la suscripción, no la borra.**
+    Seguir intentándolo es ruido, pero borrar la fila deja sin explicación el
+    «llevo tres semanas sin recibir nada».
+  - ⚠️ **`push_suscripciones` es la única tabla del proyecto sin `org_id`**, y no
+    es una fuga: no cuelga de ninguna organización, cuelga de la persona. Su
+    política es `usuario_id = auth.uid()` **sin rama de socio** — la suscripción
+    de otro es su teléfono.
+  - **`/admin` dejó de ser `PantallaPendiente`**: los avisos necesitan dónde
+    activarse y es donde una persona los busca. El resto del dominio sigue siendo
+    Fase 06 y la pantalla lo dice.
+  - ✅ **`E03` quedó sembrado**: `config_firma.plazos_default` con
+    `{"unidad":"habiles", …}`. ⚠️ **Falta el calculador de días hábiles** con
+    festivos de México — nadie lo lee todavía.
+
+- ✅ **LAS DIECISÉIS ANTERIORES ESTÁN APLICADAS**: las quince primeras el 7 sep
+  2026 y `20260908120000_acciones_y_ciclo_de_mejora.sql`
+  —tarea `E05`, la de **F04·B1**— el **9 sep 2026**, junto con la primera prueba
+  de `/acciones` contra la base real.
+  ⚠️ **`procesos.codigo` sigue casi vacío**: el dueño llenó **uno** para ver el
+  folio del cliente funcionando. Mientras los otros once estén en blanco, sus
+  acciones llevan sólo nuestro folio (`ACC-2026-105`) y la app funciona igual —
+  pero el Coordinador del SGC del cliente no reconoce el número. La tabla de las
+  doce claves está en `docs/09` · `E05`.
+  Lo que esa migración crea `acciones`, `planes_mejora`, `cambios_sgc`, `cambios_sgc_documentos` y
   `quejas`; le añade a `hallazgos` el análisis de causa del `F-SG-07`, las tres
   preguntas de impacto, la aceptación del auditado y el enlace de reincidencia;
   amplía `fuente_nc` de once a quince valores; y le da a `adjuntos` su `accion_id`.
-  Probada en Docker con las **quince anteriores en orden y con datos sembrados
-  ANTES**: **74 comprobaciones**, veinte de regresión. `src/types/database.ts` está
-  regenerado desde ese esquema.
-  ✅ **Es aditiva**: tablas y columnas nuevas con default, y un CHECK que se
-  **amplía** — ampliar nunca rechaza una fila que antes pasaba.
-  ⚠️ **Para que el folio del cliente funcione hace falta que el dueño llene
-  `procesos.codigo`** con las dos letras de `P-SG-01` §5.2 (`FA`, `OP`, `SG`…).
-  Hoy está vacío en los doce procesos; mientras siga así, las acciones llevan sólo
-  nuestro folio y la app funciona igual. Tabla completa en `docs/09` · `E05`.
+  Se probó en Docker con las **quince anteriores en orden y con datos sembrados
+  ANTES**: **74 comprobaciones**, veinte de regresión. `src/types/database.ts` sale
+  de ese esquema.
   **Cinco decisiones de diseño que salieron de los formatos, no del plan:**
   - ⚠️ **EL ANÁLISIS DE CAUSA VIVE EN `hallazgos`, NO EN `acciones`**, al revés de
     lo que decía `docs/04`. Lo que decide es el `F-SG-07` §4: **un análisis puede
@@ -158,11 +214,30 @@ de dominio cuelga de una `org_id`. Ver §Reglas críticas, regla 1.
 - ✅ **LLEGÓ `P-SG-05` Y LA FASE 04 SE DESTRABA** (7 sep 2026, cuarta tanda). El
   dueño entregó **una carpeta con 60 archivos: el SGC completo del cliente**, y
   dentro va el procedimiento de acciones correctivas que detenía `F04·B1` desde
-  el 2 sep. ✅ **`F04·B1` se construyó el 8 sep 2026**: `/acciones` ya es el
-  tablero del `F-SG-17`, con la ficha de la acción, el análisis de causa del
-  `F-SG-07` en la ficha del hallazgo y el widget `acciones_semana` conectado.
-  Falta pantalla para planes de mejora, cambios de SGC y quejas —tienen esquema—,
-  y la impresión del `F-SG-06`/`F-SG-07` en pareja.
+  el 2 sep. ✅ **`F04·B1` ESTÁ COMPLETO** (8–9 sep 2026). `/acciones` lleva
+  **cuatro pestañas** —Acciones · Quejas y sugerencias · Planes de mejora ·
+  Cambios al SGC—, el análisis de causa del `F-SG-07` vive en la ficha del
+  hallazgo, el `F-SG-06` y el `F-SG-07` **se imprimen en pareja**, y el widget
+  `acciones_semana` está conectado.
+  **Cuatro cosas del cierre que hay que saber:**
+  - ⚠️ **LA RAMA `NC-` YA TIENE PANTALLA, así que el hueco 16 caducó.** Una queja
+    procedente levanta su no conformidad desde `PanelQuejas` → `LevantarNCDeQueja`,
+    y a partir de ahí **hay folios `NC-2026-00X` emitidos** — que no se recalculan.
+  - ⚠️ **`siguienteConsecutivo` NO se extendió a la serie `NC-`, y es deliberado.**
+    `B0` anotaba que haría falta otra clave en `piezasDeLaPrecarga()`; resultó más
+    honesto **no calcularlo en el cliente**: se manda `consecutivo: 0`, lo asigna
+    `sellar_folio_hallazgo()` y la fila optimista dice «sin folio hasta
+    sincronizar». Una queja se captura en la oficina, no en un sótano — el motivo
+    que hacía obligatoria la cuenta local en la planta aquí no aplica.
+  - ⚠️ **`fuenteDeLaAuditoria()` arregla un fallo de datos que ya existía.**
+    `crearHallazgo` no mandaba `fuente_nc` y la base ponía `auditoria_interna`,
+    así que un hallazgo de un **acompañamiento a certificación** o de una
+    **auditoría a proveedor** pasaba el CHECK pero quedaba contado como interno —
+    el número que la Dirección del cliente mira. Ahora sale de `auditorias.tipo`,
+    igual que hacía el relleno de la migración con el histórico.
+  - **Los dos contenedores se eligen al levantar la acción**, en un solo
+    desplegable (`plan:` / `cambio:`). Un selector por cada uno invitaría a llenar
+    los dos, y no hay ningún caso del cliente en que eso signifique algo.
   Los `.docx`/`.xlsx` **no se commitean** (36 MB, ya en `.gitignore`); su
   sustituto son **doce fichas nuevas** en `docs/formatos_informeAuditorias/`, con
   el índice y el registro de huecos en su `README`.
@@ -1000,9 +1075,9 @@ src/
   lib/auditorias/      → catálogos · precarga · informe  [Fase 03]
   lib/acciones/        → catálogos del ciclo de mejora  [F04·B1]
   lib/asistente/       → proveedor, esquemas Zod, instrucciones, herramientas
-  lib/plantillas/      → impresion.ts + los cuatro formatos de la firma:
+  lib/plantillas/      → impresion.ts + los cinco formatos de la firma:
                          informeAuditoria [B5] · programaAnual · listaAsistencia
-                         · planeacionAgenda  [B6]
+                         · planeacionAgenda [B6] · reporteNoConformidad [F04·B1]
   lib/utils/           → helpers puros
   types/database.ts    → todos los tipos
 worker/index.js        → oyentes push del service worker
