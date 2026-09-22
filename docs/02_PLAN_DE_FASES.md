@@ -1271,41 +1271,76 @@ oportunidad de mejora. `E04` **Declarar la app en producción** y migrar al equi
 > **3 semanas.** Puede solaparse con la Fase 06.
 > Es el servicio que más urgencia genera en el cliente: aquí hay multas de por medio.
 
-## F05·B1 — Matriz de aplicabilidad NOM
+## F05·B1 — Matriz de obligaciones y evaluación de cumplimiento
 
-- `noms`: catálogo de NOMs (STPS, SEMARNAT, Protección Civil) con su nombre,
-  autoridad, tipo y periodicidad de cumplimiento.
-- `nom_requisitos`: los puntos verificables de cada NOM.
-- `org_noms`: **qué NOMs le aplican a esta organización y por qué** — la matriz de
-  aplicabilidad, que es el primer entregable de una consultoría de cumplimiento.
-- Evaluación de cumplimiento por requisito: cumple / no cumple / parcial / no
-  aplica, con evidencia.
-- Semáforo por NOM y por sitio.
-- ✅ **La metodología de evaluación de riesgo de seguridad ya está especificada**
-  (7 sep 2026): la **Matriz IPERC** del cliente, en `P-SG-04` §5.4 y `F-OP-14`.
-  `NIP = A + B + C + D` (personas expuestas, procedimiento, capacitación,
-  exposición; 1–3 cada uno), `Nivel de Riesgo = NIP × Severidad` → 4–36, con
-  cuatro bandas (RM 1-4 · RT 5-10 · RA 11-20 · **RE 21-36, que prohíbe el
-  trabajo**), la jerarquía de controles en cinco columnas —eliminación,
-  sustitución, ingeniería, administrativo, EPP— y **la evaluación repetida después
-  del control** (riesgo residual).
-  ⚠️ **Y trae `REQUISITO LEGAL` por renglón de peligro**, que es exactamente la
-  matriz de aplicabilidad enganchada al peligro que la motiva.
-  [Ficha](formatos_informeAuditorias/P-SG-04_riesgos_y_oportunidades.md) §6.
+> ⚠️ **REESCRITO EL 22 SEP 2026** con el catálogo del cliente 02 delante.
+> 📋 **Especificación completa para implementar:**
+> [`13_ESPECIFICACION_F05_B1_B2.md`](13_ESPECIFICACION_F05_B1_B2.md).
 
-## F05·B2 — Vencimientos y obligaciones
+**Tres decisiones del dueño fijan el bloque y no se vuelven a discutir:**
+**una sola tabla** (`org_noms` y la matriz de obligaciones son la misma),
+**área nullable**, y **`tipo` editable** (catálogo, no CHECK).
+
+- ⚠️ **La biblioteca la construye el usuario.** `noms`, `nom_requisitos`,
+  `obligacion_tipos` y `cursos` **nacen vacías**, como `normas` (regla 12): pedir
+  el catálogo completo es pedir un año de trabajo antes de usar la app, y un
+  catálogo sembrado nace viejo —la NOM-035 cambió, la NOM-037 es de 2023—. Alta,
+  edición y baja desde la pantalla. **`F01` del dueño dejó de bloquear.**
+- ⚠️ **NO se evalúan numerales, se evalúan ELEMENTOS.** El formato real de Summit
+  —«Extintores», «Comisión de seguridad e higiene», «Carpeta normativa»— cuelga
+  cada elemento de su NOM. Es la diferencia entre auditar un papel y auditar una
+  planta, y decide que **`B1` sea pantalla de campo, no de escritorio**.
+- `obligaciones`: la matriz, con `aplica` + **justificación obligatoria en ambos
+  sentidos**, responsable, **el documento del SGI que la controla**, evidencia
+  esperada y cadencia de verificación.
+- Evaluación por elemento: `cumple · parcial · no_cumple · en_proceso ·
+  sin_evaluar`, ⚠️ **con observación obligatoria cuando es `parcial`**.
+- `generar_obligaciones_de_nom()` instancia la plantilla en el cliente —
+  **idempotente y sin pisar lo ya evaluado**, como `generar_lista_verificacion()`.
+- Semáforo por NOM y por sitio, **calculado en memoria**.
+- ⚠️ **Precarga obligatoria.** Sin «Descargar para trabajar sin señal», en la
+  planta la pantalla sale vacía y el consultor ya está en un sótano cuando lo
+  nota. Siete piezas.
+- ⚠️ **El CUÁNDO lo manda el teléfono** (`evaluado_en`), **el QUIÉN el servidor**.
+  Regla de fechas de la Fase 03, acción de campo.
+- ✅ **`sitios.num_trabajadores` ya existe** y es lo que hace evaluable la
+  condición de la NOM-035 («de 16 a 50 trabajadores»). La app **propone**, la
+  persona decide, y **se guarda lo decidido**.
+- ✅ **La metodología de riesgo ocupacional ya está especificada**: la Matriz
+  IPERC del cliente 01 (`P-SG-04` §5.4) y, por encima, la escala unificada 5×5 de
+  [`SGI-F-CA-23`](formatos_informeAuditorias/SGI-F-CA-23_matriz_de_riesgos.md),
+  que es **Fase 02**. De ahí `B1` sólo toma el **requisito legal por peligro**.
+
+## F05·B2 — Vencimientos
 
 La pantalla que evita una clausura.
 
-- `obligaciones`: todo lo que caduca — estudios (ruido, iluminación, térmicas,
+- `vencimientos`: todo lo que caduca — estudios (ruido, iluminación, térmicas,
   psicosocial), dictámenes (eléctrico, estructural), licencias (ambiental, de
-  funcionamiento, uso de suelo), recargas de extintores, mantenimientos de
-  sistemas contra incendio, exámenes médicos, capacitaciones obligatorias.
-- Cada una con su fecha de emisión, vigencia, fecha de vencimiento calculada,
-  documento asociado y responsable.
+  funcionamiento, uso de suelo), recargas de extintores, mantenimientos,
+  exámenes médicos, capacitaciones obligatorias. ⚠️ **Y lo que el catálogo real
+  enseñó que también cabe**: licencias de software y poderes notariales — por eso
+  el tipo es editable y la tabla genérica.
+- ⚠️ **No es la misma tabla que `obligaciones`.** Una obligación es permanente y
+  se verifica con una cadencia; un vencimiento es una cosa concreta que caduca.
+  Una obligación genera cero, uno o muchos.
+- Cada uno con emisión, vigencia, **vencimiento calculado y guardado**, documento
+  asociado y responsable.
 - ⚠️ Estas fechas son columnas `date`. Formatearlas con `new Date()` las corre un
   día en México — y aquí un día decide si algo está vencido. Ver CLAUDE.md.
-- Calendario de obligaciones + aviso a 90 / 30 / 7 días.
+- Calendario de obligaciones + aviso a **90 / 60 / 30 / 7 días**.
+  ⚠️ **Cambió de 90/30/7 el 22 sep 2026**: el único documento que lo tabula
+  —`SGI-P-TI-01` §5.17.3— dice «alertas a 90, 60 y 30 días». **Gana el formato
+  sobre la prosa del plan**, precedente de `D06`; el de 7 días se conserva como
+  último recordatorio de Summit.
+- ⚠️ **NO hay un tercer cron.** El plan Hobby de Vercel da dos y están ocupados:
+  el barrido se cuelga de `correr_avisos_programados()`, como el «Estado de las
+  NC» bimestral. Categoría `obligacion_proxima`, **ya en el CHECK aplicado**, con
+  `clave_evento` para que correr el cron tres veces no mande tres avisos.
+- ⚠️ **Lo vencido avisa UNA VEZ, el día que vence.** Un aviso que se repite se
+  silencia, y con él los que sí importaban.
+- ⚠️ **Conecta `vencimientos_criticos`, el último placeholder del tablero, en el
+  mismo commit.**
 
 ## F05·B3 — Capacitación
 
@@ -1322,18 +1357,30 @@ La pantalla que evita una clausura.
 
 ### Criterio de cierre — Fase 05
 
-> Para un cliente manufacturero se genera la matriz de aplicabilidad con 14 NOMs,
-> se evalúa el cumplimiento y sale el semáforo. Se registran sus 6 estudios de
-> higiene con sus vigencias y **la app avisa 90 días antes** de que venza el de
-> ruido. Se imparte un curso de brigada de incendios a 20 personas y salen **las
-> 20 constancias DC-3 en su formato oficial, con folio**, en un clic.
+> Para un cliente se dan de alta sus NOMs en la biblioteca con sus elementos
+> verificables, se genera la matriz para un sitio con sus áreas, **se evalúa
+> caminando y en modo avión**, la cola sincroniza al recuperar señal y sale el
+> semáforo. Se registran sus 6 estudios de higiene con sus vigencias y **la app
+> avisa 90 días antes** de que venza el de ruido. Se imparte un curso de brigada
+> de incendios a 20 personas y salen **las 20 constancias DC-3 en su formato
+> oficial, con folio**, en un clic.
+
+⚠️ **El cierre está partido en dos, y sólo la segunda mitad está bloqueada.**
+`B1`+`B2` se pueden construir y cerrar hoy; las constancias DC-3 dependen de
+`F03`. **No se da la fase por cerrada sin ellas**, pero tampoco se detiene el
+trabajo por esperarlas.
 
 ### Tareas del dueño — Fase 05
 
-`F01` Aportar el catálogo de NOMs con sus requisitos verificables (criterio
-técnico de la firma). `F02` Aportar el catálogo de cursos con duraciones y
-temarios. `F03` Validar el formato DC-3 vigente y el registro de la firma ante la
-STPS como agente capacitador.
+⚠️ **Reescritas el 22 sep 2026. Sólo una bloquea.**
+`F01` y `F02` **dejaron de ser entregas de archivo**: las bibliotecas de NOMs y de
+cursos las captura el socio en la app, poco a poco. Se arranca con **las ocho
+NOMs ya procesadas** del levantamiento del cliente 02 (001, 002, 019, 025, 026,
+030, 035 y 037-STPS).
+⛔ **`F03` es la única que bloquea**, y su pregunta previa es **¿Summit emite
+constancias DC-3, o sólo las recibe?** — el cliente 02 se las pide a su
+proveedor. Si las emite: el **número de registro** como agente capacitador, el
+**formato vigente** y los **catálogos STPS** de área temática y ocupación.
 
 ---
 

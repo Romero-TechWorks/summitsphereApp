@@ -1080,66 +1080,105 @@ cuelga de otro.
 
 # FASE 05 · Cumplimiento y capacitación
 
-## `noms` · `nom_requisitos`
-**Catálogo global**, sin `org_id`.
+> ⚠️ **REESCRITO EL 22 SEP 2026.** Lo que había suponía evaluar **numerales de
+> NOM**; el formato real de Summit evalúa **elementos** y la matriz de NOMs
+> resultó ser un caso de **matriz de obligaciones**. Las tres decisiones del
+> dueño —**una tabla**, **área nullable**, **tipo editable**— están aplicadas
+> aquí.
+>
+> 📋 **La especificación completa para implementar `B1` y `B2` está en
+> [`13_ESPECIFICACION_F05_B1_B2.md`](13_ESPECIFICACION_F05_B1_B2.md)**: DDL,
+> reglas, RPC, pantallas, avisos, precarga, migración y sus 14 comprobaciones.
+> Esto es el resumen del modelo.
 
-**`noms`**: clave (`NOM-035-STPS-2018`), nombre, autoridad
-(`stps` · `semarnat` · `proteccion_civil` · `salud` · `otro`), tipo
-(`seguridad` · `higiene` · `organizacion` · `producto` · `ambiental`),
-periodicidad, vigente.
+## Catálogos de la firma — sin `org_id`, con partición de pruebas
 
-**`nom_requisitos`**: numeral, descripción, evidencia esperada, aplica_si
-(condición de aplicabilidad: número de trabajadores, giro, actividad).
+⚠️ **NACEN VACÍOS. No hay un solo `INSERT` de siembra**, igual que `normas`
+(regla 12): la biblioteca la construye el socio desde la pantalla, con sus
+palabras, y se corrige sin migración. Decisión del dueño, 22 sep 2026.
 
-## `org_noms`
-**La matriz de aplicabilidad.** Primer entregable de una consultoría de
-cumplimiento.
+**`noms`**: `clave` (**con el año**: `NOM-035-STPS-2018`), nombre, autoridad
+(`stps · semarnat · proteccion_civil · salud · otro`), tipo (`seguridad ·
+higiene · organizacion · producto · ambiental`), periodicidad, `vigente`.
+⚠️ **`unique (clave, es_demo)`**, no `unique (clave)` — lección de `A10`; y por
+eso el alta **no usa `upsert` sobre `clave`** (§6.1).
+⚠️ Una NOM actualizada **es una NOM nueva**; la anterior se apaga, no se
+reescribe: hay hallazgos citándola.
 
-| Columna | Tipo | Nota |
-|---|---|---|
-| `nom_id`, `sitio_id` | uuid FK | |
-| `aplica` | boolean NOT NULL | |
-| `justificacion` | text | **Obligatoria** en ambos sentidos: por qué aplica o por qué no |
-| `estado_cumplimiento` | text CHECK | `cumple` · `parcial` · `no_cumple` · `en_proceso` · `sin_evaluar` |
-| `evaluado_en`, `evaluado_por_id` | | |
+**`nom_requisitos`**: `numeral` (referencia), ⚠️ **`elemento`** (lo que de verdad
+se evalúa: «Extintores», «Carpeta normativa»), `descripcion`,
+`evidencia_esperada`, `aplica_si` (prosa), `min_trabajadores`/`max_trabajadores`
+(sólo para **proponer**, contra `sitios.num_trabajadores`), `orden`, `activa`.
 
-## `org_nom_requisitos`
-La evaluación punto por punto, con su evidencia.
+**`obligacion_tipos`**: catálogo **editable** (decisión 3). `clave · nombre ·
+descripcion · orden · activo · es_demo`. No es un CHECK; lo que se retira se
+marca `activo = false`.
 
-## `obligaciones`
-**La pantalla que evita una clausura.**
+## `sitio_areas`
+`org_id` (heredado por trigger) · `sitio_id` · `nombre` · `orden` · `activa`.
+La evaluación cuelga del área cuando la hay (decisión 2). Un área con
+obligaciones evaluadas **no se borra** — la condición va en la política.
 
-| Columna | Tipo | Nota |
-|---|---|---|
-| `tipo` | text CHECK | `estudio` · `dictamen` · `licencia` · `permiso` · `mantenimiento` · `recarga` · `examen_medico` · `capacitacion` · `otro` |
-| `nombre` | text | *Estudio de ruido NOM-011* |
-| `nom_id`, `sitio_id` | uuid FK | |
-| `emitido_en` | date | |
-| `vigencia_meses` | int | |
-| `vence_en` | date NOT NULL | ⚠️ Se **guarda calculada**, no se deriva al vuelo: es la columna que se indexa y por la que barre el cron |
-| `responsable_id` | uuid FK | |
-| `documento_id` | uuid FK | El dictamen o el estudio |
-| `estado` | text CHECK | `vigente` · `por_vencer` · `vencido` · `en_tramite` · `no_aplica` |
+## `obligaciones` — LA tabla (decisión 1)
+**La matriz de aplicabilidad NOM y la de obligaciones de compliance son la
+misma.** Una NOM es *un tipo de fuente*, no el eje.
 
-## `cursos` · `dnc` · `sesiones` · `asistentes`
+| Columna | Nota |
+|---|---|
+| `org_id` · `sitio_id` · `area_id` | Las dos últimas nullable |
+| `tipo_id` · `nom_id` · `nom_requisito_id` | FK nullable |
+| `fuente` | text — la cita en prosa («LFPDPPP arts. 26 y 27»): **no toda fuente está en `noms`** |
+| `naturaleza` | **`text[]`**: `legal · norma · contractual · voluntaria`. El formato real las combina |
+| `obligacion` | El deber |
+| `aplica` | boolean NOT NULL |
+| `justificacion` | ⚠️ **CHECK: obligatoria en AMBOS sentidos** |
+| `responsable_id` · `documento_id` | El segundo es **el control del SGI** que la cubre |
+| `evidencia_esperada` · `frecuencia_verificacion` · `proxima_verificacion` | ⚠️ La frecuencia es **cadencia**, no vencimiento |
+| `estado_cumplimiento` | `cumple · parcial · no_cumple · en_proceso · sin_evaluar` |
+| `observacion` | ⚠️ **CHECK: obligatoria cuando es `parcial`** |
+| `evaluado_en` | ⚠️ **La manda el TELÉFONO** (acción de campo) |
+| `evaluado_por_id` | **La sella el servidor** |
 
-**`cursos`** (catálogo de la firma, sin `org_id`): clave, nombre, tipo
-(`normatividad_stps` · `brigada` · `iso` · `interno`), NOM relacionada, duración
-en horas, temario, modalidad.
+## `vencimientos` — B2
+⚠️ **No es `obligaciones`.** Una obligación es permanente y se verifica con una
+cadencia; un vencimiento es **una cosa concreta que caduca**, y una obligación
+genera cero, uno o muchos.
 
-**`dnc`**: el programa anual de capacitación por cliente — curso, mes planeado,
-número de participantes, estado.
+`obligacion_id` · `sitio_id` · `area_id` · `tipo_id` · `nombre` · `emitido_en` ·
+`vigencia_meses` · **`vence_en` date NOT NULL** · `responsable_id` ·
+`documento_id` · `estado` (`vigente · por_vencer · vencido · en_tramite ·
+no_aplica`) · `notas`.
 
-**`sesiones`**: curso, fecha, instructor, sede, duración real, sitio, evidencia
-fotográfica.
+⚠️ **`vence_en` se GUARDA calculada**, no se deriva al vuelo ni es generada:
+`emitido_en + interval` no es `IMMUTABLE`, y hay vencimientos que se capturan sin
+emisión. Es la columna indexada por la que barre el cron.
+⚠️ **Es `date`.** `new Date()` la corre un día en México, y aquí un día decide si
+algo está vencido: `formatDateOnly` / `toISODate`.
 
-**`asistentes`**: sesión, nombre, puesto, CURP, calificación, asistencia, **folio
-de la constancia DC-3**.
+## `generar_obligaciones_de_nom(p_org, p_sitio, p_nom)`
+Instancia la plantilla en la organización — misma relación que
+`norma_clausulas` → `auditoria_items`. **Idempotente**, **no pisa lo ya
+evaluado**, **`SECURITY INVOKER`** (el papel `lectura` no genera nada) y
+**propone** `aplica` contra `sitios.num_trabajadores` dejando la justificación
+vacía a propósito.
+⚠️ **Sexta excepción consciente a `offlineWrite`**, por los mismos motivos que
+`generar_lista_verificacion()`.
 
-⚠️ El **DC-3** es un formato oficial de la STPS. Sus campos y su folio no son
-libres — ver tarea del dueño `F03`.
+## `cursos` · `dnc` · `sesiones` · `asistentes` — B3
+⚠️ **`cursos` también nace vacía y la llena el usuario** (decisión del dueño).
+Son seis campos: clave, nombre, tipo, NOM relacionada, duración, temario,
+modalidad.
 
----
+**`dnc`**: programa anual por cliente — curso, mes planeado, participantes,
+estado. **`sesiones`**: curso, fecha, instructor, sede, duración real, sitio,
+evidencia. **`asistentes`**: sesión, nombre, puesto, CURP, **calificación**,
+asistencia, folio DC-3.
+
+⚠️ **La calificación la CAPTURA el instructor, no la calcula la app**: el
+`SGI-F-RH-06` tiene preguntas abiertas. Umbral **≥ 80 %** (`SGI-P-RH-01` §5.4).
+⚠️ **El DC-3 es un formato oficial de la STPS** y depende de `F03`, que sigue
+abierta: falta saber **si Summit lo emite**. `B3` se construye entero salvo el
+generador de constancias.
 
 # FASE 06 · Portal y administración
 

@@ -21,10 +21,119 @@ de dominio cuelga de una `org_id`. Ver §Reglas críticas, regla 1.
 
 ## Estado actual — lee esto antes de pedir nada
 
-- ⚠️ **HAY UNA MIGRACIÓN ESCRITA Y SIN APLICAR, Y ES LA ÚNICA:**
-  `20260909120000_avisos_y_notificaciones.sql` — tarea `E06`, la de **F04·B3+B4**.
-  Es la que **cierra la Fase 04**: su criterio de cierre exige que «el responsable
-  reciba la notificación en su teléfono», y esto es lo único que faltaba.
+- ▶️ **LO SIGUIENTE ES LA FASE 05, BLOQUES `B1` Y `B2`, Y YA ESTÁN
+  ESPECIFICADOS.** Todo lo necesario para escribir la migración y las pantallas
+  **sin volver a leer el catálogo del cliente** está en
+  **`docs/13_ESPECIFICACION_F05_B1_B2.md`**: DDL tabla por tabla, las cinco
+  reglas que no se rompen, la RPC, las pantallas, los avisos, la precarga, la
+  migración y sus **catorce comprobaciones**. Léelo entero antes de tocar nada.
+  **Las tres decisiones del dueño (22 sep 2026) que lo fijan y NO se vuelven a
+  discutir:**
+  - **UNA tabla**: `org_noms` y la matriz de obligaciones de compliance son la
+    misma, `obligaciones`. **Una NOM es un tipo de fuente, no el eje del modelo**
+    — por eso cabe un despacho jurídico igual que una planta.
+  - **Área nullable**: la evaluación cuelga de `sitio_areas` cuando la hay.
+  - **`tipo` editable**: `obligacion_tipos` es un catálogo, **no un CHECK**.
+    ⚠️ Excepción consciente a «los catálogos de dominio van `text` + `CHECK`»,
+    por el mismo motivo que las normas; la fricción se sustituye por
+    `activo = false` y por que nada se borra.
+  ⚠️ **Y la regla que ordena el bloque: LAS BIBLIOTECAS LAS CONSTRUYE EL
+  USUARIO.** `noms`, `nom_requisitos`, `obligacion_tipos` y `cursos` **nacen
+  vacías**, sin un solo `INSERT` de siembra. Se arranca con las **ocho NOMs ya
+  procesadas** del levantamiento del cliente 02.
+  ⚠️ **`B3` NO entra, pero NO bloquea nada de `B1` ni `B2`.** Sólo su generador
+  de constancias depende de `F03`: falta saber **si Summit emite DC-3 o sólo los
+  recibe**. ✅ **Nada más está bloqueado**: el control de vencimientos que se le
+  pidió a Summit mejora los valores propuestos, no falta como pieza — el usuario
+  captura sus tipos y vigencias igual que sus NOMs.
+
+- ⚠️ **LLEGÓ UN SEGUNDO CLIENTE Y CAMBIA EL ENCUADRE** (22 sep 2026, quinta
+  tanda): **César Roel Abogados**, despacho jurídico, con un **SGI multinorma**
+  —ISO 9001 + **27001** + **37001** + **37301**— frente al SGC de sólo calidad de
+  ATELIER. 164 archivos en `docs/nuevosFormatos/`, **ya en `.gitignore`** (72 MB),
+  analizados en **nueve fichas nuevas** encabezadas por
+  `docs/formatos_informeAuditorias/cliente_02_cesar_roel.md`.
+  **Lo que hay que saber antes de tocar nada:**
+  - ✅ **`F05·B1` SE DESTRABÓ.** El `Informe de Levantamiento de Cumplimiento
+    Normativo STPS` es el formato que faltaba: ocho NOMs con su **elemento
+    verificable**, el texto de la obligación y la condición de aplicabilidad
+    («entre 16 y 50 trabajadores»). ⚠️ **Y corrige el plan: no se evalúan
+    numerales, se evalúan ELEMENTOS** —«Extintores», «Carpeta normativa»— **por
+    ÁREA del sitio**, caminando. Es pantalla de campo, con las ocho reglas del
+    offline y el reloj del teléfono.
+  - ⚠️ **`F05·B1` era más chico de lo que es.** `SGI-P-COM-02` + `SGI-F-COM-18`
+    enseñan que la matriz de NOMs es un caso de **matriz de obligaciones**:
+    legales, regulatorias, **contractuales** y voluntarias. Un despacho no tiene
+    NOMs de agentes físicos, tiene LFPDPPP y cláusulas de contrato.
+  - ⚠️ **EL CHECK DE CATEGORÍAS NECESITA CUATRO VALORES MÁS, Y YA CUESTA UNA
+    MIGRACIÓN.** La matriz de comunicación multinorma pasó de doce a dieciséis
+    renglones: faltan `politica_compliance`, `canal_denuncias`,
+    `incidente_seguridad` y `obligaciones_compliance`. Trece → diecisiete. La
+    migración se aplicó el ~15 sep, una semana antes de esta tanda; se avisó a
+    tiempo y no se alcanzó. **Hueco 29**, y va **dentro de la primera migración
+    de la Fase 05**, no en una propia.
+  - ⚠️ **UNA SOLA ESCALA DE RIESGO, Y SUSTITUYE A LAS CUATRO.** `SGI-F-CA-23`
+    (ago 2026) trae 5×5 → 1-25 con cuatro bandas, **inherente y residual**, y la
+    reducción por efectividad del control es **aritmética y comprobada**: Alta
+    −2 de probabilidad, Media −1, Baja 0; la severidad no se reduce. Cierra el
+    hueco 23 mejor que `P-SG-04`. Trae **249 riesgos y 19 tipos** cargados.
+  - ✅ **HUECO 11 CERRADO**: `SGI-F-RH-03 Descriptivo de Puesto`, con plantilla y
+    **26 ejemplos**. ⚠️ Trae `Nivel de Riesgo` **del puesto** —insumo de la debida
+    diligencia de ISO 37001— y `Modalidad`, que enlaza con la **NOM-037** de
+    teletrabajo. `contactos.puesto` deja de aguantar como texto libre.
+  - ✅ **`G01` de la Fase 06 quedó cubierta sin pedirla**: hay **una plantilla de
+    informe** y los cuatro informes la siguen. ⚠️ Y deja un hallazgo:
+    `tareas_etapa` es booleana donde el informe pide `% hecho · vencimiento ·
+    estado · notas`, y `proyectos` no tiene `objetivo` (hueco 35).
+  - ⚠️ **CONTINUIDAD ES UN SERVICIO QUE SE VENDE, NO UN DOMINIO** (decisión del
+    dueño, 22 sep 2026), y eso abre el **hueco 39**: hacen falta `servicios`
+    (catálogo de la firma) y `org_servicios` (**qué cliente tiene cuál activo**).
+    Es el interruptor que la regla 11 pedía, **por cliente** en vez de por
+    instalación — y explica que cumplimiento y capacitación sean **dos servicios**,
+    no dos bloques de una fase.
+  - ⚠️ **PRIVACIDAD SIGUE SIN FASE** (ARCO con **plazos en días hábiles**,
+    vulneraciones con reloj de **horas**): el **calculador de días hábiles** de
+    `E03` dejó de ser interruptor muerto, y una vulneración no tiene `fuente_nc`
+    (hueco 34). ⚠️ **Y hay una deuda declarada**: al subir documentos con datos de
+    trabajadores va **una advertencia corta que no bloquea** (hueco 42); la
+    retención, la supresión y el papel de encargado se ven después, a propósito.
+  - ⚠️ **UNA DENUNCIA NO ES UNA QUEJA, Y YA ESTÁ DECIDIDO QUE SE SEPARAN**
+    (22 sep 2026, hueco 37, **y es de seguridad**): `denuncias` es tabla propia,
+    anónima o confidencial, con protección contra represalias. Lleva `org_id`
+    **y además una condición por persona** —segundo caso del proyecto tras
+    `push_suscripciones`—, porque **el jefe del denunciado no puede verla**. Y
+    **no se reusa `PanelQuejas`**: un panel que enseñe las dos acaba enseñando
+    una denuncia a quien no debe.
+  - ⚠️ **`docs/nuevosFormatos/Normas/` trae el TEXTO ÍNTEGRO de las cuatro ISO**, y
+    el PDF de 27001 lleva en sus metadatos el nombre de un sitio de descargas
+    piratas. **Regla 12**: no entra al repositorio ni a la base. Ya está
+    `.gitignore`-ado; hay que preguntarle a Summit de dónde salió.
+  - ⚠️ **LAS BIBLIOTECAS LAS CONSTRUYE EL USUARIO, NO SE PIDEN** (decisión del
+    dueño, 22 sep 2026, y **manda sobre `F01` y `F02` de `docs/09``**): `noms`,
+    `nom_requisitos` y `cursos` **nacen vacías** y las llena el socio desde la
+    pantalla, **con sus propias palabras**, igual que `normas` (regla 12). Es una
+    consultoría emergente: pedirle el catálogo completo es pedirle un año de
+    trabajo antes de usar la app, y en un año la mitad está obsoleta —la NOM-035
+    cambió, la NOM-037 es de 2023—. Se arranca con **las ocho del levantamiento
+    STPS**, que ya vienen procesadas. ⚠️ **Hueco 40**: el importador de normas hoy
+    sólo importa; esto necesita alta, edición y baja. Y **una NOM actualizada es
+    una NOM nueva**, porque la clave lleva el año dentro.
+  - ✅ **Y la multi-tenencia deja de ser teórica**: dos clientes, dos giros, dos
+    catálogos, normas distintas. El criterio de cierre de la Fase 01 —«la prueba
+    con datos reales y una segunda cuenta»— por fin tiene con qué hacerse.
+  - ⚠️ **249 riesgos y 95 indicadores EN UN CLIENTE.** Las listas de riesgos e
+    indicadores de `/sistemas` se diseñaron sin un número delante: van con
+    descarga completa y **filtro en memoria** (regla offline 7), como la cartera.
+
+- ✅ **LAS DIECISIETE MIGRACIONES ESTÁN APLICADAS. NO QUEDA NINGUNA PENDIENTE.**
+  `20260909120000_avisos_y_notificaciones.sql` —tarea `E06`, la de **F04·B3+B4**—
+  se aplicó **~15 sep 2026**, y con ella **la Fase 04 quedó cerrada**: su criterio
+  exigía que «el responsable reciba la notificación en su teléfono».
+  ⚠️ **Consecuencia inmediata: el CHECK de `notificaciones.categoria` ya está en
+  producción con trece valores, así que las cuatro categorías multinorma del
+  hueco 29 YA CUESTAN UNA MIGRACIÓN.** Es exactamente lo que se avisó y no se
+  alcanzó — igual que con `E00` y las cuatro `fuente_nc`. No es grave (ampliar un
+  CHECK es aditivo), pero ya no es gratis.
   Crea `push_suscripciones` (una fila **por aparato**, no por usuario), añade
   `usuarios.preferencias_aviso` y `notificaciones.clave_evento`, **amplía el CHECK
   de categorías según `P-SG-08`** (hueco 27) y crea las dos RPC del cron.
@@ -33,8 +142,8 @@ de dominio cuelga de una `org_id`. Ver §Reglas críticas, regla 1.
   regenerado y el diff es **puramente aditivo**.
   ✅ **Es aditiva**: dos tablas, dos columnas con default y un CHECK que se
   **amplía**.
-  ⚠️ **Y necesita `vercel.json`, que es nuevo**: declara los dos crons. Vercel no
-  los registra hasta el siguiente despliegue.
+  ⚠️ **`vercel.json` declara los dos crons** y Vercel no los registra hasta el
+  siguiente despliegue — comprobar que corrieron es la verificación pendiente.
   **Lo que hay que saber:**
   - ⚠️ **LAS CATEGORÍAS SALEN DE `P-SG-08` §5.5, NO DEL PLAN.** La matriz de
     comunicación del cliente tiene doce renglones con cadencias reales, y la lista
@@ -758,9 +867,9 @@ de dominio cuelga de una `org_id`. Ver §Reglas críticas, regla 1.
   widget funciona: si nadie lo conecta en `ContenidoWidget.tsx`, el tablero
   —que es lo primero que la firma abre cada mañana— sigue diciendo «llega en la
   Fase 03» con la fase entregada, y eso se lee como que la fase no está. Pasó con
-  la 02 y la 03 y se arregló el 30 ago 2026. Quedan **dos** placeholders y los dos
-  son de verdad: ~~`acciones_semana`~~ (conectado el 8 sep 2026, F04·B1) y
-  `vencimientos_criticos` [F05]. **Queda uno.**
+  la 02 y la 03 y se arregló el 30 ago 2026. ⚠️ **Queda UNO:
+  `vencimientos_criticos` [F05·B2]**, y se conecta en el mismo commit que cierre
+  ese bloque.
 - **El indicador de conexión sólo aparece cuando tiene algo que decir**
   (`EstadoConexion` en la Navbar): sin conexión, con cola pendiente o con algo
   rechazado. En verde y vacío no se pinta — un indicador permanente deja de
@@ -781,8 +890,10 @@ de dominio cuelga de una `org_id`. Ver §Reglas críticas, regla 1.
 | `docs/07_ASISTENTE_Y_AUTOMATIZACION.md` | Módulos A, B y C |
 | `docs/08_SEGURIDAD_Y_RLS.md` | Roles, políticas, secretos |
 | `docs/09_TAREAS_DEL_DUENO.md` | Pasos manuales y **técnicos** del dueño (Supabase, Vercel, Cloudflare) |
+| `docs/13_ESPECIFICACION_F05_B1_B2.md` | ▶️ **La especificación de lo siguiente.** Matriz de obligaciones y vencimientos: DDL, reglas, RPC, pantallas, migración y comprobaciones. **Se lee entero antes de empezar `F05`** |
 | `docs/11_TAREAS_DEL_CLIENTE.md` | Lo que el cliente **captura dentro de la app**, paso a paso y sin jerga |
-| `docs/formatos_informeAuditorias/` | **El catálogo documental del cliente** —68 archivos en cuatro tandas, la última con el SGC completo (7 sep 2026)—, transcrito y mapeado al modelo en 20 fichas. El `README` es su índice y lleva el registro de huecos. ⚠️ El nombre de la carpeta es histórico: ya no son sólo formatos de auditoría |
+| `docs/12_GUIA_DE_PRUEBAS.md` | **Qué probar**, para el equipo de Summit. Seis recorridos, lo que todavía no existe, y las pruebas negativas. ⚠️ Si cambias una etiqueta o un candado que aparezca ahí, corrígelo en el mismo commit |
+| `docs/formatos_informeAuditorias/` | **Los catálogos documentales de los clientes** —232 archivos en cinco tandas: 68 del cliente 01 (ATELIER, constructora, ISO 9001) y **164 del cliente 02** (César Roel Abogados, despacho, **ISO 9001+27001+37001+37301**, 22 sep 2026)—, transcritos y mapeados al modelo en **29 fichas**. El `README` es su índice y lleva el registro de huecos (38). ⚠️ El nombre de la carpeta es histórico: ya no son sólo formatos de auditoría, ni de un solo cliente |
 | `guias/*` | Montaje de la infraestructura |
 
 **Regla de oro:** si un cambio afecta lo descrito en cualquiera de estos
@@ -962,8 +1073,11 @@ tenía WiFi malo; aquí el auditor está en un sótano de una planta industrial.
    haga falta sin señal, ya es tarde: la lista tenía que estar hecha.
    **Sólo generar**: añadir un punto, editarlo, reordenarlo y quitarlo pasan por
    la cola.
+6. **Generar las obligaciones de una NOM** [F05·B1]: `generar_obligaciones_de_nom()`,
+   por los mismos tres motivos que la quinta. **Sólo generar**: evaluar cada
+   elemento —que es lo que se hace en la planta— pasa por la cola.
 
-En las cinco, sin conexión la pantalla **lo dice y no deja empezar**.
+En las seis, sin conexión la pantalla **lo dice y no deja empezar**.
 
 ---
 

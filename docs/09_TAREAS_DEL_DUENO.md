@@ -940,19 +940,73 @@ en paralelo "por si acaso" — eso garantiza que ninguno de los dos esté comple
 
 # FASE 05 · Cumplimiento y capacitación
 
-### `F01` — Entregar el catálogo de NOMs · **Bloquea: la Fase 05 entera**
+### `F00` — Aplicar la migración de la fase · **Bloquea: `B1` y `B2`**
 
-Igual que `C01`, pero para las NOMs: qué NOMs maneja la firma, sus puntos
-verificables, y **la condición de aplicabilidad** (a partir de cuántos
-trabajadores, en qué giro, con qué actividad). Es criterio técnico de la firma.
+⚠️ **Va después de la de avisos** (`20260909120000`, aplicada el ~15 sep 2026),
+que es la decimoséptima y la última que hay hoy.
 
-### `F02` — Entregar el catálogo de cursos · **Bloquea: capacitación**
+**Qué crea:** los catálogos de la firma (`noms`, `nom_requisitos`,
+`obligacion_tipos` — **los tres vacíos**), `sitio_areas`, `obligaciones`,
+`vencimientos`, la RPC `generar_obligaciones_de_nom()`, el barrido de
+vencimientos dentro de `correr_avisos_programados()`, y `adjuntos.obligacion_id`
+/ `adjuntos.vencimiento_id`.
+**De paso amplía** el CHECK de `notificaciones.categoria` con las cuatro
+categorías multinorma (hueco 29) y `riesgos.tipo` con `continuidad` y
+`ambiental`.
 
-Nombre, duración en horas, temario y modalidad de cada curso que imparte la firma.
+✅ **Es aditiva**: tablas nuevas, columnas nullable o con default, y dos CHECK
+que se **amplían**. No rechaza ninguna fila que antes pasaba.
 
-### `F03` — Validar el DC-3 y el registro ante la STPS · **Bloquea: emitir constancias**
+📋 El detalle, las políticas y sus **catorce comprobaciones** están en
+[`13_ESPECIFICACION_F05_B1_B2.md`](13_ESPECIFICACION_F05_B1_B2.md) §11.
 
-Dos cosas:
+⚠️ **Y no olvides regenerar los tipos en el mismo commit:**
+`npx supabase gen types typescript --linked`.
+
+
+> 📋 **Qué pedir exactamente, y a quién, está en
+> [`formatos_informeAuditorias/DOCUMENTOS_POR_PEDIR.md`](formatos_informeAuditorias/DOCUMENTOS_POR_PEDIR.md)
+> · sección «Fase 05»** (15 sep 2026): las tres tareas de abajo son las
+> **imprescindibles** de una lista de doce; el resto, si Summit no lo tiene, se
+> diseña y ellos corrigen. Ahí está el mensaje de WhatsApp listo para mandar.
+> Lo del cliente (`F-CM-02`, la serie `RH`, la serie `MT`) sólo sirve para
+> contrastar.
+
+### `F01` — Dar de alta tus primeras NOMs · **Ya NO bloquea la fase**
+
+⚠️ **CAMBIÓ DE FORMA EL 22 SEP 2026.** Era «entregar el catálogo»; ahora es
+**capturarlo en la app, poco a poco**. `noms` y `nom_requisitos` nacen vacías y
+las llenas tú, con tus palabras, igual que el catálogo de normas ISO de `C01`.
+
+**Por qué cambió:** pedir la biblioteca completa es pedir un año de trabajo antes
+de poder usar la app, y en un año la mitad está desactualizada —la NOM-035 cambió
+y la NOM-037 es de 2023—. Así la biblioteca crece con cada cliente y la corriges
+sin que nadie toque el código.
+
+**Para arrancar:** las **ocho del levantamiento STPS de César Roel** (001, 002,
+019, 025, 026, 030, 035 y 037), que ya vienen con su texto de obligación
+redactado. Por cada requisito hacen falta tres cosas: qué se revisa, **qué
+evidencia lo demuestra** y **desde qué condición aplica** (número de trabajadores,
+giro, actividad).
+
+⚠️ **Y la clave lleva el año dentro** (`NOM-035-STPS-2018`): cuando salga una
+versión nueva **se da de alta como otra NOM** y la vieja se marca inactiva. No se
+reescribe, porque hay hallazgos citándola.
+
+### `F02` — Dar de alta tus cursos · **Ya NO bloquea capacitación**
+
+⚠️ **Mismo cambio.** `cursos` nace vacía y das de alta los que impartes: nombre,
+duración en horas, temario, modalidad y a qué NOM responde. Son seis campos; ni
+siquiera hace falta subir un archivo.
+
+### `F03` — Validar el DC-3 y el registro ante la STPS · ⛔ **LA ÚNICA QUE BLOQUEA**
+
+⚠️ **Y la pregunta de fondo va primero: ¿Summit EMITE constancias DC-3?** En
+César Roel, el despacho se las **pide a su proveedor** de capacitación. Si Summit
+no está registrada como agente capacitador externo, la app **no debe generar
+DC-3** y `F05·B3` se construye distinto. Hay que saberlo antes, no después.
+
+Si sí las emite, dos cosas:
 1. El **formato DC-3 vigente** (cambia; hay que usar el actual).
 2. El **registro de la firma como agente capacitador externo** ante la STPS, con
    su número. Va impreso en cada constancia.

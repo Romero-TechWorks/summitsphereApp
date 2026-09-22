@@ -63,3 +63,8 @@ yarn-error.log*
 # formatos originales de la firma (su sustituto son los .md de docs/formatos_informeAuditorias/)
 /docs/docsFase4/
 /docs/formatos_informeAuditorias/formatosNuevos/
+# quinta tanda: 164 archivos del cliente 02 (72 MB). Su sustituto son las nueve
+# fichas de docs/formatos_informeAuditorias/ (cliente_02_cesar_roel.md y las demás).
+# ⚠️ Dentro va Normas/*.pdf con el TEXTO ÍNTEGRO de ISO 9001/27001/37001/37301:
+# obra protegida, regla 12 de CLAUDE.md. No entra al repositorio ni a la base.
+/docs/nuevosFormatos/

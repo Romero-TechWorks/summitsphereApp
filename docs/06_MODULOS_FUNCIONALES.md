@@ -575,19 +575,54 @@ dirección de Vercel.
 
 El servicio que más urgencia genera: aquí hay multas y clausuras de por medio.
 
-### Matriz de aplicabilidad NOM
-**Qué NOMs le aplican a esta organización, en este sitio, y por qué.** Con
-justificación obligatoria en ambos sentidos — por qué aplica y por qué no. Es el
-primer entregable de una consultoría de cumplimiento y hoy se entrega en Excel.
+> ⚠️ **Reescrito el 22 sep 2026.** 📋 Implementación:
+> [`13_ESPECIFICACION_F05_B1_B2.md`](13_ESPECIFICACION_F05_B1_B2.md).
 
-Cubre STPS (seguridad e higiene industrial), SEMARNAT y Protección Civil.
+`/cumplimiento` **pide cliente en la URL** (`?org=`), como `/sistemas`: cuatro de
+sus cinco pestañas son el expediente de *una* organización.
 
-### Evaluación de cumplimiento
-Punto por punto de cada NOM: cumple / parcial / no cumple / no aplica, con su
-evidencia. De ahí sale el **semáforo por NOM y por sitio**, que es lo que el
-director de planta quiere ver en una diapositiva.
+### La biblioteca de NOMs es tuya y la construyes tú
+Pestaña **Catálogo**. Das de alta la NOM, escribes **con tus palabras** qué se
+verifica en cada punto, qué evidencia lo demuestra y desde cuándo aplica.
+Editas y das de baja cuando cambie. **Nada viene precargado** — igual que el
+catálogo de normas ISO, y por el mismo motivo: un catálogo que te regalan nace
+viejo, y el resumen es tu criterio técnico.
 
-### Obligaciones y vencimientos
+⚠️ **La clave lleva el año** (`NOM-035-STPS-2018`). Cuando sale una versión
+nueva, das de alta la nueva y apagas la vieja: **no la reescribes**, porque hay
+hallazgos citándola.
+
+### Matriz de obligaciones
+**Qué le aplica a esta organización, en este sitio, en esta área, y por qué.**
+Con **justificación obligatoria en ambos sentidos** — por qué aplica y por qué
+no. Es el primer entregable de una consultoría de cumplimiento y hoy se entrega
+en Excel.
+
+⚠️ **No sólo NOMs.** Una obligación puede venir de una ley, de un contrato con un
+cliente o de un compromiso voluntario. La NOM es una fuente más — por eso cabe
+un despacho jurídico igual que una planta.
+
+Cada obligación dice además **qué documento del sistema la controla** y **cada
+cuánto hay que verificarla**.
+
+### Evaluación — se hace caminando
+Pestaña **Recorrido**, y es la que manda el diseño del módulo: **se evalúa
+elemento por elemento, por área, con el teléfono en la mano y normalmente sin
+señal.** «Extintores», «Carpeta normativa», «Iluminación»: cumple / parcial / no
+cumple / en proceso / sin evaluar, con su foto y su observación.
+
+⚠️ **Parcial exige decir por qué.** Un «parcial» sin motivo es un veredicto que
+nadie puede defender tres meses después.
+⚠️ **Hay que descargar antes de entrar.** La pantalla lo avisa: sin precargar, en
+la planta sale vacía.
+**La hora que queda registrada es la del teléfono**, no la del servidor: evaluaste
+a las 10:15 en modo avión aunque la fila llegue a las 14:00.
+
+De ahí sale el **semáforo por NOM y por sitio**, que es lo que el director de
+planta quiere ver en una diapositiva, y el **informe de levantamiento**, que se
+imprime con membrete y sin conexión.
+
+### Vencimientos
 La pantalla que evita una clausura. Todo lo que caduca:
 
 - **Estudios**: ruido (NOM-011), iluminación (NOM-025), condiciones térmicas
@@ -597,11 +632,12 @@ La pantalla que evita una clausura. Todo lo que caduca:
   zonificación.
 - **Mantenimientos**: sistemas contra incendio, recarga de extintores.
 - **Personas**: exámenes médicos, capacitaciones obligatorias, constancias.
+- ⚠️ **Y lo que quieras**: el tipo es un catálogo tuyo. Un cliente lleva ahí sus
+  licencias de software y sus poderes notariales.
 
-Cada una con emisión, vigencia, vencimiento calculado, documento y responsable. La
-app **avisa a 90, 30 y 7 días**, no el día que ya venció.
-
----
+Cada uno con emisión, vigencia, vencimiento calculado, documento y responsable.
+La app **avisa a 90, 60, 30 y 7 días**, no el día que ya venció — y **lo vencido
+avisa una sola vez**, el día que vence: un aviso que se repite se deja de mirar.
 
 ## Capacitación `[Fase 05]`
 
@@ -615,6 +651,13 @@ app **avisa a 90, 30 y 7 días**, no el día que ya venció.
 - **Asistentes** con su calificación y su asistencia.
 - **Constancias DC-3** en el formato oficial de la STPS, con folio, generadas de
   los datos de la sesión. Hoy se llenan una por una a mano.
+  ⛔ **Pendiente de la tarea `F03` del dueño**, y su pregunta previa es si Summit
+  **emite** DC-3 o sólo los **recibe** de sus proveedores. El resto del módulo no
+  espera por esto.
+
+⚠️ **La calificación la capturas tú, no la calcula la app**: el examen del
+cliente tiene preguntas abiertas. El umbral de aprobación es **80 %**, y quien no
+llega **no reprueba**: se le programa una sesión de reforzamiento.
 
 ---
 

@@ -167,18 +167,35 @@ se toca**.
 ```json
 {
   "crons": [
-    { "path": "/api/cron/diario",  "schedule": "0 14 * * *" },
-    { "path": "/api/cron/resumen", "schedule": "0 12 * * *" }
+    { "path": "/api/cron/diario",  "schedule": "0 13 * * *" },
+    { "path": "/api/cron/resumen", "schedule": "0 14 * * 1-5" }
   ]
 }
 ```
 
-En UTC: `0 14` ≈ 8:00 CDMX (los avisos de vencimientos), `0 12` ≈ 6:00 CDMX (el
-resumen diario, listo antes de que nadie abra el teléfono).
+⚠️ **El `schedule` va en UTC, siempre.** Vercel no tiene zona horaria por proyecto
+y no la va a adivinar. México no cambia de horario desde 2022, así que la cuenta
+es fija: **UTC−6**.
 
-⚠️ **Hobby permite exactamente dos crons, y estos dos los ocupan.** Todo lo que
-necesite tiempo —renovar las suscripciones de Graph, recalcular la Salud del SGC,
-limpiar tokens vencidos— **se cuelga del diario**, no pide un tercero.
+| Cron | UTC | CDMX | Por qué |
+|---|---|---|---|
+| `diario` | `0 13 * * *` | **7:00**, todos los días | Genera los avisos de vencimiento **antes** de que nadie abra el teléfono |
+| `resumen` | `0 14 * * 1-5` | **8:00**, de lunes a viernes | El digest llega cuando la persona empieza el día |
+
+⚠️ **El orden importa y por eso el diario va una hora antes**: cuando llega el
+resumen, los avisos del día ya se generaron. Y **el resumen no corre en fin de
+semana**: un digest el sábado que dice lo mismo que el viernes es exactamente el
+que hace que alguien desactive las notificaciones.
+
+⚠️ **Hobby permite dos crons POR PROYECTO, no por cuenta.** Si tienes otros
+proyectos en la misma cuenta, cada uno tiene los suyos y no compiten. La prueba
+está en tu propio panel: si el límite fuera de cuenta, estos dos no se habrían
+registrado.
+⚠️ **Aun así, esos dos los ocupan.** Todo lo que necesite otra cadencia —el
+«Estado de las NC» bimestral de `P-SG-08`, renovar las suscripciones de Graph,
+recalcular la Salud del SGC— **se cuelga del diario con su propia comprobación de
+fecha**, no pide un tercero. Es lo que hace `correr_avisos_programados()` con el
+bimestral.
 
 ⚠️ **Las rutas de cron llegan sin sesión.** Van excluidas del matcher de
 `proxy.ts` y se autentican solas comparando la cabecera `Authorization` contra
@@ -186,8 +203,18 @@ limpiar tokens vencidos— **se cuelga del diario**, no pide un tercero.
 cualquiera puede disparar en bucle.
 
 ⚠️ **Hobby corre los crons una vez al día y no garantiza la hora exacta.** Puede
-desviarse hasta una hora. Para avisos de vencimiento a 90/30/7 días da igual; si
+desviarse hasta una hora. Para avisos de vencimiento a 7/3/1 días da igual; si
 alguna vez hiciera falta precisión, es Pro.
+
+⚠️ **Y por eso el cron es idempotente**, no por elegancia: si Vercel lo dispara
+dos veces o se retrasa al día siguiente, `notificaciones.clave_evento` impide que
+el mismo aviso salga dos veces. Está comprobado — correrlo tres veces seguidas no
+manda tres avisos.
+
+⚠️ **Los límites de Vercel cambian.** Lo de arriba es lo que había al escribir
+esto; antes de dar por hecho que caben tres crons o que el plan aguanta una
+cadencia nueva, míralo en el panel del proyecto → *Settings* → *Cron Jobs*, que es
+donde se ve lo que de verdad está registrado.
 
 ---
 

@@ -31,11 +31,12 @@ en [`../guias/`](../guias/00_INDICE_INFRAESTRUCTURA.md).
 └───────┘└────────┘└─────────┘└───────────┘└─────────────┘
                                 │
                                 ▼
-              ┌─────────────────────────┬─────────────────────────┐
-              │ 09 · Tareas del dueño   │ 11 · Tareas del cliente │
-              │  paneles, llaves y      │  lo que se captura      │
-              │  migraciones            │  DENTRO de la app       │
-              └─────────────────────────┴─────────────────────────┘
+     ┌─────────────────────┬─────────────────────┬──────────────────────┐
+     │ 09 · Tareas del     │ 11 · Tareas del     │ 12 · Guía de pruebas │
+     │      dueño          │      cliente        │                      │
+     │ paneles, llaves y   │ lo que se captura   │ qué probar, para el  │
+     │ migraciones         │ DENTRO de la app    │ equipo que la usa    │
+     └─────────────────────┴─────────────────────┴──────────────────────┘
 ```
 
 ---
@@ -55,6 +56,8 @@ en [`../guias/`](../guias/00_INDICE_INFRAESTRUCTURA.md).
 | 09 | [Tareas del dueño](09_TAREAS_DEL_DUENO.md) | Lo **técnico** que ningún programa puede hacer por ti: paneles, llaves, migraciones, buckets |
 | 10 | [Glosario](10_GLOSARIO.md) | Del vocabulario ISO al nombre de la columna |
 | 11 | [Tareas del cliente](11_TAREAS_DEL_CLIENTE.md) | Lo que se **captura dentro de la app** para poder empezar a usarla, paso a paso y con la navegación de cada pantalla |
+| 12 | [Guía de pruebas](12_GUIA_DE_PRUEBAS.md) | **Qué probar**, para el equipo de Summit: los recorridos, lo que todavía no existe y las pruebas negativas |
+| 13 | [Especificación F05·B1 y B2](13_ESPECIFICACION_F05_B1_B2.md) | **Cómo se implementan** la matriz de obligaciones y los vencimientos: DDL, reglas, RPC, pantallas, migración y sus comprobaciones |
 
 ---
 

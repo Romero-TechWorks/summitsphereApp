@@ -57,6 +57,24 @@ original, el dueño lo tiene.
 | [`F-SG-03_lista_de_asistencia.md`](F-SG-03_lista_de_asistencia.md) | `F-SG-03 …docx` | Lista de asistencia. **Puro imprimir, sin modelo** |
 | [`F-SG-05_ficha_tecnica_de_proceso.md`](F-SG-05_ficha_tecnica_de_proceso.md) | `F-SG-05 …pptx` | Ficha técnica de proceso. **Fase 02**, y trae el catálogo documental del cliente |
 
+### Quinta tanda — 22 sep 2026 · **el segundo cliente**
+
+| Ficha | Documentos | Fase |
+|---|---|---|
+| ⚠️ [`DECISIONES_22_SEP_2026.md`](DECISIONES_22_SEP_2026.md) | **Seis decisiones del dueño + dos hechos nuevos. MANDA sobre las fichas de abajo** | **Todas** |
+| [`cliente_02_cesar_roel.md`](cliente_02_cesar_roel.md) | Panorama de los 164 archivos | **Todas** |
+| [`levantamiento_cumplimiento_STPS.md`](levantamiento_cumplimiento_STPS.md) | Informe STPS | **F05·B1** |
+| [`SGI-P-COM-02_obligaciones_de_compliance.md`](SGI-P-COM-02_obligaciones_de_compliance.md) | `P-COM-02` · `F-COM-18` | **F05·B1+B2** |
+| [`SGI-F-CA-23_matriz_de_riesgos.md`](SGI-F-CA-23_matriz_de_riesgos.md) | `F-CA-23` | **F02 + F05** |
+| [`SGI-P-RH-01_recursos_humanos.md`](SGI-P-RH-01_recursos_humanos.md) | `P-RH-01` + serie `RH` | **F05·B3** |
+| [`SGI-P-COM-10_privacidad_y_arco.md`](SGI-P-COM-10_privacidad_y_arco.md) | `P-COM-10` · `F-COM-30/31/32/33` | sin fase |
+| [`SGI-P-CA-09_continuidad.md`](SGI-P-CA-09_continuidad.md) | `P-CA-09` · `F-CA-26/27/28/29` | sin fase |
+| [`informes_de_avance.md`](informes_de_avance.md) | Los cuatro informes + plantilla | **F06 · `G01`** |
+| [`serie_CA_multinorma.md`](serie_CA_multinorma.md) | Los 8 rectores + Análisis de Brechas | F02·F03·F04 |
+
+⚠️ **Los originales viven en `docs/nuevosFormatos/` y NO se commitean** (72 MB,
+en `.gitignore` desde esta tanda). Estas nueve fichas son su sustituto.
+
 ### Cuarta tanda — 7 sep 2026
 
 | Archivo | Cubre | Fase |
@@ -156,6 +174,20 @@ referencia a un «hueco N», es este renglón N.
 | 26 | **`mediciones.periodo` asume calendario** | F-SG-19 col. PERIODO | ⚠️ Nueve de once indicadores miden **«al finalizar un proyecto»**. Dos proyectos cerrados el mismo mes chocarían contra el índice único (§6.1). Fase 02 |
 | 27 | **Las categorías de aviso del plan no son las del cliente** | P-SG-08 §5.5 | ✅ **CERRADO** en `20260909120000` (F04·B3): trece valores en el CHECK, con las cuatro que faltaban y el «Estado de las NC» **bimestral**. El resumen diario se conserva como criterio de Summit, ya no como única cadencia. Contexto original: Faltan indicadores (mensual), queja recibida (por evento, **a Dirección**), satisfacción y documento publicado. Y el cliente no pide «resumen diario». **F04·B3** |
 | 28 | **La plantilla de listas de verificación necesita una tercera clave** | F-OP-03…F-OP-13 | ⚠️ Hoy es por norma y por giro. Once listas del mismo giro y la misma norma, distintas **por actividad**. F03·B2, no urge |
+| 29 | **La matriz de comunicación multinorma pide cuatro categorías más** | SGI-P-CA-08 | ⚠️ `politica_compliance` · `canal_denuncias` · `incidente_seguridad` · `obligaciones_compliance`. **`20260909120000` SE APLICÓ el ~15 sep 2026**, una semana antes de esta tanda: ya cuesta una migración. Es aditivo y no urge — **va dentro de la primera migración de la Fase 05**. Ver [cliente 02](cliente_02_cesar_roel.md) §3.1 |
+| 30 | **La evaluación de cumplimiento es por ÁREA del sitio, no por sitio** | Levantamiento STPS | ⚠️ El recorrido va por recepción, site, comedor, sanitarios. Hace falta `sitio_areas`. Hermano del 21, y se deciden juntos. [Ficha](levantamiento_cumplimiento_STPS.md) §4 |
+| 31 | **El cambio normativo es un cuarto disparador de `cambios_sgc`** | SGI-P-COM-02 §5.3 | ⚠️ `F-SG-24` tenía tres, todos internos. El cambio de ley nace fuera y tiene plazo: **30 días naturales** para evaluar impacto. [Ficha](SGI-P-COM-02_obligaciones_de_compliance.md) §4 |
+| 32 | **Un KRI no es un indicador** | SGI-P-COM-02 §3 | ⚠️ Tiene **umbral** y dispara al cruzarlo. `indicadores` necesita `es_kri` + `umbral_alerta`, y el cruce es una categoría de aviso |
+| 33 | **`meta` no siempre es un porcentaje ni «más es mejor»** | SGI-P-RH-01 §7.2 | ⚠️ «≤ 30 días», «≥ 12 horas anuales», «≤ 10 %». La meta necesita **unidad** y **sentido** (`≥`/`≤`). Hoy `indicadores` asume porcentaje ascendente. [Ficha](SGI-P-RH-01_recursos_humanos.md) §3 |
+| 34 | **Una vulneración de datos personales no tiene `fuente_nc`** | SGI-F-COM-33 | ⚠️ Los quince valores no la cubren; `incumplimiento_legal` pierde la naturaleza de incidente. Y trae **plazos en HORAS** (72 h), no en días. [Ficha](SGI-P-COM-10_privacidad_y_arco.md) §3 |
+| 35 | **`proyectos` sin `objetivo` y `tareas_etapa` booleana** | Template Informe | ⚠️ **SUBE DE PRIORIDAD el 22 sep 2026**: el dueño confirmó que **el informe lo genera la app** (sólo las conclusiones las escribe el consultor), así que el entregable que la firma cobra depende de esto. Faltan `proyectos.objetivo`, `proyectos.conclusiones` y en `tareas_etapa` el `% hecho · vencimiento · estado · notas`. Aditivo. [Decisión](DECISIONES_22_SEP_2026.md#4--el-informe-de-avance-lo-genera-la-app) |
+| 39 | ⚠️ **No hay dónde decir qué SERVICIOS tiene contratado un cliente** | Decisión del dueño, 22 sep 2026 | ⚠️ **Continuidad se vende aparte**, y con ella cumplimiento, capacitación, datos personales y compliance. Hacen falta `servicios` (catálogo de la firma) y `org_servicios` (quién lo tiene activo). Es el interruptor que la regla 11 pedía, **por cliente** en vez de por instalación, y es el embudo comercial de `/admin`. **No es `proyectos`** |
+| 40 | **`noms` y `cursos` tienen que ser EDITABLES, no sembradas** | Decisión del dueño, 22 sep 2026 | ⚠️ Nacen vacías y las llena el socio «con sus propias palabras», como `normas`. Pero el importador de normas **hoy sólo importa, no edita ni da de baja a mano**. Y una NOM actualizada **es una NOM nueva** —la clave lleva el año— no una edición. [Decisión](DECISIONES_22_SEP_2026.md#1--las-bibliotecas-las-construye-el-usuario-no-se-piden) |
+| 41 | **La cadencia de aviso de vencimientos es 90/60/30, no 90/30/7** | SGI-P-TI-01 §5.17.3 | ⚠️ `docs/02` y `docs/06` dicen «90, 30 y 7». El único documento que lo tabula dice **90, 60 y 30**. Gana el formato sobre la prosa (precedente de `D06`). Propuesta: **90/60/30/7** |
+| 42 | **Advertencia de datos personales al subir documentos** | Decisión del dueño, 22 sep 2026 | ⚠️ **Deuda declarada, no olvido.** Se avisa al subir —corto, en español llano, **sin bloquear**— y se anota en `docs/08`. Quedan fuera por ahora: retención, supresión con acta, notificación en 72 h, y si SummitApp es **encargado** |
+| 36 | **Un punto de lista de verificación puede colgar de un CONTROL, no de una cláusula** | SGI-P-CA-03 integrado | ⚠️ Con ISO 27001 el criterio son los 93 controles del Anexo A declarados en el SoA. `auditoria_items.control_id` nullable. [Ficha](serie_CA_multinorma.md) §2 |
+| 37 | ⚠️ **Una DENUNCIA no es una queja, y `quejas` la filtraría mal** | SGI-P-CA-07/08 integrados | ✅ **DECIDIDO el 22 sep 2026: se separan.** `denuncias` es tabla propia, con `org_id` **y** una segunda condición por persona —segundo caso del proyecto tras `push_suscripciones`—, y **sin reusar `PanelQuejas`**. Anónima o confidencial, con protección contra represalias. [Decisión](DECISIONES_22_SEP_2026.md#3--queja-y-denuncia-se-separan) |
+| 38 | **Un requisito puede ser obligatorio para certificar, y eso no es su avance** | Análisis de Brechas §3 | ⚠️ «Prioridad Alta = exigida explícitamente por la norma y sin la cual no es posible certificar». `requisitos` necesita saberlo. [Ficha](serie_CA_multinorma.md) §3 |
 
 **Los tres primeros se resolvieron al construir B5**, y el noveno apareció ahí
 mismo (30 ago 2026). **La segunda tanda cerró el 7 y entregó los documentos del 4
@@ -198,7 +230,25 @@ redescubran tarde, no para hacerlos ahora.
 | **F-SG-18** Revisión por la Dirección + **F-SG-20** | F06 | ✅ **Llegó**. [Ficha](F-SG-18_revision_por_la_direccion.md). **Doce de sus dieciséis entradas ya salen de la app** |
 | Serie **`OP`** (23 documentos) | — | ✅ **Llegó**. [Ficha](serie_OP_operacion.md). **Fuera de alcance salvo la Matriz IPERC** y lo que valida de F03·B2 |
 | **`P-CO-02`** Selección y Evaluación de Proveedores | F04 | ❌ **No ha llegado.** Respalda `fuente_nc = 'evaluacion_proveedor'`, el indicador 6 y la entrada 4g del `F-SG-18` |
-| **`P-RH-01`** + **`F-RH-03/04`** Recursos Humanos | **F05** | ❌ **No han llegado.** Son el hueco 11 y el respaldo de `dnc`, `sesiones` y `asistentes` |
+| **`P-RH-01`** + **`F-RH-03`** Recursos Humanos | **F05** | ✅ **LLEGARON** (22 sep 2026, quinta tanda) como `SGI-P-RH-01` y `SGI-F-RH-03`, con catorce formatos y 26 descriptivos. **Cierran el hueco 11.** ⚠️ **`F-RH-04` Programa de Capacitación sigue sin llegar.** [Ficha](SGI-P-RH-01_recursos_humanos.md) |
+
+### Quinta tanda — 22 sep 2026 · **cliente 02, César Roel Abogados**
+
+⚠️ **Otro cliente, otro giro y cuatro normas.** Ver [su ficha](cliente_02_cesar_roel.md).
+
+| Formato | Fase | Estado |
+|---|---|---|
+| **Levantamiento de Cumplimiento STPS** | **F05·B1** | ✅ **Destraba la fase.** Ocho NOMs con su elemento verificable y su veredicto, de un cliente real. [Ficha](levantamiento_cumplimiento_STPS.md) |
+| **`SGI-P-COM-02`** + **`SGI-F-COM-18`** Obligaciones de Compliance | **F05·B1 + B2** | ✅ **Generaliza el bloque**: la matriz de NOMs es un caso de la matriz de obligaciones. [Ficha](SGI-P-COM-02_obligaciones_de_compliance.md) |
+| **`SGI-F-CA-23`** Matriz de Riesgos | **F02 + F05** | ✅ **Una escala 5×5 que sustituye a las cuatro del hueco 23**, con inherente/residual y 249 riesgos cargados. [Ficha](SGI-F-CA-23_matriz_de_riesgos.md) |
+| **`SGI-P-RH-01`** + serie `RH` | **F05·B3** | ✅ Cierra el **hueco 11**. [Ficha](SGI-P-RH-01_recursos_humanos.md) |
+| **`SGI-P-COM-10`** + `F-COM-30/31/32/33` Privacidad | ❌ sin fase | ⚠️ ARCO con **plazos en días hábiles**, vulneraciones con reloj de **horas**. [Ficha](SGI-P-COM-10_privacidad_y_arco.md) |
+| **`SGI-P-CA-09`** + `F-CA-26/27/28/29` Continuidad | ❌ sin fase | ⚠️ BIA con MTPD/RTO/RPO. **No abrir como fase** (regla 11). [Ficha](SGI-P-CA-09_continuidad.md) |
+| **Informes de avance** + `Template Informe` | **F06 · `G01`** | ✅ **`G01` cubierta sin pedirla.** [Ficha](informes_de_avance.md) |
+| Serie **`SGI-P-CA`** integrada + **Análisis de Brechas** | F02·F03·F04 | ✅ Los ocho rectores con alcance multinorma. [Ficha](serie_CA_multinorma.md) |
+| Serie **`COM`**/**`SGI`** antisoborno (`P-COM-01/03`, `P-SGI-04…09`, `F-SGI-01…17`) | ❌ sin fase | ⚠️ Debida diligencia de terceros, línea ética, regalos, PLD, prevención penal, régimen disciplinario. **Fuera de alcance hoy**; el hueco 37 es lo único que urge |
+| Serie **`LT`/`CP`/`FN`/`AH`/`RC`/`TI`/`CN`** (operación del despacho) | — | **Fuera de alcance**, igual que la serie `OP` del cliente 01. Son el ERP del cliente |
+| **`Normas/*.pdf`** (ISO 9001/27001/37001/37301) | ⚠️ **NO USAR** | ⚠️ **Texto íntegro de norma protegida** y uno con marcas de sitio pirata. **Regla 12.** Ver [cliente 02](cliente_02_cesar_roel.md) §5 |
 
 ---
 
@@ -383,6 +433,10 @@ alcance salvo la Matriz IPERC. Repartidos por fase:
 > [`DOCUMENTOS_POR_PEDIR.md`](DOCUMENTOS_POR_PEDIR.md)** — los **45** que faltan,
 > derivados de la `F-SG-01` (105 en el catálogo, 60 entregados), en tres bloques
 > por lo que desbloquean, más las tres preguntas que hay que hacerle al cliente.
+> ⚠️ **Y desde el 15 sep 2026, su sección «Fase 05»**: qué pedirle **a Summit**
+> —doce cosas, tres imprescindibles y el resto «si no lo tienen, lo diseñamos»—,
+> porque esta fase es el servicio de la firma y **no está en el catálogo del
+> cliente**. Con el mensaje listo para WhatsApp.
 
 Lo que bloquea algo, en resumen:
 
