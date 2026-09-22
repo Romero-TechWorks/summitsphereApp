@@ -745,6 +745,86 @@ vuelves a entregar, vuelve a pulsarlo: vale la fecha de la última entrega.
 
 ---
 
+# Paso 14 · Tu biblioteca de NOMs y el recorrido de cumplimiento
+
+> **Necesita la migración `F00`** (`docs/09`). Sin ella, la pantalla Cumplimiento
+> no carga.
+
+### Qué es
+
+Tres cosas, en este orden: **tu biblioteca de NOMs** (de la firma, sirve para
+todos los clientes), **la matriz de obligaciones de un cliente** (qué le aplica y
+por qué) y **el recorrido** (caminar el sitio con el teléfono y dar el veredicto
+de cada elemento, aunque no haya señal).
+
+⚠️ **La biblioteca la construyes tú, poco a poco.** No hace falta tenerla
+completa para empezar: arranca con las ocho del levantamiento STPS (001, 002, 019,
+025, 026, 030, 035 y 037) y ve sumando las que pida cada cliente nuevo.
+
+### Cómo se hace
+
+**A · Tu biblioteca (una vez, y la vas creciendo)**
+
+1. Barra de la izquierda → **Cumplimiento** → pestaña **Catálogo de NOMs**.
+2. **Nueva NOM** → la clave **con el año al final** (`NOM-002-STPS-2010`), el
+   nombre, la autoridad y el tipo → **Dar de alta**.
+3. Pulsa la NOM para abrirla → **Agregar elemento**. Un elemento es **lo que se
+   revisa**: «Extintores», «Estudio de riesgo de incendio», «Carpeta normativa».
+   Escribe qué exige **con tus palabras**, qué evidencia lo demuestra y, si
+   depende del tamaño del centro, **desde y hasta cuántos trabajadores**.
+4. Abajo, en **Tipos de obligación**, toca los sugeridos que uses (Estudio,
+   Dictamen, Licencia…) o escribe los tuyos.
+
+**B · La matriz de un cliente (en la oficina, con señal)**
+
+1. **Cumplimiento** → pestaña **Matriz** → elige el **cliente** y el **sitio**.
+2. En **Áreas de…** da de alta por dónde vas a caminar (toca las sugeridas:
+   Recepción, Comedor, Site…).
+3. En **Generar desde una NOM** elige la NOM → **Generar**. Aparece un renglón por
+   elemento, todos **«Sin decidir»**.
+4. Abre cada renglón y di **Aplica** o **No aplica**, con su **justificación**. Si
+   el elemento tiene rango de trabajadores, la app te **propone** la respuesta con
+   su motivo: pulsa **Tomar la propuesta** si estás de acuerdo.
+5. Lo que no viene de una NOM —una ley, una cláusula de contrato— se da de alta
+   con **Nueva obligación**.
+
+**C · El recorrido (en la planta, con o sin señal)**
+
+1. **Antes de salir**, con señal: **Cumplimiento** → **Recorrido** → elige el
+   cliente → **Descargar para trabajar sin señal**. Espera el aviso verde **«Listo
+   para trabajar sin señal»**.
+2. En la planta: elige el **sitio** y toca el **área** donde estás.
+3. Abre cada elemento → **Cumple**, **Parcial**, **No cumple** o **En proceso**.
+   Debajo aparece **cómo se decide** ese veredicto. **Tomar foto** para la
+   evidencia.
+4. Si un elemento es «de todo el sitio» pero lo revisas área por área —un
+   extintor en cada una—, pulsa **Evaluar en (área)**.
+5. Al terminar, pestaña **Semáforo**: cuánto cumple, por NOM y por sitio.
+
+### Cosas que conviene saber
+
+- ⚠️ **Cuando salga una versión nueva de una NOM, no cambies la clave de la que
+  tienes**: da de alta la nueva y desmarca **Vigente** en la vieja. Las
+  evaluaciones que ya hiciste la siguen citando.
+- **Nada de la biblioteca se borra**: los elementos se apagan y los tipos se dan
+  de baja.
+- ⚠️ **«Parcial» pide observación.** Si lo pulsas con la observación vacía, la app
+  te pide qué falta antes de guardarlo.
+- **Lo que no aplica o no está decidido no sale en el recorrido**: se decide en la
+  Matriz, en la oficina.
+- ⚠️ **Generar desde una NOM necesita conexión** y te lo dice. Evaluar, tomar
+  fotos y cambiar de área, no.
+- La hora que queda guardada es **la de tu teléfono al evaluar**, no la de cuando
+  vuelve la señal.
+- Sólo un socio da de alta NOMs y tipos.
+
+### Cómo sabes que quedó
+
+En el **Recorrido** el contador dice «X de Y evaluadas · todo guardado», y en el
+**Semáforo** aparece el porcentaje de cumplimiento por NOM.
+
+---
+
 # Lo que tienes que decidirme o entregarme
 
 Esto no se captura en la app: son documentos o decisiones tuyas que yo tengo que
@@ -759,8 +839,8 @@ meter en el sistema.
 | **Las cuentas del equipo** | Nombre, correo y rol de cada persona de la firma. Las creo yo; el reparto por cliente lo haces tú en el Paso 6 | Pendiente (`A04`) |
 
 **Más adelante, cuando lleguen sus fases** — no hace falta ahora, pero ve
-juntándolo: el catálogo de NOMs con su condición de aplicabilidad, el catálogo de
-cursos, el formato DC-3 vigente con el registro de la firma ante la STPS, y la
+juntándolo: el catálogo de cursos (se captura en la app, como las NOMs del
+Paso 14), el formato DC-3 vigente con el registro de la firma ante la STPS, y la
 decisión de qué ve el cliente en su portal.
 
 ---

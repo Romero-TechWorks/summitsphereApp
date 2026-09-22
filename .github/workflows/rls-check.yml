@@ -69,7 +69,7 @@ jobs:
           # pertenece a una PERSONA de la firma, no a una organización cliente, y
           # su política (`usuario_id = auth.uid()`) es más estricta que filtrar
           # por organización — no la ve nadie más, ni el socio.
-          EXENTAS="'organizaciones','usuarios','config_firma','preferencias_tablero','normas','norma_clausulas','noms','nom_requisitos'"
+          EXENTAS="'organizaciones','usuarios','config_firma','preferencias_tablero','normas','norma_clausulas','noms','nom_requisitos','obligacion_tipos'"
 
           FALLO=0
 

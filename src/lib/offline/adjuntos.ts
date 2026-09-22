@@ -39,14 +39,12 @@ export const BUCKET_EVIDENCIAS = 'evidencias'
  * no usa índice, y peor: devuelve adjuntos de otro sitio en cuanto dos ids
  * coinciden. Se filtra por el campo que manda, y ya.
  *
- * ⚠️ Tres de estos campos **todavía no existen en la tabla**: `accion_id`,
- * `tarea_id` y `obligacion_id` llegan en la Fase 04 y la 05. El orden se escribe
- * entero desde ahora para que añadirlos sea descomentar una línea aquí y otra en
- * `heredar_org_del_adjunto()`, en vez de reconstruir el criterio a partir de cómo
- * quedó el código.
+ * ⚠️ Todos existen ya en la tabla: `accion_id` llegó con F04·B1 y
+ * `vencimiento_id` + `obligacion_id` con F05·B1. (`tarea_id` nunca llegó:
+ * `tareas` no se creó, ver CLAUDE.md · F04·B1.) Añadir uno es una línea aquí y
+ * una rama en `heredar_org_del_adjunto()`.
  *
- * ⚠️ `hallazgo_id` e `item_id` **ya están** —los añadieron las migraciones de
- * F03·B0 y F03·B3— y van entre la tarea y el documento. Esta lista y el `if` del
+ * ⚠️ `hallazgo_id` e `item_id` van entre la acción y el vencimiento. Esta lista y el `if` del
  * trigger `heredar_org_del_adjunto()` se mueven juntos: si divergen, un adjunto
  * hereda la organización equivocada.
  *
@@ -64,8 +62,13 @@ export const CAMPOS_DOMINANTES = [
   'accion_id',
   'hallazgo_id',
   'item_id',
+  // ⚠️ [F05·B1] El vencimiento antes que la obligación —cuelga de ella, es más
+  // específico— y los dos antes que el documento, porque una obligación CITA un
+  // documento y no al revés. Mismo orden que `heredar_org_del_adjunto()` en
+  // `20260922120000_cumplimiento_normativo.sql`.
+  'vencimiento_id',
+  'obligacion_id',
   'documento_id',
-  // 'obligacion_id', → Fase 05
 ] as const
 
 export type CampoDominante = (typeof CAMPOS_DOMINANTES)[number]

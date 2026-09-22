@@ -269,6 +269,40 @@ export const queryKeys = {
     preferencias: () => ['avisos', 'preferencias'] as const,
   },
   /**
+   * El cumplimiento normativo [F05·B1].
+   *
+   * ⚠️ **Lo del cliente cuelga de la ORGANIZACIÓN, no del sitio ni del área.** El
+   * recorrido se camina por sitio y por área, pero esos dos son filtros **en
+   * memoria** (CLAUDE.md · reglas del offline, 7): con una clave por sitio, en la
+   * planta cambiar de sitio vaciaría la lista —esa clave no está en la caché— y
+   * el consultor concluiría que perdió su trabajo. Un cliente son decenas o
+   * cientos de obligaciones, no millones.
+   *
+   * ⚠️ **Y la biblioteca no lleva `orgId`**: es de la firma, como `normas`. El
+   * RLS ya la recorta a la partición de quien pregunta.
+   */
+  cumplimiento: {
+    todo: () => ['cumplimiento'] as const,
+    /** La biblioteca de NOMs con sus elementos verificables. */
+    noms: () => ['cumplimiento', 'noms'] as const,
+    /** Los tipos de obligación de la firma (decisión 3: catálogo editable). */
+    tipos: () => ['cumplimiento', 'tipos'] as const,
+    /** La matriz entera de un cliente, todos sus sitios. */
+    obligaciones: (orgId: string) => ['cumplimiento', 'obligaciones', orgId] as const,
+    /** Las áreas de todos los sitios de un cliente. */
+    areas: (orgId: string) => ['cumplimiento', 'areas', orgId] as const,
+    /**
+     * La evidencia de todas las obligaciones de un cliente, **en una sola
+     * consulta**.
+     *
+     * ⚠️ Al revés que `adjuntos.de(campo, id)`, que es una clave por fila. Aquí
+     * la precarga tiene que bajar la evidencia de un sitio entero antes de
+     * entrar, y una consulta por obligación serían cien viajes con media barra de
+     * señal en la puerta de la planta. La fila del recorrido filtra en memoria.
+     */
+    adjuntos: (orgId: string) => ['cumplimiento', 'adjuntos', orgId] as const,
+  },
+  /**
    * El catálogo de normas. Fuera de `cartera` porque no es de nadie: lo usan
    * también los sistemas de gestión [Fase 02] y las auditorías [Fase 03].
    */

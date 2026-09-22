@@ -940,28 +940,53 @@ en paralelo "por si acaso" — eso garantiza que ninguno de los dos esté comple
 
 # FASE 05 · Cumplimiento y capacitación
 
-### `F00` — Aplicar la migración de la fase · **Bloquea: `B1` y `B2`**
+### `F00` — Aplicar la migración de la fase · **Bloquea: `B1` y `B2`** · 📝 **LISTA PARA APLICAR** (22 sep 2026)
 
-⚠️ **Va después de la de avisos** (`20260909120000`, aplicada el ~15 sep 2026),
-que es la decimoséptima y la última que hay hoy.
+`20260922120000_cumplimiento_normativo.sql`. ⚠️ **Va después de la de avisos**
+(`20260909120000`, aplicada el ~15 sep 2026), que es la decimoséptima.
 
 **Qué crea:** los catálogos de la firma (`noms`, `nom_requisitos`,
 `obligacion_tipos` — **los tres vacíos**), `sitio_areas`, `obligaciones`,
 `vencimientos`, la RPC `generar_obligaciones_de_nom()`, el barrido de
 vencimientos dentro de `correr_avisos_programados()`, y `adjuntos.obligacion_id`
-/ `adjuntos.vencimiento_id`.
-**De paso amplía** el CHECK de `notificaciones.categoria` con las cuatro
-categorías multinorma (hueco 29) y `riesgos.tipo` con `continuidad` y
-`ambiental`.
+/ `adjuntos.vencimiento_id`. **De paso amplía** el CHECK de
+`notificaciones.categoria` con las cuatro categorías multinorma (hueco 29).
 
-✅ **Es aditiva**: tablas nuevas, columnas nullable o con default, y dos CHECK
-que se **amplían**. No rechaza ninguna fila que antes pasaba.
+**Cómo se aplica.** Igual que las anteriores: pégala en el editor SQL de Supabase
+y ejecútala, o `npx supabase db push` si trabajas con la CLI.
 
-📋 El detalle, las políticas y sus **catorce comprobaciones** están en
-[`13_ESPECIFICACION_F05_B1_B2.md`](13_ESPECIFICACION_F05_B1_B2.md) §11.
+✅ **Es aditiva**: tablas nuevas, columnas nullable o con default y un CHECK que
+se **amplía**. El despliegue en línea no la conoce y sigue igual mientras tanto.
+⚠️ Pero el código de `/cumplimiento` **sí la necesita**: si despliegas el código
+antes de aplicarla, esa pantalla falla al consultar tablas que no existen. El
+orden es **primero la migración, después el push**.
 
-⚠️ **Y no olvides regenerar los tipos en el mismo commit:**
-`npx supabase gen types typescript --linked`.
+**Tres cosas que salieron distintas de la especificación, y por qué:**
+
+1. ⚠️ **`obligaciones.aplica` admite `null` = «sin decidir».** La spec pedía a la
+   vez que la justificación fuera obligatoria siempre y que la RPC la dejara
+   vacía: con `aplica NOT NULL` el INSERT de la RPC chocaba contra el CHECK. Con
+   el tercer estado, la RPC genera los renglones sin decidir, la pantalla
+   **propone** (trabajadores del sitio contra el rango del elemento) y en cuanto
+   alguien decide —aplica o no aplica— la base exige la justificación. Además,
+   **no se puede evaluar lo que no aplica**.
+2. ⚠️ **`riesgos.tipo` NO se amplió.** Esa columna es la polaridad
+   `riesgo/oportunidad`, no la categoría: meterle `continuidad` y `ambiental`
+   mezclaría dos cosas. Los 19 tipos de `SGI-F-CA-23` necesitan columna propia y
+   se deciden con el resto de esa matriz (Fase 02).
+3. ✅ **`puedo_borrar_org()` recupera la partición de pruebas**, que la migración
+   de acciones había perdido al reescribirla. No era explotable desde la app, pero
+   la función tiene que ser verdad por sí sola.
+
+**Comprobado antes de mandártela** (22 sep 2026): Postgres 17 desechable, las
+diecisiete anteriores en orden **y datos sembrados antes de aplicarla**, con el
+`auth.uid()` que lee la sesión simulada: **80 comprobaciones**, las catorce de la
+spec más la regresión del cron de acciones, los adjuntos, las categorías y el
+borrado de organizaciones. `src/types/database.ts` regenerado desde ese esquema:
+**527 líneas añadidas, ninguna quitada**.
+
+⚠️ **Y después de aplicarla, regenera los tipos contra la base real** para
+confirmar que no hay diferencia: `npx supabase gen types typescript --linked`.
 
 
 > 📋 **Qué pedir exactamente, y a quién, está en

@@ -8,9 +8,10 @@
  * Excepciones conscientes, y están enumeradas en CLAUDE.md: los adjuntos (cola
  * propia, pesan megabytes y van en dos fases), crear o revocar el link del portal
  * (no tiene sentido sin red), importar el catálogo de normas, subir el archivo de
- * una versión de documento, y generar la lista de verificación (es una RPC, y la
- * cola sabe reproducir escrituras de tabla, no llamadas a función). En las cinco,
- * sin conexión la pantalla lo dice y no deja empezar.
+ * una versión de documento, generar la lista de verificación y generar las
+ * obligaciones de una NOM [F05·B1] (las dos últimas son RPC, y la cola sabe
+ * reproducir escrituras de tabla, no llamadas a función). En las seis, sin
+ * conexión la pantalla lo dice y no deja empezar.
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js'

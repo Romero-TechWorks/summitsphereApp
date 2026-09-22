@@ -13,6 +13,40 @@
 
 ---
 
+## 0 · Lo que cambió al implementar `B1` (22 sep 2026)
+
+La migración (`20260922120000_cumplimiento_normativo.sql`) cubre **B1 y B2
+enteros**, como pide §11; las pantallas de esta entrega son **sólo B1**. Seis
+diferencias con lo de abajo, y **mandan sobre el texto de las secciones**:
+
+| # | Qué decía la spec | Qué se hizo | Por qué |
+|---|---|---|---|
+| 1 | `aplica` NOT NULL, justificación obligatoria siempre (§3.3) **y** la RPC la deja vacía (§4) | ⚠️ **`aplica` nullable**: `null` = sin decidir. La justificación se exige en cuanto `aplica` no es null. Y un **tercer CHECK**: no se evalúa lo que no aplica | Las dos reglas juntas hacían imposible el INSERT de la RPC. El tercer estado ya existía en la realidad |
+| 2 | La RPC «propone `aplica`» (§4) | La RPC **no decide**; la propuesta la pinta la pantalla (`proponerAplica()`) con botón «Tomar la propuesta» | La columna guarda lo que decidió una persona (§5.2). Los dos números ya están en la caché |
+| 3 | `riesgos.tipo` + `continuidad`, `ambiental` (§3.6, §11.8) | ⚠️ **No entró** | `riesgos.tipo` es la polaridad `riesgo/oportunidad`, no la categoría. Los 19 tipos de `SGI-F-CA-23` son otra columna, de la Fase 02 |
+| 4 | `puedo_borrar_org()` «ampliada» (§3.6) | Ampliada **y con la partición de pruebas restaurada** | La reescritura de `20260908120000` la había perdido |
+| 5 | Precarga de siete piezas con el membrete (§7) | Siete piezas **sin membrete y con los documentos del cliente** | El membrete sólo lo lee el informe (#6); los documentos son un desplegable del formulario (regla 3 del offline) |
+| 6 | Informe de levantamiento (§10) | ⚠️ **Aplazado** | Sus secciones de prosa —objetivo del recorrido, desafíos, próximos pasos, recomendaciones— **no tienen dónde vivir en el modelo**: la spec no define una tabla de «levantamiento». Hay que decidirla antes de escribir el imprimible |
+
+**Además**, cosas que la spec no decía y se decidieron así:
+
+- **El sitio va en la URL** (`?sitio=`) y es un filtro en memoria, igual que
+  `?org=`; el área es un filtro local del recorrido.
+- **«Evaluar en (área)»**: un elemento generado para todo el sitio se copia al
+  área que se está caminando (una fila por la cola, funciona sin señal). La RPC no
+  cuenta esas copias para su idempotencia.
+- **El sello de la evaluación es más estricto que el de la Fase 03**: si el
+  veredicto no cambia, la base **conserva** quién y cuándo aunque el navegador
+  mande otros.
+- **`vencimientos.estado`** en `vigente/por_vencer/vencido` lo mantiene la base
+  contra la fecha (trigger + el cron diario); `por_vencer` empieza a los **90
+  días**, el primer aviso. `en_tramite` y `no_aplica` no se tocan.
+- **Una obligación se puede quitar** mientras esté sin evaluar, sin fotos y sin
+  vencimientos; un vencimiento, mientras no tenga adjunto.
+- **Probada con 80 comprobaciones**, no catorce: §11 más su regresión.
+
+---
+
 ## 1 · Las tres decisiones del dueño que fijan el diseño
 
 Tomadas el 22 sep 2026. **No se vuelven a discutir.**

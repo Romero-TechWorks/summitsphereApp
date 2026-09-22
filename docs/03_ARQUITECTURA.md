@@ -563,6 +563,18 @@ falta hace en el piso por partida doble: sin ellos el auditor no puede comprobar
 si lo de ayer sigue abierto, y el recorrido **no puede calcular el consecutivo del
 siguiente hallazgo** — que es lo único que hace que el folio salga sin red.
 
+**Y la del recorrido de cumplimiento** [F05·B1], con el mismo patrón y en
+`src/lib/cumplimiento/precarga.ts`: **siete** piezas —la matriz, los sitios y sus
+áreas, la biblioteca de NOMs, los tipos de obligación, el equipo, los documentos
+del cliente y la evidencia ya subida—, con su propio `faltaPorPrecargarRecorrido()`.
+⚠️ **Cuelga de la organización, no del sitio**: se baja la matriz entera y el
+sitio y el área se filtran en memoria, así que una sola descarga sirve para los
+tres sitios del día y cambiar de sitio en la planta no deja la pantalla vacía. Por
+lo mismo, la evidencia previa es **una** consulta por cliente
+(`cumplimiento.adjuntos(orgId)`) y no una por obligación. ⚠️ **El membrete de la
+firma todavía no está**: sólo lo consume el informe de levantamiento, que no se
+construyó en B1 (docs/13 §10); entra en la misma entrega que el informe.
+
 ### §8.12 · Reglas del offline
 
 Las siete de CLAUDE.md. La que más se rompe: **copiar `data` a un `useState`**.

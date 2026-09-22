@@ -3,7 +3,7 @@
 > **Para quién es esto:** las personas de Summit que van a probar la app antes de
 > que se use con clientes de verdad. No hace falta saber nada técnico.
 >
-> **Cuánto tiempo lleva:** los seis recorridos completos, alrededor de dos horas.
+> **Cuánto tiempo lleva:** los siete recorridos completos, alrededor de dos horas y media.
 > Se pueden hacer en días distintos; el **A** y el **E** necesitan un teléfono.
 >
 > **Qué se está probando:** las Fases 01 a 04. Lo demás **todavía no existe** y
@@ -55,7 +55,7 @@ de quien lee los reportes.
 
 | Pantalla | Qué pasa |
 |---|---|
-| **Cumplimiento** | Vacía. Es la Fase 05 — matriz de NOMs y vencimientos |
+| **Cumplimiento** | Matriz, Recorrido, Semáforo y Catálogo de NOMs **sí están** (recorrido G). Falta la pestaña **Vencimientos** (F05·B2) y el **informe de levantamiento** impreso |
 | **Capacitación** | Vacía. Fase 05 |
 | **Admin**, salvo *Avisos* | Metas, finanzas, facturación, usuarios y bitácora son Fase 06 |
 | **Portal del cliente** | No existe todavía. Fase 06 |
@@ -75,7 +75,7 @@ Y dentro de lo que sí está:
 
 ---
 
-## 3 · Los seis recorridos
+## 3 · Los siete recorridos
 
 Hazlos **en orden**: cada uno deja algo que el siguiente usa.
 
@@ -249,9 +249,37 @@ debería funcionar.
 | **Cancelar una acción sin decir por qué** | Lo rechaza |
 | **Borrar una organización que ya tiene auditorías** | No deja |
 | **Ver el cliente de otro consultor** | No aparece. Pídele al dueño una segunda cuenta con otro cliente asignado y compruébalo |
+| **Decir que una obligación aplica, o que no, sin justificación** | Lo rechaza, en los dos sentidos |
+| **Marcar «Parcial» sin observación** | Te pide qué falta antes de guardarlo |
+| **Quitar una obligación ya evaluada**, o un área que ya tiene obligaciones | No se ofrece el botón; el área sólo se da de baja |
+| **Generar desde una NOM en modo avión** | El botón no se activa y la pantalla dice por qué |
 
 ⚠️ **Ésa última es la más importante de todas.** Un cliente no puede ver los
 expedientes de otro, y es lo único que si falla no se arregla con una disculpa.
+
+---
+
+### G · Cumplimiento en planta  📱 *teléfono* · ⚠️ necesita la migración `F00`
+
+1. Con un **socio**, en **Cumplimiento → Catálogo de NOMs**, da de alta la
+   `NOM-002-STPS-2010` con tres elementos: *Extintores*, *Estudio de riesgo de
+   incendio* y *Carpeta normativa*.
+2. En **Matriz**, elige un cliente y un sitio, dale **tres áreas** y pulsa
+   **Generar** con esa NOM. Salen tres renglones «Sin decidir».
+3. Decide los tres: **Aplica**, con su justificación.
+4. En **Recorrido**, pulsa **«Descargar para trabajar sin señal»** hasta que diga
+   que está listo. **Pon el modo avión.**
+5. Toca un área. En *Extintores*, pulsa **«Evaluar en (área)»**, marca **No
+   cumple**, escribe la observación y **toma una foto**. Marca otro como
+   **Parcial** — primero sin observación.
+6. Cierra la app por completo, ábrela en modo avión, y vuelve.
+
+**Qué tiene que pasar:** todo sigue ahí; el contador dice cuántos cambios esperan.
+Al quitar el modo avión, el contador llega a «todo guardado» solo, y en
+**Semáforo** sale el porcentaje de la NOM.
+
+> 🔴 **La hora de la evaluación tiene que ser la de cuando pulsaste**, no la de
+> cuando volvió la señal. Ábrela y compruébalo.
 
 ---
 

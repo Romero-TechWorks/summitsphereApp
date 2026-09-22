@@ -21,8 +21,45 @@ de dominio cuelga de una `org_id`. Ver §Reglas críticas, regla 1.
 
 ## Estado actual — lee esto antes de pedir nada
 
-- ▶️ **LO SIGUIENTE ES LA FASE 05, BLOQUES `B1` Y `B2`, Y YA ESTÁN
-  ESPECIFICADOS.** Todo lo necesario para escribir la migración y las pantallas
+- ✅ **`F05·B1` ESTÁ ESCRITO POR EL LADO DEL CÓDIGO, Y SU MIGRACIÓN ESPERA AL
+  DUEÑO** (22 sep 2026). `20260922120000_cumplimiento_normativo.sql` —tarea
+  `F00`— es la **decimoctava** y cubre **B1 y B2 enteros** (tablas, RPC, barrido
+  del cron); las pantallas son **sólo B1**. ⚠️ **Primero la migración, después el
+  push**: `/cumplimiento` consulta tablas que sin ella no existen.
+  Probada en Docker con las diecisiete anteriores y datos sembrados antes:
+  **80 comprobaciones**. `src/types/database.ts` regenerado: **527 líneas
+  añadidas, ninguna quitada**. `lint` y `build` en verde.
+  `/cumplimiento` tiene **cuatro pestañas** —Matriz · Recorrido · Semáforo ·
+  Catálogo de NOMs—, pide `?org=` y además `?sitio=` (los dos son filtros en
+  memoria, no claves de caché). **Lo que hay que saber:**
+  - ⚠️ **`obligaciones.aplica` es NULLABLE (`null` = sin decidir)**, al revés que
+    `docs/13` §3.3. La spec pedía justificación obligatoria siempre **y** una RPC
+    que la dejara vacía: no cabían juntas. La RPC genera sin decidir, la pantalla
+    **propone** (`proponerAplica()`), la persona decide con justificación, y
+    **no se evalúa lo que no aplica** (tercer CHECK). `docs/13` §0 tabula las seis
+    diferencias con la spec.
+  - ⚠️ **`riesgos.tipo` NO se amplió**: es la polaridad `riesgo/oportunidad`, no
+    la categoría. Los 19 tipos de `SGI-F-CA-23` van en otra columna (Fase 02).
+  - ✅ **`puedo_borrar_org()` recupera la partición de pruebas** que perdió al
+    reescribirse en `20260908120000`.
+  - ⚠️ **El informe de levantamiento (§10) NO está**: su prosa —objetivo,
+    desafíos, próximos pasos, recomendaciones— no tiene tabla donde vivir. Hay que
+    decidirla antes. Por lo mismo la precarga **no baja el membrete** todavía.
+  - **La precarga del recorrido cuelga de la ORGANIZACIÓN**
+    (`src/lib/cumplimiento/precarga.ts`, siete piezas): una descarga sirve para
+    todos los sitios del día. La evidencia previa es **una** consulta por cliente
+    (`cumplimiento.adjuntos(orgId)`), no una por obligación.
+  - **`CAMPOS_DOMINANTES`** suma `vencimiento_id` y `obligacion_id`, **entre
+    `item_id` y `documento_id`**, en el mismo orden que el trigger.
+  - ⚠️ **La sexta excepción a `offlineWrite` ya existe en código**:
+    `generarObligacionesDeNom()`. Todo lo demás —evaluar, fotos, «Evaluar en
+    (área)», áreas, alta manual, la biblioteca— pasa por la cola.
+  - **Falta B2**: la pestaña Vencimientos y el widget `vencimientos_criticos`,
+    que se conecta en el mismo commit que cierre ese bloque.
+
+- ▶️ **LO SIGUIENTE ES `F05·B2` —`B1` ya está escrito, arriba—, Y ESTÁ
+  ESPECIFICADO.** ⚠️ Lee primero `docs/13` §0: lo que cambió al implementar
+  `B1` manda sobre el resto de la spec. Todo lo necesario para escribir la migración y las pantallas
   **sin volver a leer el catálogo del cliente** está en
   **`docs/13_ESPECIFICACION_F05_B1_B2.md`**: DDL tabla por tabla, las cinco
   reglas que no se rompen, la RPC, las pantallas, los avisos, la precarga, la
@@ -125,7 +162,8 @@ de dominio cuelga de una `org_id`. Ver §Reglas críticas, regla 1.
     indicadores de `/sistemas` se diseñaron sin un número delante: van con
     descarga completa y **filtro en memoria** (regla offline 7), como la cartera.
 
-- ✅ **LAS DIECISIETE MIGRACIONES ESTÁN APLICADAS. NO QUEDA NINGUNA PENDIENTE.**
+- ✅ **LAS DIECISIETE MIGRACIONES ANTERIORES ESTÁN APLICADAS.** La decimoctava
+  (`F00`, arriba) es la única pendiente.
   `20260909120000_avisos_y_notificaciones.sql` —tarea `E06`, la de **F04·B3+B4**—
   se aplicó **~15 sep 2026**, y con ella **la Fase 04 quedó cerrada**: su criterio
   exigía que «el responsable reciba la notificación en su teléfono».
@@ -892,7 +930,7 @@ de dominio cuelga de una `org_id`. Ver §Reglas críticas, regla 1.
 | `docs/09_TAREAS_DEL_DUENO.md` | Pasos manuales y **técnicos** del dueño (Supabase, Vercel, Cloudflare) |
 | `docs/13_ESPECIFICACION_F05_B1_B2.md` | ▶️ **La especificación de lo siguiente.** Matriz de obligaciones y vencimientos: DDL, reglas, RPC, pantallas, migración y comprobaciones. **Se lee entero antes de empezar `F05`** |
 | `docs/11_TAREAS_DEL_CLIENTE.md` | Lo que el cliente **captura dentro de la app**, paso a paso y sin jerga |
-| `docs/12_GUIA_DE_PRUEBAS.md` | **Qué probar**, para el equipo de Summit. Seis recorridos, lo que todavía no existe, y las pruebas negativas. ⚠️ Si cambias una etiqueta o un candado que aparezca ahí, corrígelo en el mismo commit |
+| `docs/12_GUIA_DE_PRUEBAS.md` | **Qué probar**, para el equipo de Summit. Siete recorridos, lo que todavía no existe, y las pruebas negativas. ⚠️ Si cambias una etiqueta o un candado que aparezca ahí, corrígelo en el mismo commit |
 | `docs/formatos_informeAuditorias/` | **Los catálogos documentales de los clientes** —232 archivos en cinco tandas: 68 del cliente 01 (ATELIER, constructora, ISO 9001) y **164 del cliente 02** (César Roel Abogados, despacho, **ISO 9001+27001+37001+37301**, 22 sep 2026)—, transcritos y mapeados al modelo en **29 fichas**. El `README` es su índice y lleva el registro de huecos (38). ⚠️ El nombre de la carpeta es histórico: ya no son sólo formatos de auditoría, ni de un solo cliente |
 | `guias/*` | Montaje de la infraestructura |
 
@@ -1188,6 +1226,7 @@ src/
   lib/sistemas/        → catálogos de la Fase 02
   lib/auditorias/      → catálogos · precarga · informe  [Fase 03]
   lib/acciones/        → catálogos del ciclo de mejora  [F04·B1]
+  lib/cumplimiento/    → catálogos · precarga del recorrido  [F05·B1]
   lib/asistente/       → proveedor, esquemas Zod, instrucciones, herramientas
   lib/plantillas/      → impresion.ts + los cinco formatos de la firma:
                          informeAuditoria [B5] · programaAnual · listaAsistencia

@@ -1117,7 +1117,8 @@ marca `activo = false`.
 ## `sitio_areas`
 `org_id` (heredado por trigger) · `sitio_id` · `nombre` · `orden` · `activa`.
 La evaluación cuelga del área cuando la hay (decisión 2). Un área con
-obligaciones evaluadas **no se borra** — la condición va en la política.
+obligaciones **o vencimientos** colgando **no se borra** — la condición va en la
+política, porque el cascade se saltaría el RLS; se apaga.
 
 ## `obligaciones` — LA tabla (decisión 1)
 **La matriz de aplicabilidad NOM y la de obligaciones de compliance son la
@@ -1129,15 +1130,25 @@ misma.** Una NOM es *un tipo de fuente*, no el eje.
 | `tipo_id` · `nom_id` · `nom_requisito_id` | FK nullable |
 | `fuente` | text — la cita en prosa («LFPDPPP arts. 26 y 27»): **no toda fuente está en `noms`** |
 | `naturaleza` | **`text[]`**: `legal · norma · contractual · voluntaria`. El formato real las combina |
+| `elemento` | Lo que se camina, copiado de la plantilla. Vacío en una de compliance |
 | `obligacion` | El deber |
-| `aplica` | boolean NOT NULL |
-| `justificacion` | ⚠️ **CHECK: obligatoria en AMBOS sentidos** |
+| `aplica` | ⚠️ **boolean NULLABLE**: `null` = generada y **sin decidir**. Ver abajo |
+| `justificacion` | ⚠️ **CHECK: obligatoria en AMBOS sentidos en cuanto `aplica` no es null** |
 | `responsable_id` · `documento_id` | El segundo es **el control del SGI** que la cubre |
 | `evidencia_esperada` · `frecuencia_verificacion` · `proxima_verificacion` | ⚠️ La frecuencia es **cadencia**, no vencimiento |
 | `estado_cumplimiento` | `cumple · parcial · no_cumple · en_proceso · sin_evaluar` |
 | `observacion` | ⚠️ **CHECK: obligatoria cuando es `parcial`** |
 | `evaluado_en` | ⚠️ **La manda el TELÉFONO** (acción de campo) |
-| `evaluado_por_id` | **La sella el servidor** |
+| `evaluado_por_id` | **La sella el servidor**, y la **conserva** si el veredicto no cambia |
+| `proxima_verificacion` | La calcula el trigger al evaluar, con la cadencia y la fecha de México |
+
+⚠️ **`aplica` es nullable, y es lo que resuelve una contradicción de la
+especificación** (22 sep 2026, al implementar): la justificación obligatoria en
+los dos sentidos y una RPC que la deja vacía no caben con `NOT NULL`. El tercer
+estado ya existía en la realidad —«todavía no se decidió»—, y además hay un
+tercer CHECK: **no se evalúa lo que no aplica** (`estado = 'sin_evaluar' or
+aplica is true`). Un «no cumple» sobre algo que no aplica sería un
+incumplimiento inventado en el informe.
 
 ## `vencimientos` — B2
 ⚠️ **No es `obligaciones`.** Una obligación es permanente y se verifica con una
@@ -1158,9 +1169,13 @@ algo está vencido: `formatDateOnly` / `toISODate`.
 ## `generar_obligaciones_de_nom(p_org, p_sitio, p_nom)`
 Instancia la plantilla en la organización — misma relación que
 `norma_clausulas` → `auditoria_items`. **Idempotente**, **no pisa lo ya
-evaluado**, **`SECURITY INVOKER`** (el papel `lectura` no genera nada) y
-**propone** `aplica` contra `sitios.num_trabajadores` dejando la justificación
-vacía a propósito.
+evaluado**, **`SECURITY INVOKER`** (el papel `lectura` no genera nada) y ⚠️
+**NO decide `aplica`**: lo deja en null. La propuesta —`min/max_trabajadores`
+contra `sitios.num_trabajadores`— la calcula la pantalla
+(`proponerAplica()` en `src/lib/cumplimiento/catalogos.ts`), que tiene los dos
+números en la caché; la columna guarda sólo lo que alguien decidió. La huella de
+idempotencia es (organización, sitio, requisito) **sobre las filas sin área**:
+las copias por área que el consultor hace en el recorrido no cuentan.
 ⚠️ **Sexta excepción consciente a `offlineWrite`**, por los mismos motivos que
 `generar_lista_verificacion()`.
 
@@ -1215,7 +1230,7 @@ Todas con **`security_invoker = true`** (§4.4):
 |---|---|
 | `avance_proyecto` | % de requisitos por proyecto y por norma |
 | `hallazgos_abiertos` | ⚠️ **Aplazada en F03·B4, y confirmada al conectar el widget del tablero** (30 ago 2026). El tablero del lunes y el widget «Hallazgos abiertos» agrupan y calculan la antigüedad **en memoria**, sobre la misma lista ya bajada — una vista es otra clave que puede faltar en la caché, y las dos pantallas se abren con media barra de señal. Es la misma decisión que la de los widgets de la cartera [F01·B3] |
-| `obligaciones_semaforo` | Qué vence en 7 / 30 / 90 días |
+| `obligaciones_semaforo` | ⚠️ **No se creó** (F05·B1). El semáforo se cuenta **en memoria** sobre la matriz ya bajada, igual que los widgets: una vista sería otra clave que puede faltar sin señal |
 | `carga_consultor` | Proyectos y acciones abiertas por consultor |
 | `indice_busqueda_global` | Las seis fuentes del buscador |
 | `salud_sgc` | El puntaje de la Fase 08, por proceso y organización |
@@ -1272,8 +1287,8 @@ CREATE INDEX ON <cada_tabla_dominio> (org_id);
 CREATE INDEX ON hallazgos (org_id, estado, fecha_compromiso);
 CREATE INDEX ON acciones  (org_id, estado, fecha_compromiso);
 
--- El barrido del cron
-CREATE INDEX ON obligaciones (vence_en) WHERE estado <> 'no_aplica';
+-- El barrido del cron [F05·B2] — sobre `vencimientos`, no sobre `obligaciones`
+CREATE INDEX ON vencimientos (org_id, vence_en) WHERE estado IN ('vigente','por_vencer');
 
 -- La matriz de requisitos
 CREATE UNIQUE INDEX ON requisitos (proyecto_id, clausula_id);

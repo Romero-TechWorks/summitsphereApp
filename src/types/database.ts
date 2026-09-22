@@ -200,6 +200,7 @@ export type Database = {
           id: string
           item_id: string | null
           nombre: string
+          obligacion_id: string | null
           org_id: string
           ruta: string
           subido_desde: string
@@ -207,6 +208,7 @@ export type Database = {
           tarea_etapa_id: string | null
           tipo_mime: string | null
           titulo: string | null
+          vencimiento_id: string | null
         }
         Insert: {
           accion_id?: string | null
@@ -217,6 +219,7 @@ export type Database = {
           id?: string
           item_id?: string | null
           nombre: string
+          obligacion_id?: string | null
           org_id: string
           ruta: string
           subido_desde?: string
@@ -224,6 +227,7 @@ export type Database = {
           tarea_etapa_id?: string | null
           tipo_mime?: string | null
           titulo?: string | null
+          vencimiento_id?: string | null
         }
         Update: {
           accion_id?: string | null
@@ -234,6 +238,7 @@ export type Database = {
           id?: string
           item_id?: string | null
           nombre?: string
+          obligacion_id?: string | null
           org_id?: string
           ruta?: string
           subido_desde?: string
@@ -241,6 +246,7 @@ export type Database = {
           tarea_etapa_id?: string | null
           tipo_mime?: string | null
           titulo?: string | null
+          vencimiento_id?: string | null
         }
         Relationships: [
           {
@@ -279,6 +285,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "adjuntos_obligacion_id_fkey"
+            columns: ["obligacion_id"]
+            isOneToOne: false
+            referencedRelation: "obligaciones"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "adjuntos_org_id_fkey"
             columns: ["org_id"]
             isOneToOne: false
@@ -290,6 +303,13 @@ export type Database = {
             columns: ["tarea_etapa_id"]
             isOneToOne: false
             referencedRelation: "tareas_etapa"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "adjuntos_vencimiento_id_fkey"
+            columns: ["vencimiento_id"]
+            isOneToOne: false
+            referencedRelation: "vencimientos"
             referencedColumns: ["id"]
           },
         ]
@@ -1908,6 +1928,125 @@ export type Database = {
           },
         ]
       }
+      nom_requisitos: {
+        Row: {
+          activa: boolean
+          actualizado_en: string
+          aplica_si: string | null
+          creado_en: string
+          creado_por: string | null
+          descripcion: string
+          elemento: string
+          es_demo: boolean
+          evidencia_esperada: string | null
+          id: string
+          max_trabajadores: number | null
+          min_trabajadores: number | null
+          nom_id: string
+          numeral: string | null
+          orden: number
+        }
+        Insert: {
+          activa?: boolean
+          actualizado_en?: string
+          aplica_si?: string | null
+          creado_en?: string
+          creado_por?: string | null
+          descripcion: string
+          elemento: string
+          es_demo?: boolean
+          evidencia_esperada?: string | null
+          id?: string
+          max_trabajadores?: number | null
+          min_trabajadores?: number | null
+          nom_id: string
+          numeral?: string | null
+          orden?: number
+        }
+        Update: {
+          activa?: boolean
+          actualizado_en?: string
+          aplica_si?: string | null
+          creado_en?: string
+          creado_por?: string | null
+          descripcion?: string
+          elemento?: string
+          es_demo?: boolean
+          evidencia_esperada?: string | null
+          id?: string
+          max_trabajadores?: number | null
+          min_trabajadores?: number | null
+          nom_id?: string
+          numeral?: string | null
+          orden?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nom_requisitos_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nom_requisitos_nom_id_fkey"
+            columns: ["nom_id"]
+            isOneToOne: false
+            referencedRelation: "noms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      noms: {
+        Row: {
+          actualizado_en: string
+          autoridad: string
+          clave: string
+          creado_en: string
+          creado_por: string | null
+          es_demo: boolean
+          id: string
+          nombre: string
+          periodicidad: string | null
+          tipo: string | null
+          vigente: boolean
+        }
+        Insert: {
+          actualizado_en?: string
+          autoridad?: string
+          clave: string
+          creado_en?: string
+          creado_por?: string | null
+          es_demo?: boolean
+          id?: string
+          nombre: string
+          periodicidad?: string | null
+          tipo?: string | null
+          vigente?: boolean
+        }
+        Update: {
+          actualizado_en?: string
+          autoridad?: string
+          clave?: string
+          creado_en?: string
+          creado_por?: string | null
+          es_demo?: boolean
+          id?: string
+          nombre?: string
+          periodicidad?: string | null
+          tipo?: string | null
+          vigente?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "noms_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       norma_clausulas: {
         Row: {
           activa: boolean
@@ -2057,6 +2196,211 @@ export type Database = {
             columns: ["usuario_id"]
             isOneToOne: false
             referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      obligacion_tipos: {
+        Row: {
+          activo: boolean
+          actualizado_en: string
+          clave: string
+          creado_en: string
+          creado_por: string | null
+          descripcion: string | null
+          es_demo: boolean
+          id: string
+          nombre: string
+          orden: number
+        }
+        Insert: {
+          activo?: boolean
+          actualizado_en?: string
+          clave: string
+          creado_en?: string
+          creado_por?: string | null
+          descripcion?: string | null
+          es_demo?: boolean
+          id?: string
+          nombre: string
+          orden?: number
+        }
+        Update: {
+          activo?: boolean
+          actualizado_en?: string
+          clave?: string
+          creado_en?: string
+          creado_por?: string | null
+          descripcion?: string | null
+          es_demo?: boolean
+          id?: string
+          nombre?: string
+          orden?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "obligacion_tipos_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      obligaciones: {
+        Row: {
+          actualizado_en: string
+          aplica: boolean | null
+          area_id: string | null
+          creado_en: string
+          creado_por: string | null
+          documento_id: string | null
+          elemento: string | null
+          estado_cumplimiento: string
+          evaluado_en: string | null
+          evaluado_por_id: string | null
+          evidencia_esperada: string | null
+          frecuencia_verificacion: string | null
+          fuente: string | null
+          id: string
+          justificacion: string | null
+          naturaleza: string[]
+          nom_id: string | null
+          nom_requisito_id: string | null
+          obligacion: string
+          observacion: string | null
+          orden: number
+          org_id: string
+          proxima_verificacion: string | null
+          responsable_id: string | null
+          sitio_id: string | null
+          tipo_id: string | null
+        }
+        Insert: {
+          actualizado_en?: string
+          aplica?: boolean | null
+          area_id?: string | null
+          creado_en?: string
+          creado_por?: string | null
+          documento_id?: string | null
+          elemento?: string | null
+          estado_cumplimiento?: string
+          evaluado_en?: string | null
+          evaluado_por_id?: string | null
+          evidencia_esperada?: string | null
+          frecuencia_verificacion?: string | null
+          fuente?: string | null
+          id?: string
+          justificacion?: string | null
+          naturaleza?: string[]
+          nom_id?: string | null
+          nom_requisito_id?: string | null
+          obligacion: string
+          observacion?: string | null
+          orden?: number
+          org_id: string
+          proxima_verificacion?: string | null
+          responsable_id?: string | null
+          sitio_id?: string | null
+          tipo_id?: string | null
+        }
+        Update: {
+          actualizado_en?: string
+          aplica?: boolean | null
+          area_id?: string | null
+          creado_en?: string
+          creado_por?: string | null
+          documento_id?: string | null
+          elemento?: string | null
+          estado_cumplimiento?: string
+          evaluado_en?: string | null
+          evaluado_por_id?: string | null
+          evidencia_esperada?: string | null
+          frecuencia_verificacion?: string | null
+          fuente?: string | null
+          id?: string
+          justificacion?: string | null
+          naturaleza?: string[]
+          nom_id?: string | null
+          nom_requisito_id?: string | null
+          obligacion?: string
+          observacion?: string | null
+          orden?: number
+          org_id?: string
+          proxima_verificacion?: string | null
+          responsable_id?: string | null
+          sitio_id?: string | null
+          tipo_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "obligaciones_area_id_fkey"
+            columns: ["area_id"]
+            isOneToOne: false
+            referencedRelation: "sitio_areas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "obligaciones_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "obligaciones_documento_id_fkey"
+            columns: ["documento_id"]
+            isOneToOne: false
+            referencedRelation: "documentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "obligaciones_evaluado_por_id_fkey"
+            columns: ["evaluado_por_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "obligaciones_nom_id_fkey"
+            columns: ["nom_id"]
+            isOneToOne: false
+            referencedRelation: "noms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "obligaciones_nom_requisito_id_fkey"
+            columns: ["nom_requisito_id"]
+            isOneToOne: false
+            referencedRelation: "nom_requisitos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "obligaciones_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizaciones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "obligaciones_responsable_id_fkey"
+            columns: ["responsable_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "obligaciones_sitio_id_fkey"
+            columns: ["sitio_id"]
+            isOneToOne: false
+            referencedRelation: "sitios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "obligaciones_tipo_id_fkey"
+            columns: ["tipo_id"]
+            isOneToOne: false
+            referencedRelation: "obligacion_tipos"
             referencedColumns: ["id"]
           },
         ]
@@ -2987,6 +3331,64 @@ export type Database = {
           },
         ]
       }
+      sitio_areas: {
+        Row: {
+          activa: boolean
+          actualizado_en: string
+          creado_en: string
+          creado_por: string | null
+          id: string
+          nombre: string
+          orden: number
+          org_id: string
+          sitio_id: string
+        }
+        Insert: {
+          activa?: boolean
+          actualizado_en?: string
+          creado_en?: string
+          creado_por?: string | null
+          id?: string
+          nombre: string
+          orden?: number
+          org_id: string
+          sitio_id: string
+        }
+        Update: {
+          activa?: boolean
+          actualizado_en?: string
+          creado_en?: string
+          creado_por?: string | null
+          id?: string
+          nombre?: string
+          orden?: number
+          org_id?: string
+          sitio_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sitio_areas_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sitio_areas_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizaciones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sitio_areas_sitio_id_fkey"
+            columns: ["sitio_id"]
+            isOneToOne: false
+            referencedRelation: "sitios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sitios: {
         Row: {
           activo: boolean
@@ -3237,6 +3639,123 @@ export type Database = {
           },
         ]
       }
+      vencimientos: {
+        Row: {
+          actualizado_en: string
+          area_id: string | null
+          creado_en: string
+          creado_por: string | null
+          documento_id: string | null
+          emitido_en: string | null
+          estado: string
+          id: string
+          nombre: string
+          notas: string | null
+          obligacion_id: string | null
+          org_id: string
+          responsable_id: string | null
+          sitio_id: string | null
+          tipo_id: string | null
+          vence_en: string
+          vigencia_meses: number | null
+        }
+        Insert: {
+          actualizado_en?: string
+          area_id?: string | null
+          creado_en?: string
+          creado_por?: string | null
+          documento_id?: string | null
+          emitido_en?: string | null
+          estado?: string
+          id?: string
+          nombre: string
+          notas?: string | null
+          obligacion_id?: string | null
+          org_id: string
+          responsable_id?: string | null
+          sitio_id?: string | null
+          tipo_id?: string | null
+          vence_en: string
+          vigencia_meses?: number | null
+        }
+        Update: {
+          actualizado_en?: string
+          area_id?: string | null
+          creado_en?: string
+          creado_por?: string | null
+          documento_id?: string | null
+          emitido_en?: string | null
+          estado?: string
+          id?: string
+          nombre?: string
+          notas?: string | null
+          obligacion_id?: string | null
+          org_id?: string
+          responsable_id?: string | null
+          sitio_id?: string | null
+          tipo_id?: string | null
+          vence_en?: string
+          vigencia_meses?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vencimientos_area_id_fkey"
+            columns: ["area_id"]
+            isOneToOne: false
+            referencedRelation: "sitio_areas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vencimientos_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vencimientos_documento_id_fkey"
+            columns: ["documento_id"]
+            isOneToOne: false
+            referencedRelation: "documentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vencimientos_obligacion_id_fkey"
+            columns: ["obligacion_id"]
+            isOneToOne: false
+            referencedRelation: "obligaciones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vencimientos_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizaciones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vencimientos_responsable_id_fkey"
+            columns: ["responsable_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vencimientos_sitio_id_fkey"
+            columns: ["sitio_id"]
+            isOneToOne: false
+            referencedRelation: "sitios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vencimientos_tipo_id_fkey"
+            columns: ["tipo_id"]
+            isOneToOne: false
+            referencedRelation: "obligacion_tipos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -3260,9 +3779,17 @@ export type Database = {
           usuario_id: string
         }[]
       }
+      dearmor: { Args: { "": string }; Returns: string }
+      dias_por_vencer: { Args: never; Returns: number }
       es_socio: { Args: never; Returns: boolean }
+      gen_random_uuid: { Args: never; Returns: string }
+      gen_salt: { Args: { "": string }; Returns: string }
       generar_lista_verificacion: {
         Args: { p_auditoria: string }
+        Returns: number
+      }
+      generar_obligaciones_de_nom: {
+        Args: { p_nom: string; p_org: string; p_sitio: string }
         Returns: number
       }
       meses_de_programa_validos: { Args: { p: Json }; Returns: boolean }
