@@ -1,6 +1,7 @@
 'use client'
 
 import { Fragment, useMemo, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { queryKeys } from '@/lib/query/keys'
 import { aplicarEscritura } from '@/lib/query/cache'
@@ -64,6 +65,10 @@ export default function PanelMatriz({ orgId }: { orgId: string }) {
   const [generadas, setGeneradas] = useState<string | null>(null)
   const [editando, setEditando] = useState<ObligacionConContexto | null>(null)
   const [abierto, setAbierto] = useState(false)
+  // `?obligacion=<id>` abre su ficha: es a donde lleva el buscador global
+  // [F06·B4]. Cerrarla la descarta sin tocar la URL.
+  const pedida = useSearchParams().get('obligacion')
+  const [descartada, setDescartada] = useState<string | null>(null)
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -89,6 +94,19 @@ export default function PanelMatriz({ orgId }: { orgId: string }) {
   )
 
   const delSitio = obligaciones.filter((o) => enElSitio(o.sitio_id, sitioId))
+
+  const porUrl = !abierto && pedida && pedida !== descartada
+    ? obligaciones.find((o) => o.id === pedida) ?? null
+    : null
+  // Lo que enseña la ficha: la que se abrió con el dedo, o la del enlace.
+  const ficha = abierto ? editando : porUrl
+  const fichaAbierta = abierto || porUrl !== null
+
+  function cerrarFicha() {
+    setAbierto(false)
+    setEditando(null)
+    setDescartada(pedida)
+  }
   const sinDecidir = delSitio.filter((o) => o.aplica === null).length
 
   // Agrupadas por NOM, y las que no vienen de una NOM al final: son las de
@@ -141,8 +159,8 @@ export default function PanelMatriz({ orgId }: { orgId: string }) {
     setGuardando(true)
     setError(null)
     try {
-      if (editando) {
-        const { fila, encolado } = await actualizarObligacion(editando, datos, contexto)
+      if (ficha) {
+        const { fila, encolado } = await actualizarObligacion(ficha, datos, contexto)
         aplicarEscritura<ObligacionConContexto>({
           cliente, clave, encolado,
           actualizar: (p) => p.map((o) => (o.id === fila.id ? fila : o)),
@@ -155,8 +173,7 @@ export default function PanelMatriz({ orgId }: { orgId: string }) {
           actualizar: (p) => [...p, fila],
         })
       }
-      setAbierto(false)
-      setEditando(null)
+      cerrarFicha()
     } catch (problema) {
       setError(mensajeDeError(problema))
     } finally {
@@ -173,8 +190,7 @@ export default function PanelMatriz({ orgId }: { orgId: string }) {
         cliente, clave, encolado,
         actualizar: (p) => p.filter((o) => o.id !== obligacion.id),
       })
-      setAbierto(false)
-      setEditando(null)
+      cerrarFicha()
     } catch (problema) {
       setError(mensajeDeError(problema))
     } finally {
@@ -338,41 +354,41 @@ export default function PanelMatriz({ orgId }: { orgId: string }) {
       )}
 
       <Modal
-        abierto={abierto}
-        alCerrar={() => setAbierto(false)}
-        titulo={editando ? editando.elemento || 'Obligación' : 'Nueva obligación'}
+        abierto={fichaAbierta}
+        alCerrar={cerrarFicha}
+        titulo={ficha ? ficha.elemento || 'Obligación' : 'Nueva obligación'}
         ancho={640}
         pie={
           <>
             {/* Sólo lo que la base deja quitar: sin evaluar. Una con foto o con
                 vencimientos también se rechaza, y el motivo sale en el aviso. */}
-            {editando && editando.estado_cumplimiento === 'sin_evaluar' && (
-              <Button variante="peligro" onClick={() => quitar(editando)} disabled={guardando} style={{ marginRight: 'auto' }}>
+            {ficha && ficha.estado_cumplimiento === 'sin_evaluar' && (
+              <Button variante="peligro" onClick={() => quitar(ficha)} disabled={guardando} style={{ marginRight: 'auto' }}>
                 Quitar
               </Button>
             )}
-            <Button variante="fantasma" onClick={() => setAbierto(false)}>Cancelar</Button>
+            <Button variante="fantasma" onClick={cerrarFicha}>Cancelar</Button>
             <Button variante="primario" type="submit" form={FORM} cargando={guardando}>
-              {editando ? 'Guardar' : 'Dar de alta'}
+              {ficha ? 'Guardar' : 'Dar de alta'}
             </Button>
           </>
         }
       >
         {error && <div style={{ marginBottom: 12 }}><Aviso tono="error">{error}</Aviso></div>}
-        {editando?.requisito && (
+        {ficha?.requisito && (
           <p style={{ fontSize: 12, color: 'var(--texto-dim)', margin: '0 0 12px' }}>
-            Nació del elemento {editando.requisito.numeral ? `${editando.requisito.numeral} · ` : ''}
-            «{editando.requisito.elemento}» de la {editando.nom?.clave}.
+            Nació del elemento {ficha.requisito.numeral ? `${ficha.requisito.numeral} · ` : ''}
+            «{ficha.requisito.elemento}» de la {ficha.nom?.clave}.
           </p>
         )}
-        {abierto && (
+        {fichaAbierta && (
           <FormularioObligacion
-            key={editando?.id ?? 'nueva'}
+            key={ficha?.id ?? 'nueva'}
             id={FORM}
             orgId={orgId}
             sitios={sitios}
             sitioInicial={sitioId}
-            inicial={editando ?? undefined}
+            inicial={ficha ?? undefined}
             alEnviar={guardar}
           />
         )}

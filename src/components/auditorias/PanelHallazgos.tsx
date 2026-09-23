@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { queryKeys } from '@/lib/query/keys'
 import { aplicarEscritura } from '@/lib/query/cache'
@@ -72,6 +73,10 @@ export default function PanelHallazgos({ auditoria }: { auditoria: AuditoriaEnLi
   const [verCerrados, setVerCerrados] = useState(false)
   const [edicion, setEdicion] = useState<Edicion>(null)
   const [viendo, setViendo] = useState<string | null>(null)
+  // `?hallazgo=<id>` abre su ficha: es a donde lleva el buscador global
+  // [F06·B4]. Cerrarla la descarta sin tocar la URL, y otro id la vuelve a abrir.
+  const pedido = useSearchParams().get('hallazgo')
+  const [descartado, setDescartado] = useState<string | null>(null)
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -110,7 +115,13 @@ export default function PanelHallazgos({ auditoria }: { auditoria: AuditoriaEnLi
   }, [hallazgos, texto, verCerrados])
 
   const cerrados = hallazgos.filter((h) => !ESTADOS_ABIERTOS_HALLAZGO.includes(h.estado)).length
-  const enPantalla = viendo ? hallazgos.find((h) => h.id === viendo) ?? null : null
+  const idEnPantalla = viendo ?? (pedido && pedido !== descartado ? pedido : null)
+  const enPantalla = idEnPantalla ? hallazgos.find((h) => h.id === idEnPantalla) ?? null : null
+
+  function dejarDeVer() {
+    setViendo(null)
+    setDescartado(pedido)
+  }
 
   function cerrarModal() {
     setEdicion(null)
@@ -283,7 +294,7 @@ export default function PanelHallazgos({ auditoria }: { auditoria: AuditoriaEnLi
       {/* El expediente del hallazgo */}
       <Modal
         abierto={enPantalla !== null}
-        alCerrar={() => setViendo(null)}
+        alCerrar={dejarDeVer}
         titulo={enPantalla ? folioDeHallazgo(enPantalla) : ''}
       >
         {enPantalla && (
@@ -294,7 +305,7 @@ export default function PanelHallazgos({ auditoria }: { auditoria: AuditoriaEnLi
             claveLista={clave}
             folioAuditoria={auditoria.folio}
             alEditar={() => {
-              setViendo(null)
+              dejarDeVer()
               setEdicion({ modo: 'editar', hallazgo: enPantalla })
             }}
             alCambiarEstado={(estado, motivo) => moverEstado(enPantalla, estado, motivo)}

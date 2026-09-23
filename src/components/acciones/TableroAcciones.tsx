@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { queryKeys } from '@/lib/query/keys'
 import { listarOrganizaciones, nombreDeOrganizacion } from '@/lib/queries/cartera'
@@ -66,6 +67,10 @@ export default function TableroAcciones() {
   const [orgFiltro, setOrgFiltro] = useState('')
   const [verCerradas, setVerCerradas] = useState(false)
   const [abierta, setAbierta] = useState<AccionEnCartera | null>(null)
+  // `?accion=<id>` abre su ficha: es a donde lleva el buscador global [F06·B4].
+  const pedida = useSearchParams().get('accion')
+  const [descartada, setDescartada] = useState<string | null>(null)
+  const idAbierta = abierta?.id ?? (pedida && pedida !== descartada ? pedida : null)
 
   const { data: acciones = [], isPending } = useQuery({
     queryKey: queryKeys.acciones.lista(),
@@ -259,10 +264,10 @@ export default function TableroAcciones() {
         ))
       )}
 
-      {abierta && (
+      {idAbierta && (
         <FichaAccion
-          accionId={abierta.id}
-          alCerrar={() => setAbierta(null)}
+          accionId={idAbierta}
+          alCerrar={() => { setAbierta(null); setDescartada(pedida) }}
         />
       )}
     </>

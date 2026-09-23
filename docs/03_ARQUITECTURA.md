@@ -648,7 +648,19 @@ Tres reglas que ya se pagaron al escribir el primero:
 
 Vista `indice_busqueda_global` + RPC `buscar_global`. Por **prefijo**
 (`'calibr':*`), no `websearch_to_tsquery`: se teclea a medias palabras. Vive en la
-Navbar, no en un FAB.
+Navbar, no en un FAB [F06·B4].
+
+- **La vista es `security_invoker = true` y la RPC `SECURITY INVOKER`**: cada una
+  de las siete tablas aplica su RLS a quien busca, partición de pruebas incluida
+  (regla 6).
+- **Sin índice**: el `tsvector` se calcula al vuelo sobre
+  `texto_busqueda()` —minúsculas, sin acentos, sólo `[a-z0-9]`—, que es
+  IMMUTABLE para poder convertirse en columna generada el día que haga falta.
+- **Dos caminos en el cliente** (`src/lib/busqueda/buscador.ts`): con señal, la
+  RPC; sin señal —o mientras contesta—, `buscarEnCache()` sobre las listas ya
+  bajadas, con el mismo criterio de prefijos. La clave `busqueda.global(texto)`
+  es la única con el texto dentro y **no se persiste**
+  (`src/lib/offline/persistencia.ts`).
 
 ### §8.17 · El asistente
 

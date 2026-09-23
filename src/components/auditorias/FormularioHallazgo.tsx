@@ -8,6 +8,8 @@ import { listarContactos, listarSitios } from '@/lib/queries/cartera'
 import { listarNormasConClausulas } from '@/lib/queries/normas'
 import { listarProcesos } from '@/lib/queries/procesos'
 import { TIPOS_HALLAZGO, TIPOS_QUE_EXIGEN_ACCION, criterioDe } from '@/lib/auditorias/catalogos'
+import { usePlazoPropuesto } from '@/lib/firma/usePlazoPropuesto'
+import { toISODate } from '@/lib/utils/dates'
 import type {
   ContextoHallazgo,
   DatosHallazgo,
@@ -32,7 +34,6 @@ const esquema = z.object({
   proceso_id: z.string(),
   sitio_id: z.string(),
   responsable_contacto_id: z.string(),
-  fecha_compromiso: z.string(),
   motivo: z.string().trim(),
 })
 
@@ -79,10 +80,18 @@ export default function FormularioHallazgo({
     proceso_id: inicial?.proceso_id ?? procesoSugerido ?? '',
     sitio_id: inicial?.sitio_id ?? '',
     responsable_contacto_id: inicial?.responsable_contacto_id ?? '',
-    fecha_compromiso: inicial?.fecha_compromiso ?? '',
     motivo: '',
   })
   const [errores, setErrores] = useState<Partial<Record<keyof Campos, string>>>({})
+
+  // La fecha compromiso la propone el plazo de la firma según el tipo, hasta
+  // que el auditor la escribe [F06·B3]. En un hallazgo ya levantado el plazo
+  // corre desde que se detectó, no desde hoy.
+  const compromiso = usePlazoPropuesto(
+    campos.tipo,
+    inicial ? inicial.fecha_compromiso : undefined,
+    inicial?.detectado_en ? toISODate(new Date(inicial.detectado_en)) : undefined,
+  )
 
   const { data: normas = [] } = useQuery({
     queryKey: queryKeys.normas.arbol(),
@@ -146,7 +155,7 @@ export default function FormularioHallazgo({
         proceso_id: v.proceso_id || null,
         sitio_id: v.sitio_id || null,
         responsable_contacto_id: v.responsable_contacto_id || null,
-        fecha_compromiso: v.fecha_compromiso || null,
+        fecha_compromiso: compromiso.valor || null,
       },
       v.motivo || null,
       {
@@ -277,14 +286,20 @@ export default function FormularioHallazgo({
           <Input
             etiqueta="Fecha compromiso"
             type="date"
-            value={campos.fecha_compromiso}
+            value={compromiso.valor}
             ayuda={
-              TIPOS_QUE_EXIGEN_ACCION.includes(campos.tipo)
-                ? 'Una NC necesita fecha: es lo que se sigue el lunes siguiente.'
-                : undefined
+              compromiso.ayuda
+                ?? (TIPOS_QUE_EXIGEN_ACCION.includes(campos.tipo)
+                  ? 'Una NC necesita fecha: es lo que se sigue el lunes siguiente.'
+                  : undefined)
             }
-            onChange={(e) => escribir('fecha_compromiso', e.target.value)}
+            onChange={(e) => compromiso.escribir(e.target.value)}
           />
+          {compromiso.movida && (
+            <button type="button" onClick={compromiso.usarPropuesta} style={VOLVER_A_PROPUESTA}>
+              Usar el plazo de la firma
+            </button>
+          )}
         </div>
       </div>
 
@@ -303,4 +318,14 @@ export default function FormularioHallazgo({
       )}
     </form>
   )
+}
+
+const VOLVER_A_PROPUESTA: React.CSSProperties = {
+  border: 0,
+  background: 'transparent',
+  padding: '4px 0 0',
+  color: 'var(--cyan-tinta)',
+  fontSize: 13,
+  cursor: 'pointer',
+  textDecoration: 'underline',
 }

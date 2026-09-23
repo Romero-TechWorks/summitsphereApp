@@ -1447,15 +1447,42 @@ WhatsApp.
   de JDM Built — incluidas todas sus trampas documentadas (cadena original desde
   el XSLT, `KeyInfo` con `RSAKeyValue` en cancelación, `customid` en el reintento,
   razón social sin régimen de capital).
-- **Usuarios**: alta, roles, asignación a organizaciones, reseteo de contraseña.
+- **Usuarios** ✅ *código listo, 23 sep 2026*: alta con **contraseña temporal**
+  que la persona cambia al entrar (decisión del dueño), roles, reseteo y baja.
+  Va por `/api/users` con `service_role` porque toca `auth.users`, y **la baja
+  bloquea la cuenta en `auth`**: `activo = false` a secas no le cerraba la puerta
+  a un consultor, porque `mis_organizaciones()` no mira `activo`. La asignación a
+  organizaciones **se queda en la pestaña Equipo** del expediente.
 - **Bitácora**: la consulta de `audit_logs` en lenguaje natural.
-- **Configuración**: datos de la firma, módulos encendidos, plazos por defecto.
+- **Configuración** ✅ *código listo, 23 sep 2026*: datos de la firma, **logotipo
+  incrustado** (un `data:` dentro de la fila, para que el membrete salga sin
+  señal) y **plazos por defecto conectados**: el formulario del hallazgo propone
+  la fecha compromiso con días hábiles y el calendario de la LFT, más los
+  festivos que añada la firma. ⚠️ **Los módulos encendidos NO se pintaron**:
+  ninguno de los cuatro existe en el código todavía, y cuatro casillas que no
+  encienden nada son un interruptor muerto (regla 11). Cada casilla llega con
+  su módulo.
 
-## F06·B4 — Buscador global
+## F06·B4 — Buscador global  ✅ *código listo, 23 sep 2026 · migración `G00` por aplicar*
 
 Vista `indice_busqueda_global` + RPC `buscar_global` sobre organizaciones,
 proyectos, documentos, hallazgos, acciones y obligaciones. Por **prefijo**
 (`'calibr':*`), porque se teclea a medias palabras. Vive en la Navbar.
+
+- ⚠️ **Siete fuentes, no seis: se sumaron las auditorías.** Lo primero que se
+  teclea es un folio `AUD-2026-014`, y sin ellas el buscador encontraba sus
+  hallazgos pero no la auditoría.
+- ⚠️ **Sin señal sigue buscando**, en las listas que ya están en la caché
+  (`buscarEnCache()`), con la misma regla de prefijos, y lo dice. Es la regla 7
+  del offline llevada al buscador: una búsqueda que sólo va al servidor sale
+  vacía en el sótano, y eso se lee como datos perdidos.
+- **También encuentra las pantallas**: en el teléfono, Sistemas, Capacitación y
+  Admin no caben en la barra inferior.
+- Los resultados abren la ficha en su pantalla: se añadieron `?hallazgo=`,
+  `?accion=` y `?obligacion=`, que no existían. Sin rutas nuevas (§2.1).
+- ⚠️ **Los signos se vuelven espacios antes del `to_tsvector`**: el analizador de
+  Postgres leía `AUD-2026-001` como `aud` y los enteros negativos `-2026` y
+  `-001`, y ningún folio casaba. Lo destapó la prueba en Docker.
 
 ### Criterio de cierre — Fase 06
 

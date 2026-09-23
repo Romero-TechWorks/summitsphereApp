@@ -1247,14 +1247,14 @@ Todas con **`security_invoker = true`** (§4.4):
 | `hallazgos_abiertos` | ⚠️ **Aplazada en F03·B4, y confirmada al conectar el widget del tablero** (30 ago 2026). El tablero del lunes y el widget «Hallazgos abiertos» agrupan y calculan la antigüedad **en memoria**, sobre la misma lista ya bajada — una vista es otra clave que puede faltar en la caché, y las dos pantallas se abren con media barra de señal. Es la misma decisión que la de los widgets de la cartera [F01·B3] |
 | `obligaciones_semaforo` | ⚠️ **No se creó** (F05·B1). El semáforo se cuenta **en memoria** sobre la matriz ya bajada, igual que los widgets: una vista sería otra clave que puede faltar sin señal |
 | `carga_consultor` | Proyectos y acciones abiertas por consultor |
-| `indice_busqueda_global` | Las seis fuentes del buscador |
+| `indice_busqueda_global` | ✅ F06·B4. **Siete** fuentes —las seis del plan más `auditorias`—, `security_invoker = true`. El `tsvector` sale al vuelo de `texto_busqueda()`, sin índice |
 | `salud_sgc` | El puntaje de la Fase 08, por proceso y organización |
 
 ## RPC principales
 
 ```sql
 correr_avisos_programados()        -- Fase 04, cron diario
-buscar_global(consulta text)       -- Fase 06, por prefijo
+buscar_global(p_consulta, p_limite) -- F06·B4, por prefijo, SECURITY INVOKER
 generar_lista_verificacion(...)    -- Fase 03, desde el alcance
 portal_organizacion(p_token)       -- Fase 06, SECURITY DEFINER
 recalcular_salud_sgc()             -- Fase 08, barrido nocturno

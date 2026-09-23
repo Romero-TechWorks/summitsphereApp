@@ -254,6 +254,31 @@ export const queryKeys = {
     quejas: () => ['acciones', 'quejas'] as const,
   },
   /**
+   * El buscador global de la Navbar [F06·B4].
+   *
+   * ⚠️ **Es la ÚNICA clave con el texto tecleado dentro, y NO se persiste**
+   * (`src/lib/offline/persistencia.ts` la salta). La regla 7 del offline dice
+   * que un filtro no es una consulta, y aquí sí lo es a propósito: buscar en
+   * toda la cartera es justo lo que no cabe en memoria. Lo que la regla protege
+   * —que sin señal la lista no se vacíe— lo cubre `buscarEnCache()`, que busca
+   * en las listas ya bajadas cuando esta consulta no puede salir.
+   */
+  busqueda: {
+    todo: () => ['busqueda'] as const,
+    global: (texto: string) => ['busqueda', 'global', texto] as const,
+  },
+  /**
+   * La administración de la firma [F06·B3].
+   *
+   * ⚠️ **`usuarios` es la lista COMPLETA, activas y dadas de baja**, y no es la
+   * misma que `cartera.usuariosFirma()`: aquélla es el desplegable de un
+   * expediente y sólo trae la gente activa de la firma. Cambiar un rol o dar
+   * de baja invalida **las dos**.
+   */
+  admin: {
+    usuarios: () => ['admin', 'usuarios'] as const,
+  },
+  /**
    * Los avisos al teléfono [F04·B3].
    *
    * ⚠️ **Ninguna lleva `usuarioId` en la clave, y es a propósito**: las dos son

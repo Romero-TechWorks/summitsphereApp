@@ -5,10 +5,11 @@
  * `middleware.ts` está deprecado: si renombras este archivo, deja de correr y
  * la app queda ABIERTA sin que nada falle ni avise.
  *
- * Hace tres cosas (docs/03_ARQUITECTURA.md §7.1):
+ * Hace cuatro cosas (docs/03_ARQUITECTURA.md §7.1):
  *   1. Refresca la sesión de Supabase en cada petición.
  *   2. Redirige a `/login` a quien no tenga sesión.
- *   3. Exige `aal2` —segundo factor— a los roles `socio` y `administracion`.
+ *   3. Manda a `/contrasena` a quien entró con una contraseña temporal [F06·B3].
+ *   4. Exige `aal2` —segundo factor— a los roles `socio` y `administracion`.
  *
  * ⚠️ El MFA se impone AQUÍ, no en la interfaz. Una pantalla que se esconde no
  * protege nada: los datos siguen a un `fetch` de distancia. Sin `aal2` en el
@@ -29,6 +30,12 @@ const RUTAS_PUBLICAS = ['/login']
  * queda en un bucle de redirecciones contra sí mismo.
  */
 const RUTA_MFA = '/mfa'
+
+/**
+ * Donde se cambia la contraseña temporal que dio un socio [F06·B3]. Exenta de
+ * la marca por el mismo motivo que `/mfa` del segundo factor: es donde se quita.
+ */
+const RUTA_CONTRASENA = '/contrasena'
 
 export async function proxy(request: NextRequest) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -96,6 +103,31 @@ export async function proxy(request: NextRequest) {
     destino.pathname = '/'
     destino.search = ''
     return NextResponse.redirect(destino)
+  }
+
+  // ⚠️ ANTES que el segundo factor, salvo una excepción. Quien tenga que
+  // ENROLARSE lo hace ya con su contraseña definitiva. Pero quien YA tiene un
+  // factor y no lo ha usado en esta sesión —un socio al que otro le generó una
+  // temporal— pasa primero por `/mfa`: cambiar la contraseña de una cuenta con
+  // segundo factor sin haberlo usado sería saltárselo.
+  //
+  // Sale casi gratis: `user_metadata` viene en lo que `getUser()` ya devolvió,
+  // y los niveles se leen del token sin tocar la red. La marca la pone
+  // `/api/users` y la quita la propia persona al guardar su contraseña.
+  const debeCambiar = user?.user_metadata?.debe_cambiar_contrasena === true
+  if (user && debeCambiar && !ruta.startsWith('/api/')) {
+    const { data: niveles } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+    const tieneFactorSinUsar = niveles?.currentLevel === 'aal1' && niveles?.nextLevel === 'aal2'
+    const toca = tieneFactorSinUsar ? RUTA_MFA : RUTA_CONTRASENA
+    if (ruta !== toca) {
+      const destino = request.nextUrl.clone()
+      destino.pathname = toca
+      destino.search = ''
+      return NextResponse.redirect(destino)
+    }
+    // Está donde le toca. `/contrasena` se libra aquí del segundo factor de su
+    // rol —enrolará después, ya con su contraseña—; `/mfa` es `/mfa`.
+    return respuesta
   }
 
   if (user && ruta !== RUTA_MFA && await faltaSegundoFactor(supabase, user.id)) {

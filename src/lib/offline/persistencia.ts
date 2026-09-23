@@ -13,7 +13,13 @@
  * teléfono.
  */
 
-import { dehydrate, hydrate, type DehydratedState, type QueryClient } from '@tanstack/react-query'
+import {
+  defaultShouldDehydrateQuery,
+  dehydrate,
+  hydrate,
+  type DehydratedState,
+  type QueryClient,
+} from '@tanstack/react-query'
 import { ALMACEN_CACHE, borrarIdb, escribirIdb, leerIdb } from './idb'
 
 const CLAVE = 'react-query'
@@ -61,6 +67,11 @@ export function iniciarPersistencia(cliente: QueryClient): () => void {
         // `src/lib/offline/cola.ts`. Guardar además las mutaciones pausadas de
         // React Query mandaría cada escritura dos veces al volver la señal.
         shouldDehydrateMutation: () => false,
+        // ⚠️ Las búsquedas del buscador global tampoco [F06·B4]: una clave por
+        // cada cosa tecleada llenaría IndexedDB de resultados que nadie vuelve
+        // a pedir. Sin señal, el buscador busca en las listas persistidas.
+        shouldDehydrateQuery: (consulta) =>
+          consulta.queryKey[0] !== 'busqueda' && defaultShouldDehydrateQuery(consulta),
       })
 
       await escribirIdb(

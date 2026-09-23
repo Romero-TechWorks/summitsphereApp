@@ -3,7 +3,7 @@
 > **Para quién es esto:** las personas de Summit que van a probar la app antes de
 > que se use con clientes de verdad. No hace falta saber nada técnico.
 >
-> **Cuánto tiempo lleva:** los ocho recorridos completos, alrededor de tres horas.
+> **Cuánto tiempo lleva:** los diez recorridos completos, alrededor de cuatro horas.
 > Se pueden hacer en días distintos; el **A** y el **E** necesitan un teléfono.
 >
 > **Qué se está probando:** las Fases 01 a 04. Lo demás **todavía no existe** y
@@ -15,7 +15,11 @@
 
 ### Tu cuenta
 
-Te la crea el dueño. La primera vez que entres, la app te va a pedir que enroles
+Te la crea el dueño desde *Admin → Usuarios*, y te entrega una **contraseña
+temporal**. Al entrar con ella, la app te pide poner una propia antes de nada;
+después la puedes cambiar cuando quieras en *Admin → Mi cuenta*.
+
+Si tu rol lo exige, la app también te va a pedir que enroles
 un **segundo factor** con una aplicación de autenticación (Google Authenticator,
 Authy, 1Password…). No es opcional y no se puede saltar.
 
@@ -57,7 +61,7 @@ de quien lee los reportes.
 |---|---|
 | **Cumplimiento** | Matriz, Recorrido, Semáforo, Vencimientos y Catálogo de NOMs **sí están** (recorrido G). Falta el **informe de levantamiento** impreso |
 | **Capacitación** | ✅ **Está** (recorrido H). No genera DC-3 **a propósito**: los expide el proveedor y la app los registra |
-| **Admin**, salvo *Avisos* | Metas, finanzas, facturación, usuarios y bitácora son Fase 06 |
+| **Admin**: metas, finanzas, facturación y bitácora | Fase 06. *Avisos*, *Configuración*, *Usuarios* y *Mi cuenta* sí están |
 | **Portal del cliente** | No existe todavía. Fase 06 |
 | **Asistente** (🤖) | Fase 07, y está apagado de fábrica |
 
@@ -73,7 +77,7 @@ Y dentro de lo que sí está:
 
 ---
 
-## 3 · Los ocho recorridos
+## 3 · Los diez recorridos
 
 Hazlos **en orden**: cada uno deja algo que el siguiente usa.
 
@@ -312,6 +316,42 @@ Al quitar el modo avión, el contador llega a «todo guardado» solo, y en
 
 **Qué tiene que pasar:** en **Sesiones → Con DC-3 pendientes** la sesión sale
 mientras falte alguno, y en el **Programa anual** el renglón dice **Impartido**.
+
+### I · Cuentas y configuración de la firma  💻 · *con un socio*
+
+1. En **Admin → Usuarios → Dar de alta**, crea una cuenta de consultor con un
+   correo tuyo de pruebas. Anota la contraseña temporal: **no se vuelve a
+   enseñar**.
+2. En otra ventana privada, entra con ella. Tiene que mandarte a **Tu
+   contraseña** antes de enseñarte nada. Pon una nueva y entra.
+3. De vuelta con el socio, pulsa **Baja** sobre esa cuenta. En la ventana
+   privada, cierra sesión e intenta entrar: **no tiene que dejarte**.
+   **Reactivar** y vuelve a entrar.
+4. En **Admin → Configuración**, sube el logotipo y cambia el plazo de *NC
+   menor* a 20. Guarda.
+5. En una auditoría, levanta un hallazgo *NC menor*: la fecha compromiso tiene
+   que salir **puesta**, a 20 días hábiles, y decir de dónde sale. Cambia el tipo
+   a *NC mayor*: la fecha se mueve sola. Escríbela a mano y vuelve a cambiar el
+   tipo: **ya no se mueve**.
+6. Imprime el informe **en modo avión**: tiene que salir con el logotipo.
+
+**Qué tiene que pasar además:** con un consultor, **Admin** no enseña la pestaña
+*Usuarios*, y *Configuración* se ve pero no se puede guardar.
+
+### J · El buscador  📱💻 · ⚠️ necesita la migración `G00`
+
+1. En la barra de arriba (o con la lupa en el teléfono), escribe un pedazo de
+   folio: «AUD-2026». Tiene que salir la auditoría. Pulsa y abre.
+2. Escribe «calibracion» **sin acento** y el nombre corto de un cliente:
+   «aceros calibr». Tienen que salir sólo cosas de ese cliente.
+3. Escribe el folio de un hallazgo y ábrelo: tiene que abrir **su ficha**, no
+   sólo la lista.
+4. Escribe «capac»: tiene que salir la pantalla **Capacitación**.
+5. Con un **consultor**: busca un cliente que **no** tenga asignado. No tiene
+   que salir.
+6. En el teléfono, **modo avión** y busca otra vez algo que ya habías abierto:
+   tiene que salir, con el aviso «Sin señal. Buscando sólo en lo que ya está
+   descargado».
 
 ---
 

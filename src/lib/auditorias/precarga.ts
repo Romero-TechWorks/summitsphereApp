@@ -193,11 +193,16 @@ export function piezasDeLaPrecarga(auditoriaId: string, orgId: string): PiezaPre
        * razón social y sin logotipo: un documento anónimo, en la única ocasión en
        * que el entregable se mira delante de quien lo paga.
        *
-       * Va la última a propósito. Es la más barata de todas y la única que no
-       * hace falta para *trabajar*: si la señal se corta a mitad de la precarga,
-       * lo que tiene que haber bajado ya son la lista y los hallazgos.
+       * Va la última a propósito. Es la más barata de todas: si la señal se
+       * corta a mitad de la precarga, lo que tiene que haber bajado ya son la
+       * lista y los hallazgos.
+       *
+       * ⚠️ **Desde F06·B3 trae también los plazos por defecto**, con los que el
+       * formulario del hallazgo propone la fecha compromiso. Si falta, el
+       * hallazgo se levanta igual —la fecha se captura a mano—; no se propone
+       * una fecha con plazos inventados.
        */
-      etiqueta: 'El membrete de la firma',
+      etiqueta: 'El membrete y los plazos de la firma',
       claves: [queryKeys.firma.identidad()],
       cargar: (c) => c.ensureQueryData({
         queryKey: queryKeys.firma.identidad(),

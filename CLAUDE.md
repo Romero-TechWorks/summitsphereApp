@@ -79,9 +79,8 @@ de dominio cuelga de una `org_id`. Ver §Reglas críticas, regla 1.
   - **La advertencia de datos personales (hueco 42)** va en el adjunto del
     vencimiento, corta y sin bloquear. `docs/08` §7 declara el resto como deuda.
   - `docs/13` §0 tabula las doce diferencias de B1+B2 con la spec.
-- ✅ **`F05·B3` ESTÁ ESCRITO, CON SU MIGRACIÓN `F00c` POR APLICAR** (23 sep 2026).
-  `20260924120000_capacitacion.sql` —la **vigésima**—. ⚠️ **Primero la
-  migración, después el push**. Probada en Docker: **125 comprobaciones** con
+- ✅ **`F05·B3` ESTÁ ESCRITO Y SU MIGRACIÓN `F00c` APLICADA** (23 sep 2026).
+  `20260924120000_capacitacion.sql` —la **vigésima**—. Probada en Docker: **125 comprobaciones** con
   datos previos y **94 de regresión** desde cero; tipos regenerados, **398
   líneas añadidas**. `lint` y `build` en verde. La especificación de lo
   construido es **`docs/14_ESPECIFICACION_F05_B3.md`**. **Lo que hay que saber:**
@@ -105,8 +104,67 @@ de dominio cuelga de una `org_id`. Ver §Reglas críticas, regla 1.
   un agente capacitador externo. Por eso ya no hacen falta el formato oficial
   vigente, el registro STPS de Summit, los catálogos STPS ni el bucket
   `constancias` (si ya se creó, no estorba; nada lo usa).
-- ▶️ **LO SIGUIENTE**: con B3, **la Fase 05 está escrita entera**. Falta
-  aplicar `F00c`, y la prueba del criterio de cierre en el teléfono. ⚠️ **El
+- ✅ **`F06·B3` EMPEZÓ POR CONFIGURACIÓN Y USUARIOS** (23 sep 2026), **sin
+  migración**: `config_firma` y `usuarios` ya tenían todo. `lint` y `build` en
+  verde. `/admin` lleva ahora **Avisos · Configuración · Usuarios · Mi cuenta**.
+  Tres decisiones del dueño que lo fijan:
+  - ⚠️ **EL LOGOTIPO VA INCRUSTADO** en `config_firma.logotipo_url` como
+    `data:image/png` reducido a 160 px (`src/lib/firma/logotipo.ts`). Un enlace
+    no carga sin señal —y los buckets son privados, un enlace firmado caduca—:
+    así viaja en `firma.identidad()`, que ya es pieza de la precarga, y el informe
+    de la reunión de cierre sale con logo en el sótano.
+  - ⚠️ **LOS PLAZOS POR DEFECTO YA TIENEN LECTOR**: el formulario del hallazgo
+    —y el de NC desde queja— **propone** la fecha compromiso según el tipo
+    (`usePlazoPropuesto()`), con **días hábiles** y los festivos de la LFT art. 74
+    calculados (`src/lib/utils/diasHabiles.ts`) más los que añada la firma
+    (`plazos_default.festivos`). La propuesta **se deriva, no se copia a estado**:
+    se mueve con el tipo hasta que el auditor escribe la fecha. En un hallazgo ya
+    levantado **no se inventa** una fecha. `firma.identidad()` trae ahora
+    `plazos_default`; **sin ella en la caché no se propone nada** —nunca los
+    plazos de fábrica—.
+  - ⚠️ **ALTA CON CONTRASEÑA TEMPORAL**, que la persona cambia al entrar. Va
+    por `/api/users` con `service_role` (`src/lib/api/usuarios.ts`:
+    `socioQueLlama()` y `puedeAdministrar()` son el candado, porque ahí el RLS no
+    existe). La marca `debe_cambiar_contrasena` vive en `user_metadata`, la lee
+    `src/proxy.ts` de lo que `getUser()` ya devolvió y la persona la apaga **en la
+    misma llamada** que pone su contraseña. `/contrasena` va **antes** que `/mfa`
+    salvo si la cuenta ya tiene un factor sin usar. **La temporal se enseña una
+    vez** y nunca va a la bitácora.
+  - ⚠️ **LA BAJA BLOQUEA LA CUENTA EN `auth` (`ban_duration`)**, no sólo pone
+    `activo = false`: `mis_organizaciones()` no mira `activo`, así que un
+    consultor «dado de baja» seguía viendo sus expedientes. Nombre, rol y
+    certificaciones sí van por la cola.
+  - ⚠️ **Los módulos encendidos NO se pintaron**: ninguno de los cuatro existe en
+    código (ver §Módulos apagados). Regla 11.
+- ✅ **`F06·B4` —EL BUSCADOR GLOBAL— ESTÁ ESCRITO, CON SU MIGRACIÓN `G00` POR
+  APLICAR** (23 sep 2026). `20260925120000_buscador_global.sql`, la **vigésima
+  primera**. ⚠️ **Primero la migración, después el push.** Probada en Docker con
+  las veinte anteriores y datos sembrados: **17 comprobaciones** (aislamiento por
+  asignación y por partición, acentos, folios a medias, signos, `anon`). Tipos:
+  **51 líneas añadidas, ninguna quitada**. `lint` y `build` en verde.
+  **Lo que hay que saber:**
+  - ⚠️ **`indice_busqueda_global` es `security_invoker = true`** y la RPC
+    `SECURITY INVOKER`: es la primera vista del proyecto y la regla 6 manda.
+    Siete fuentes: las seis del plan **más `auditorias`**.
+  - ⚠️ **`texto_busqueda()` convierte los signos en espacios ANTES del
+    `to_tsvector`.** El analizador leía `AUD-2026-001` como `aud`, `-2026`,
+    `-001` —enteros negativos— y ningún folio casaba. Es IMMUTABLE a propósito:
+    el día que haga falta índice, sale una columna generada.
+  - ⚠️ **SIN SEÑAL SIGUE BUSCANDO** en las listas ya bajadas
+    (`buscarEnCache()`, `src/lib/busqueda/buscador.ts`), con el mismo criterio
+    de prefijos, y lo dice. **No dispara consultas**: sólo `getQueryData`.
+  - ⚠️ **`busqueda.global(texto)` es la única clave con el texto dentro, y NO
+    se persiste** (`persistencia.ts` la salta). Es la excepción consciente a la
+    regla 7; lo que esa regla protege lo cubre la búsqueda en caché.
+  - **Encuentra también las pantallas**: en el teléfono es el camino a
+    Sistemas, Capacitación y Admin.
+  - Se añadieron **`?hallazgo=`, `?accion=` y `?obligacion=`**, que abren la
+    ficha. Cerrarla la **descarta** sin reescribir la URL (`descartado`), y otro
+    id la vuelve a abrir.
+- ▶️ **LO SIGUIENTE**: aplicar `G00`. La Fase 05 está escrita y aplicada
+  entera; falta la prueba del criterio de cierre en el teléfono. De la Fase 06
+  quedan el portal (espera `G02`), los reportes (esperan `G01`), metas y
+  finanzas, y la bitácora. ⚠️ **El
   informe de levantamiento de `B1` sigue esperando** a que se decida dónde vive
   su prosa (docs/13 §0, #6).
 - 📋 **B1 y B2 se especificaron en `docs/13_ESPECIFICACION_F05_B1_B2.md`** —y su
@@ -212,8 +270,9 @@ de dominio cuelga de una `org_id`. Ver §Reglas críticas, regla 1.
     descarga completa y **filtro en memoria** (regla offline 7), como la cartera.
 
 - ✅ **LAS DIECINUEVE PRIMERAS MIGRACIONES ESTÁN APLICADAS.** `F00` el 22 sep
-  2026 y `F00b` —la renovación de vencimientos— el 23 sep 2026. La vigésima
-  (`F00c`, capacitación) es la única pendiente.
+  2026, `F00b` —la renovación de vencimientos— y `F00c` —capacitación, la
+  vigésima— el 23 sep 2026. **La única pendiente es la vigésima primera, `G00`
+  (el buscador).**
   `20260909120000_avisos_y_notificaciones.sql` —tarea `E06`, la de **F04·B3+B4**—
   se aplicó **~15 sep 2026**, y con ella **la Fase 04 quedó cerrada**: su criterio
   exigía que «el responsable reciba la notificación en su teléfono».
@@ -980,7 +1039,7 @@ de dominio cuelga de una `org_id`. Ver §Reglas críticas, regla 1.
 | `docs/14_ESPECIFICACION_F05_B3.md` | Capacitación: lo construido con las cuatro respuestas de Summit sobre el DC-3 |
 | `docs/13_ESPECIFICACION_F05_B1_B2.md` | ▶️ **La especificación de lo siguiente.** Matriz de obligaciones y vencimientos: DDL, reglas, RPC, pantallas, migración y comprobaciones. **Se lee entero antes de empezar `F05`** |
 | `docs/11_TAREAS_DEL_CLIENTE.md` | Lo que el cliente **captura dentro de la app**, paso a paso y sin jerga |
-| `docs/12_GUIA_DE_PRUEBAS.md` | **Qué probar**, para el equipo de Summit. Siete recorridos, lo que todavía no existe, y las pruebas negativas. ⚠️ Si cambias una etiqueta o un candado que aparezca ahí, corrígelo en el mismo commit |
+| `docs/12_GUIA_DE_PRUEBAS.md` | **Qué probar**, para el equipo de Summit. Diez recorridos, lo que todavía no existe, y las pruebas negativas. ⚠️ Si cambias una etiqueta o un candado que aparezca ahí, corrígelo en el mismo commit |
 | `docs/formatos_informeAuditorias/` | **Los catálogos documentales de los clientes** —232 archivos en cinco tandas: 68 del cliente 01 (ATELIER, constructora, ISO 9001) y **164 del cliente 02** (César Roel Abogados, despacho, **ISO 9001+27001+37001+37301**, 22 sep 2026)—, transcritos y mapeados al modelo en **29 fichas**. El `README` es su índice y lleva el registro de huecos (38). ⚠️ El nombre de la carpeta es histórico: ya no son sólo formatos de auditoría, ni de un solo cliente |
 | `guias/*` | Montaje de la infraestructura |
 
@@ -1134,12 +1193,16 @@ tenía WiFi malo; aquí el auditor está en un sótano de una planta industrial.
    planta sin señal la lista se vacía en cuanto se teclea la primera letra —esa
    clave no está en la caché— y el consultor concluye que la app perdió sus
    datos. Ver `queryKeys.cartera.organizaciones()`.
+   ⚠️ **La única excepción es el buscador global** [F06·B4]: buscar en toda la
+   cartera no cabe en memoria, así que su clave lleva el texto —y no se
+   persiste—. Sin señal cae a `buscarEnCache()` sobre las listas ya bajadas, que
+   es lo que esta regla protege.
 8. **Una auditoría se descarga entera antes de entrar a planta.** El plan, sus
    cláusulas, la lista de verificación y los hallazgos previos se precargan en la
    caché al abrir la auditoría con señal. Si esto no pasa, el auditor llega al
    piso con una pantalla vacía. §8.11.
 
-**Excepciones conscientes, y son cinco:**
+**Excepciones conscientes, y son siete:**
 
 1. **Los adjuntos**, sólo en su mitad binaria: la **fila** de `adjuntos` sí pasa
    por `offlineWrite` —y tiene que pasar, para conservar el orden—; lo que va por
@@ -1165,7 +1228,12 @@ tenía WiFi malo; aquí el auditor está en un sótano de una planta industrial.
    por los mismos tres motivos que la quinta. **Sólo generar**: evaluar cada
    elemento —que es lo que se hace en la planta— pasa por la cola.
 
-En las seis, sin conexión la pantalla **lo dice y no deja empezar**.
+7. **Las cuentas: alta, contraseña temporal, baja y cambiar la propia
+   contraseña** [F06·B3]. Tocan `auth.users` —sólo `service_role` o la propia
+   sesión— y no tienen sentido sin red. **Sólo esas**: nombre, rol y
+   certificaciones de una cuenta pasan por la cola.
+
+En las siete, sin conexión la pantalla **lo dice y no deja empezar**.
 
 ---
 
@@ -1278,6 +1346,9 @@ src/
   lib/acciones/        → catálogos del ciclo de mejora  [F04·B1]
   lib/cumplimiento/    → catálogos · precarga del recorrido  [F05·B1]
   lib/capacitacion/    → catálogos · estado del DC-3 · solicitud CSV  [F05·B3]
+  lib/firma/           → plazos por defecto · logotipo incrustado  [F06·B3]
+  lib/busqueda/        → tipos, enlaces y búsqueda en caché del buscador  [F06·B4]
+  lib/api/             → lo compartido de las rutas: cron · usuarios (candado del socio)
   lib/asistente/       → proveedor, esquemas Zod, instrucciones, herramientas
   lib/plantillas/      → impresion.ts + los cinco formatos de la firma:
                          informeAuditoria [B5] · programaAnual · listaAsistencia
@@ -1310,7 +1381,11 @@ y sin barra inferior.
 ## Módulos apagados de fábrica
 
 Igual que en JDM Built, hay módulos que existen en el código y **no se encienden**
-hasta que el dueño lo pide, en `MODULOS_APAGADOS_POR_DEFECTO`:
+hasta que el dueño lo pide, en `MODULOS_APAGADOS_POR_DEFECTO`.
+⚠️ **Hoy ni esa constante ni ninguno de los cuatro módulos existe en el código**
+(revisado el 23 sep 2026): la columna `config_firma.modulos_activos` está, y por
+eso *Configuración* no pinta ninguna casilla todavía — la de cada módulo llega
+con él. Los cuatro:
 
 `facturacion` · `asistente` · `automatizacion` (MS Graph) · `comercializadora`
 

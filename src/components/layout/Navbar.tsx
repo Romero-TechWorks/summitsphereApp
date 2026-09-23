@@ -8,14 +8,15 @@ import { queryKeys } from '@/lib/query/keys'
 import { obtenerUsuarioActual } from '@/lib/queries/usuarios'
 import { DESTINOS, estaActivo } from '@/lib/navegacion'
 import EstadoConexion from '@/components/layout/EstadoConexion'
+import BuscadorGlobal from '@/components/layout/BuscadorGlobal'
 import Logo from '@/components/ui/Logo'
 import { IconoSalir } from '@/components/ui/Iconos'
 
 /**
  * La barra superior.
  *
- * ⚠️ Aquí van a vivir el buscador global [Fase 06] y el 🤖 del asistente
- * [Fase 07]. Todavía no están, y no se dejan puestos apagados: un botón que no
+ * Aquí vive el buscador global [F06·B4], y aquí vivirá el 🤖 del asistente
+ * [Fase 07]. Ése todavía no está, y no se deja puesto apagado: un botón que no
  * hace nada se toca dos veces, se da por roto, y enseña al usuario a
  * desconfiar del resto de la interfaz.
  *
@@ -97,7 +98,9 @@ export default function Navbar({ isMobile }: { isMobile: boolean }) {
         )}
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+      <BuscadorGlobal isMobile={isMobile} />
+
       {usuario?.es_dev === true && (
         <span
           title="Cuenta de pruebas: esta sesión sólo ve los datos de demostración. Nada de lo que hagas aquí toca la cartera del cliente."

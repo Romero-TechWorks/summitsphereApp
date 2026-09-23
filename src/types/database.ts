@@ -4166,7 +4166,22 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      indice_busqueda_global: {
+        Row: {
+          actualizado_en: string | null
+          auditoria_id: string | null
+          detalle: string | null
+          documento: unknown
+          estado: string | null
+          folio: string | null
+          id: string | null
+          org_id: string | null
+          organizacion: string | null
+          tipo: string | null
+          titulo: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       armar_resumen_diario: {
@@ -4175,6 +4190,22 @@ export type Database = {
           cuerpo: string
           titulo: string
           usuario_id: string
+        }[]
+      }
+      buscar_global: {
+        Args: { p_consulta: string; p_limite?: number }
+        Returns: {
+          actualizado_en: string
+          auditoria_id: string
+          detalle: string
+          estado: string
+          folio: string
+          id: string
+          org_id: string
+          organizacion: string
+          rango: number
+          tipo: string
+          titulo: string
         }[]
       }
       correr_avisos_programados: {
@@ -4220,6 +4251,7 @@ export type Database = {
       }
       registrar_inicio_sesion: { Args: never; Returns: undefined }
       soy_dev: { Args: never; Returns: boolean }
+      texto_busqueda: { Args: { p_texto: string }; Returns: string }
     }
     Enums: {
       [_ in never]: never

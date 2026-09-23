@@ -23,16 +23,27 @@
  */
 
 import { createClient } from '@/lib/supabase/client'
-import type { Tables } from '@/types/database'
+import { exigirFilas } from '@/lib/supabase/errores'
+import { offlineWrite, type ResultadoEscritura } from '@/lib/offline/mutate'
+import type { Json, Tables } from '@/types/database'
 
 /**
- * Lo que se imprime en un membrete. **No trae `plantillas` ni
- * `modulos_activos`**: son configuración, pesan, y una consulta que se precarga
- * antes de bajar a un sótano no baja lo que no va a usar.
+ * Lo que se imprime en un membrete **y los plazos por defecto**. No trae
+ * `plantillas` ni `modulos_activos`: son configuración, pesan, y una consulta
+ * que se precarga antes de bajar a un sótano no baja lo que no va a usar.
+ *
+ * ⚠️ **`plazos_default` entró con F06·B3, y es por la misma razón que el
+ * membrete**: el formulario del hallazgo propone la fecha compromiso con ellos,
+ * y ese formulario se llena en la planta. Una clave aparte sería otra pieza de
+ * la precarga que puede faltar; éstos son cuatro números en la misma fila.
+ *
+ * ⚠️ **Y `logotipo_url` es una imagen INCRUSTADA** (`data:image/png;base64,…`),
+ * no un enlace, desde F06·B3: un enlace remoto no carga sin señal y el informe
+ * de la reunión de cierre salía sin logo. Ver `src/lib/firma/logotipo.ts`.
  */
 export type IdentidadFirma = Pick<
   Tables<'config_firma'>,
-  'razon_social' | 'rfc' | 'direccion' | 'telefono' | 'correo' | 'logotipo_url'
+  'razon_social' | 'rfc' | 'direccion' | 'telefono' | 'correo' | 'logotipo_url' | 'plazos_default'
 >
 
 /**
@@ -46,10 +57,56 @@ export type IdentidadFirma = Pick<
 export async function obtenerIdentidadFirma(): Promise<IdentidadFirma | null> {
   const { data, error } = await createClient()
     .from('config_firma')
-    .select('razon_social, rfc, direccion, telefono, correo, logotipo_url')
+    .select('razon_social, rfc, direccion, telefono, correo, logotipo_url, plazos_default')
     .eq('id', 1)
     .maybeSingle()
 
   if (error) throw error
   return data ?? null
+}
+
+// ════════════════════════════════════════════════════════════════ escrituras ══
+
+export type DatosFirma = {
+  razon_social: string
+  rfc: string | null
+  direccion: string | null
+  telefono: string | null
+  correo: string | null
+  logotipo_url: string | null
+  plazos_default: Json
+}
+
+/**
+ * Guardar la configuración de la firma [F06·B3].
+ *
+ * ⚠️ **Sólo un socio**, y lo impone la base (`config_firma_update ... using
+ * (es_socio())`), no la pantalla. Sin `.select()` y `exigirFilas`, un
+ * consultor que llegara aquí vería «guardado» con cero filas tocadas.
+ *
+ * Pasa por la cola como todo lo demás: es una fila, y cambiar el teléfono de la
+ * firma sin señal no tiene por qué perderse.
+ */
+export async function actualizarFirma(
+  actual: IdentidadFirma | null,
+  datos: DatosFirma,
+): Promise<ResultadoEscritura<IdentidadFirma>> {
+  return offlineWrite<IdentidadFirma>({
+    tabla: 'config_firma',
+    operacion: 'update',
+    etiqueta: 'Configuración de la firma',
+    valores: datos,
+    filtro: { id: 1 },
+    online: async () => {
+      const { data, error } = await createClient()
+        .from('config_firma')
+        .update(datos)
+        .eq('id', 1)
+        .select('razon_social, rfc, direccion, telefono, correo, logotipo_url, plazos_default')
+      if (error) throw error
+      // ⚠️ Cero filas en un UPDATE es un rechazo del RLS con cara de éxito.
+      return exigirFilas(data, 'Configuración de la firma')[0]
+    },
+    offline: { ...(actual ?? {}), ...datos },
+  })
 }

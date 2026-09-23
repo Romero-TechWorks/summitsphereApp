@@ -899,7 +899,7 @@ meter en el sistema.
 | **Los criterios de *oportunidad de mejora* y *conformidad*** | Los de **NC mayor, NC menor y observación** ya llegaron en tu `P-SG-03` y están en la app. Esos dos no los define tu procedimiento, y el informe necesita los cinco. Si no tienes criterio propio, dilo y se deja el texto general | A medias (`D02`) |
 | **Los nombres de los estados de la matriz** | La app propone *no iniciado · documentado · implementado · evidenciado · no aplica*. Si en la firma les dicen de otra manera, **dilo antes de capturar mil requisitos**: después es un cambio de base de datos | Pendiente (`C02`) |
 | **Los plazos por defecto** | Cuántos días tiene un cliente para responder. Propuesta: NC mayor 15 · NC menor 30 · Observación 60 · Oportunidad de mejora 90 | Pendiente (`E03`) |
-| **Las cuentas del equipo** | Nombre, correo y rol de cada persona de la firma. Las creo yo; el reparto por cliente lo haces tú en el Paso 6 | Pendiente (`A04`) |
+| **Las cuentas del equipo** | Nombre, correo y rol de cada persona de la firma. Se dan de alta en *Admin* → *Usuarios*, con una contraseña temporal que la persona cambia al entrar; el reparto por cliente lo haces tú en el Paso 6 | Pendiente (`A04`) |
 
 **Más adelante, cuando lleguen sus fases** — no hace falta ahora, pero ve
 juntándolo: el catálogo de cursos (se captura en la app, como las NOMs del

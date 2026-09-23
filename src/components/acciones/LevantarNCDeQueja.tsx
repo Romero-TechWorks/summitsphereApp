@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { usePlazoPropuesto } from '@/lib/firma/usePlazoPropuesto'
 import { queryKeys } from '@/lib/query/keys'
 import { mensajeDeError } from '@/lib/supabase/errores'
 import { listarNormasConClausulas } from '@/lib/queries/normas'
@@ -58,7 +59,8 @@ export default function LevantarNCDeQueja({
     `Queja ${queja.folio} recibida el ${queja.fecha} de ${quienLaPuso(queja)}.`,
   )
   const [contactoId, setContactoId] = useState('')
-  const [compromiso, setCompromiso] = useState('')
+  // La propone el plazo de la firma según el tipo, hasta que alguien la escribe.
+  const compromiso = usePlazoPropuesto(tipo, undefined)
   const [ocupado, setOcupado] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -97,7 +99,7 @@ export default function LevantarNCDeQueja({
         proceso_id: queja.proceso_id,
         sitio_id: null,
         responsable_contacto_id: contactoId || null,
-        fecha_compromiso: compromiso || null,
+        fecha_compromiso: compromiso.valor || null,
       }
 
       const { fila } = await crearHallazgo({
@@ -227,8 +229,9 @@ export default function LevantarNCDeQueja({
             <Input
               etiqueta="Fecha compromiso"
               type="date"
-              value={compromiso}
-              onChange={(e) => setCompromiso(e.target.value)}
+              value={compromiso.valor}
+              ayuda={compromiso.ayuda ?? undefined}
+              onChange={(e) => compromiso.escribir(e.target.value)}
             />
           </div>
         </div>

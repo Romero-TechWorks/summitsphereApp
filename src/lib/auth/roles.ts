@@ -33,3 +33,36 @@ export function esRol(valor: string | null | undefined): valor is Rol {
 export function exigeMfa(rol: string | null | undefined): boolean {
   return esRol(rol) && ROLES_CON_MFA.includes(rol)
 }
+
+/**
+ * Cómo se lee cada rol en pantalla, y qué implica — `/admin?tab=usuarios`
+ * [F06·B3]. La descripción se pinta al elegir, que es cuando hace falta.
+ */
+export const DESCRIPCION_ROL: Readonly<Record<Rol, { etiqueta: string; ayuda: string }>> = {
+  socio: {
+    etiqueta: 'Socio',
+    ayuda: 'Ve la cartera entera, da de alta clientes y cuentas, borra y configura la firma. Exige segundo factor.',
+  },
+  consultor: {
+    etiqueta: 'Consultor',
+    ayuda: 'Trabaja los expedientes que tiene asignados en la pestaña Equipo de cada cliente.',
+  },
+  auditor: {
+    etiqueta: 'Auditor',
+    ayuda: 'Igual que un consultor, sobre los clientes asignados. Su nombre sale en los informes.',
+  },
+  administracion: {
+    etiqueta: 'Administración',
+    ayuda: 'Lo comercial y lo fiscal de la firma. Exige segundo factor.',
+  },
+  cliente: {
+    etiqueta: 'Cliente',
+    ayuda: 'Una persona del cliente. No ve nada hasta que se le asigna su organización.',
+  },
+}
+
+/** La etiqueta de un rol. Uno que no se reconoce se enseña crudo, no revienta. */
+export function etiquetaRol(rol: string | null | undefined): string {
+  if (!rol) return '—'
+  return esRol(rol) ? DESCRIPCION_ROL[rol].etiqueta : rol
+}

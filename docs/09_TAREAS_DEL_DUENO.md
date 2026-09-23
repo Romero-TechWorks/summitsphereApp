@@ -78,14 +78,18 @@ adentro — hay que borrar el factor desde el panel de Supabase.
 
 ### `A04` — Dar de alta al equipo · **Bloquea: que alguien más use la app**
 
-⚠️ **Hasta la Fase 06 no existe `/admin?tab=usuarios`.** Mientras tanto: la cuenta
-se crea en el panel de Supabase (*Authentication* → *Users* → *Add user*), y el
-rol se pone desde el *SQL Editor*, porque **toda cuenta nueva nace `cliente`** —el
-rol de menos privilegio— a propósito:
+✅ **Desde F06·B3 (23 sep 2026) se hace en la app: *Admin* → *Usuarios* →
+*Dar de alta*.** Nombre, correo y rol; la app genera una **contraseña temporal**
+que se enseña **una sola vez** para que se la entregues a la persona, y ésta
+tiene que poner una propia al entrar. Desde la misma lista se genera otra
+temporal si alguien la olvida, se cambia el rol y se da de baja (la baja
+**bloquea** la cuenta; no se borra nada).
 
-```sql
-update usuarios set rol = 'consultor' where correo = 'quien@summit-sphere.com';
-```
+⚠️ Necesita `SUPABASE_SERVICE_ROLE_KEY` en Vercel — la misma que ya usan los
+crons, así que si los avisos llegan, está puesta.
+
+Lo de abajo —el panel de Supabase y el *SQL Editor*— queda sólo para la **primera**
+cuenta de socio, que no tiene a nadie que la dé de alta.
 
 ### ⚠️ Tu cuenta de socio: el único paso que no se puede automatizar
 
@@ -1027,7 +1031,7 @@ organización ni a sí mismo, el papel `lectura` no renueva—; y con las diecin
 aplicadas desde cero, **las 80 de regresión**. `src/types/database.ts`: **10 líneas
 añadidas, ninguna quitada**.
 
-### `F00c` — Aplicar la migración de capacitación · **Bloquea: `/capacitacion`** · 📝 **LISTA PARA APLICAR** (23 sep 2026)
+### `F00c` — Aplicar la migración de capacitación · **Bloquea: `/capacitacion`** · ✅ **HECHA** (23 sep 2026)
 
 `20260924120000_capacitacion.sql`. ⚠️ **Va después de `F00b`, y antes del push**:
 la pantalla `/capacitacion` consulta tablas que sin ella no existen.
@@ -1108,11 +1112,54 @@ se construyó B3 (`docs/14`):
 
 # FASE 06 · Portal y administración
 
+### `G00` — Aplicar la migración del buscador global · **Bloquea: el buscador de la barra superior** · 📝 **LISTA PARA APLICAR** (23 sep 2026)
+
+`20260925120000_buscador_global.sql`, la **vigésima primera**. ⚠️ **Primero la
+migración, después el push**: sin ella el buscador no se rompe, pero con señal
+cada búsqueda responde «el servidor no contestó» y sólo busca en lo que el
+aparato tiene descargado.
+
+**Qué crea:** una función (`texto_busqueda`), una vista
+(`indice_busqueda_global`) y una RPC (`buscar_global`). **No toca ninguna
+tabla.** ✅ Es aditiva. Cómo se aplica: igual que las anteriores.
+
+⚠️ **La vista lleva `security_invoker = true`, y es lo único que no se puede
+perder** (regla 6): sin eso, el buscador enseñaría hallazgos de clientes que no
+te tocan. Para comprobarlo después de aplicar, en el *SQL Editor*:
+
+```sql
+select relname, reloptions from pg_class where relname = 'indice_busqueda_global';
+-- tiene que decir {security_invoker=true}
+```
+
+**Comprobado antes de mandártela** (23 sep 2026), con las veinte anteriores en
+orden y datos sembrados: **17 comprobaciones**. Entre ellas: un consultor sólo
+encuentra sus clientes asignados; la cuenta de pruebas sólo la partición demo;
+«calibracion» sin acento encuentra «Calibración»; un folio a medias
+(«AUD-2026-0») encuentra su auditoría; comillas y signos no rompen nada; y ni
+`anon` ni un enlace sin sesión pueden llamarla. `src/types/database.ts`: **51
+líneas añadidas, ninguna quitada**.
+
 ### `G01` — Entregar los formatos de los entregables · **Bloquea: los reportes**
 
 Informe mensual de avance, matriz de requisitos, lista maestra de documentos,
 matriz de aplicabilidad NOM, plan de acción, acta de revisión por la dirección.
 Los que uses hoy.
+
+### `G04` — Revisar la configuración de la firma · **Bloquea: nada, pero el membrete sale como esté** · 🆕 (23 sep 2026)
+
+*Admin* → *Configuración*. Tres cosas:
+
+1. **Datos y logotipo.** ⚠️ Si el logotipo se había puesto como enlace desde el
+   panel de Supabase, **vuelve a subirlo desde aquí**: ahora se guarda dentro de
+   la configuración para que el informe salga con logo aunque se imprima sin
+   señal. La pantalla avisa si el actual es un enlace.
+2. **Plazos por defecto.** Ya vienen con lo que decidiste en `E03` (15/30/60/90
+   hábiles). Al levantar un hallazgo, la app **propone** la fecha compromiso con
+   ellos; el auditor la puede mover.
+3. **Días que la firma no cuenta.** Los festivos de ley ya se descuentan solos.
+   Añade los que la ley no fija: jornada electoral, Jueves y Viernes Santo,
+   12 de diciembre, cierre de fin de año.
 
 ### `G02` — Decidir qué ve el cliente en el portal · **Bloquea: el portal**
 
