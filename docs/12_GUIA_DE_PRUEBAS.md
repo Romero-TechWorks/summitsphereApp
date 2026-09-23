@@ -3,7 +3,7 @@
 > **Para quién es esto:** las personas de Summit que van a probar la app antes de
 > que se use con clientes de verdad. No hace falta saber nada técnico.
 >
-> **Cuánto tiempo lleva:** los siete recorridos completos, alrededor de dos horas y media.
+> **Cuánto tiempo lleva:** los ocho recorridos completos, alrededor de tres horas.
 > Se pueden hacer en días distintos; el **A** y el **E** necesitan un teléfono.
 >
 > **Qué se está probando:** las Fases 01 a 04. Lo demás **todavía no existe** y
@@ -56,7 +56,7 @@ de quien lee los reportes.
 | Pantalla | Qué pasa |
 |---|---|
 | **Cumplimiento** | Matriz, Recorrido, Semáforo, Vencimientos y Catálogo de NOMs **sí están** (recorrido G). Falta el **informe de levantamiento** impreso |
-| **Capacitación** | Vacía. Fase 05 |
+| **Capacitación** | ✅ **Está** (recorrido H). No genera DC-3 **a propósito**: los expide el proveedor y la app los registra |
 | **Admin**, salvo *Avisos* | Metas, finanzas, facturación, usuarios y bitácora son Fase 06 |
 | **Portal del cliente** | No existe todavía. Fase 06 |
 | **Asistente** (🤖) | Fase 07, y está apagado de fábrica |
@@ -73,7 +73,7 @@ Y dentro de lo que sí está:
 
 ---
 
-## 3 · Los siete recorridos
+## 3 · Los ocho recorridos
 
 Hazlos **en orden**: cada uno deja algo que el siguiente usa.
 
@@ -252,6 +252,8 @@ debería funcionar.
 | **Quitar una obligación ya evaluada**, o un área que ya tiene obligaciones | No se ofrece el botón; el área sólo se da de baja |
 | **Generar desde una NOM en modo avión** | El botón no se activa y la pantalla dice por qué |
 | **Quitar un vencimiento que ya tiene su PDF adjunto** | No se ofrece el botón |
+| **Capturar una CURP mal escrita** | La rechaza y dice por qué |
+| **Registrar un folio de DC-3 a quien no asistió** | Lo rechaza |
 
 ⚠️ **Ésa última es la más importante de todas.** Un cliente no puede ver los
 expedientes de otro, y es lo único que si falla no se arregla con una disculpa.
@@ -289,6 +291,27 @@ Al quitar el modo avión, el contador llega a «todo guardado» solo, y en
 > Los avisos al teléfono de 90/60/30/7 días los manda el cron de la mañana:
 > para verlos llegar hace falta un vencimiento que caiga justo a 90 días de hoy y
 > esperar al día siguiente. Activa antes la categoría en *Admin → Avisos*.
+
+---
+
+### H · Capacitación y DC-3  💻 · ⚠️ necesita la migración `F00c`
+
+1. Con un **socio**, en **Capacitación → Cursos y proveedores**, da de alta un
+   curso (*Brigada contra incendios*, 8 h, NOM-002) y un proveedor con su
+   **registro STPS**.
+2. En **Programa anual**, elige un cliente y agrega el curso en un mes.
+   Pulsa **Programar sesión**: llega con el curso puesto. Elige el proveedor y
+   escribe el instructor.
+3. En la ficha de la sesión captura **cinco asistentes seguidos** en la fila de
+   arriba. A uno ponle una CURP mal escrita.
+4. **Marcar impartida**. Abre a uno y ponle calificación 70: tiene que decir
+   **Reforzamiento**. A otro quítale «Asistió».
+5. **Descargar solicitud de DC-3**: ábrela en Excel. Tienen que salir **sólo**
+   los que asistieron y no van a reforzamiento, con acentos bien.
+6. A uno regístrale folio, fecha y un PDF. Su renglón pasa a **DC-3 recibido**.
+
+**Qué tiene que pasar:** en **Sesiones → Con DC-3 pendientes** la sesión sale
+mientras falte alguno, y en el **Programa anual** el renglón dice **Impartido**.
 
 ---
 

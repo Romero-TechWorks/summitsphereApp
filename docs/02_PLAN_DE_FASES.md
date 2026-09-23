@@ -1358,7 +1358,12 @@ La pantalla que evita una clausura.
 - ⚠️ **Conecta `vencimientos_criticos`, el último placeholder del tablero, en el
   mismo commit.**
 
-## F05·B3 — Capacitación
+## F05·B3 — Capacitación  ✅ *código listo, 23 sep 2026 · migración `F00c` por aplicar*
+
+> 📋 **Lo construido está en [`14_ESPECIFICACION_F05_B3.md`](14_ESPECIFICACION_F05_B3.md)**
+> y manda sobre esta lista: instructor externo en texto, catálogo de
+> proveedores con su registro STPS, solicitud genérica en CSV y DC-3 sólo
+> registrado.
 
 - `cursos`: catálogo de la firma — los de normatividad STPS (NOM-002, 009, 017,
   018, 019, 022, 029, 033, 035, 036) y los de brigadas (montacargas, incendios,
@@ -1367,9 +1372,13 @@ La pantalla que evita una clausura.
 - `dnc`: detección de necesidades y programa anual de capacitación por cliente.
 - `sesiones`: cada curso impartido — fecha, instructor, sede, duración, temario.
 - `asistentes`: quién asistió, con su calificación y su asistencia.
-- **Constancias DC-3**: generación en el formato oficial de la STPS, con folio,
-  desde los datos de la sesión y del asistente. Es un entregable que hoy se llena
-  a mano, uno por uno.
+- ⚠️ **Constancias DC-3: se REGISTRAN, no se generan** (`F03` resuelta el 23
+  sep 2026). **Summit no emite DC-3**: lo expide un **agente capacitador
+  externo** que Summit contrata. La app guarda, por asistente, el **folio y el
+  PDF** que manda el externo, enseña **quién no tiene todavía la suya**, y
+  prepara **los datos que el externo necesita para expedirlas** —lo que hoy se
+  le manda a mano—. Sin formato oficial, sin registro STPS de la firma, sin
+  bucket `constancias`: el PDF es evidencia y va a `evidencias`.
 
 ### Criterio de cierre — Fase 05
 
@@ -1378,25 +1387,25 @@ La pantalla que evita una clausura.
 > caminando y en modo avión**, la cola sincroniza al recuperar señal y sale el
 > semáforo. Se registran sus 6 estudios de higiene con sus vigencias y **la app
 > avisa 90 días antes** de que venza el de ruido. Se imparte un curso de brigada
-> de incendios a 20 personas y salen **las 20 constancias DC-3 en su formato
-> oficial, con folio**, en un clic.
+> de incendios a 20 personas, **la app arma en un clic la lista que se le manda
+> al agente capacitador externo**, y cuando llegan sus 20 DC-3 se registran con
+> folio y PDF — y la app dice cuáles faltan.
 
-⚠️ **El cierre está partido en dos, y sólo la segunda mitad está bloqueada.**
-`B1`+`B2` se pueden construir y cerrar hoy; las constancias DC-3 dependen de
-`F03`. **No se da la fase por cerrada sin ellas**, pero tampoco se detiene el
-trabajo por esperarlas.
+✅ **Ya nada está bloqueado** (23 sep 2026). `B1` y `B2` están escritos y
+aplicados; `B3` se construye entero, y cambió de forma con la respuesta de `F03`:
+**registrar** constancias, no **generarlas**.
 
 ### Tareas del dueño — Fase 05
 
-⚠️ **Reescritas el 22 sep 2026. Sólo una bloquea.**
+⚠️ **Reescritas el 22 sep 2026. Desde el 23 sep, ninguna bloquea.**
 `F01` y `F02` **dejaron de ser entregas de archivo**: las bibliotecas de NOMs y de
 cursos las captura el socio en la app, poco a poco. Se arranca con **las ocho
 NOMs ya procesadas** del levantamiento del cliente 02 (001, 002, 019, 025, 026,
 030, 035 y 037-STPS).
-⛔ **`F03` es la única que bloquea**, y su pregunta previa es **¿Summit emite
-constancias DC-3, o sólo las recibe?** — el cliente 02 se las pide a su
-proveedor. Si las emite: el **número de registro** como agente capacitador, el
-**formato vigente** y los **catálogos STPS** de área temática y ocupación.
+✅ **`F03` se resolvió el 23 sep 2026: Summit NO emite DC-3**, los contrata a un
+agente capacitador externo. Ya no hacen falta el número de registro, el formato
+vigente ni los catálogos STPS. Quedan cuatro preguntas que afinan B3 sin
+bloquearlo (`docs/09` · `F03`).
 
 ---
 

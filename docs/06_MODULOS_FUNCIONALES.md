@@ -649,11 +649,10 @@ avisa una sola vez**, el día que vence: un aviso que se repite se deja de mirar
 - **Sesiones impartidas**: fecha, instructor, sede, duración real, temario,
   evidencia fotográfica.
 - **Asistentes** con su calificación y su asistencia.
-- **Constancias DC-3** en el formato oficial de la STPS, con folio, generadas de
-  los datos de la sesión. Hoy se llenan una por una a mano.
-  ⛔ **Pendiente de la tarea `F03` del dueño**, y su pregunta previa es si Summit
-  **emite** DC-3 o sólo los **recibe** de sus proveedores. El resto del módulo no
-  espera por esto.
+- **Constancias DC-3: las expide un agente capacitador externo**, no Summit
+  (`F03`, 23 sep 2026). La app prepara la lista de datos que el externo necesita
+  para expedirlas, **registra** el folio y el PDF de cada una cuando llegan, y
+  dice **quién no tiene todavía la suya**.
 
 ⚠️ **La calificación la capturas tú, no la calcula la app**: el examen del
 cliente tiene preguntas abiertas. El umbral de aprobación es **80 %**, y quien no

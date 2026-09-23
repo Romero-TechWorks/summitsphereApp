@@ -312,6 +312,23 @@ export const queryKeys = {
     vencimientos: () => ['cumplimiento', 'vencimientos'] as const,
   },
   /**
+   * Capacitación [F05·B3].
+   *
+   * ⚠️ La biblioteca —cursos y proveedores— sin `orgId`, como `noms`: es de la
+   * firma y el RLS la recorta a la partición. Lo del cliente, **una lista plana
+   * por organización**: la sesión, el año y el estado del DC-3 se filtran en
+   * memoria (reglas del offline, 7).
+   */
+  capacitacion: {
+    todo: () => ['capacitacion'] as const,
+    cursos: () => ['capacitacion', 'cursos'] as const,
+    proveedores: () => ['capacitacion', 'proveedores'] as const,
+    dnc: (orgId: string) => ['capacitacion', 'dnc', orgId] as const,
+    sesiones: (orgId: string) => ['capacitacion', 'sesiones', orgId] as const,
+    /** Los de TODAS las sesiones del cliente; la ficha filtra los suyos. */
+    asistentes: (orgId: string) => ['capacitacion', 'asistentes', orgId] as const,
+  },
+  /**
    * El catálogo de normas. Fuera de `cartera` porque no es de nadie: lo usan
    * también los sistemas de gestión [Fase 02] y las auditorías [Fase 03].
    */

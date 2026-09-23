@@ -193,6 +193,7 @@ export type Database = {
       adjuntos: {
         Row: {
           accion_id: string | null
+          asistente_id: string | null
           creado_en: string
           creado_por: string | null
           documento_id: string | null
@@ -203,6 +204,7 @@ export type Database = {
           obligacion_id: string | null
           org_id: string
           ruta: string
+          sesion_id: string | null
           subido_desde: string
           tamano: number | null
           tarea_etapa_id: string | null
@@ -212,6 +214,7 @@ export type Database = {
         }
         Insert: {
           accion_id?: string | null
+          asistente_id?: string | null
           creado_en?: string
           creado_por?: string | null
           documento_id?: string | null
@@ -222,6 +225,7 @@ export type Database = {
           obligacion_id?: string | null
           org_id: string
           ruta: string
+          sesion_id?: string | null
           subido_desde?: string
           tamano?: number | null
           tarea_etapa_id?: string | null
@@ -231,6 +235,7 @@ export type Database = {
         }
         Update: {
           accion_id?: string | null
+          asistente_id?: string | null
           creado_en?: string
           creado_por?: string | null
           documento_id?: string | null
@@ -241,6 +246,7 @@ export type Database = {
           obligacion_id?: string | null
           org_id?: string
           ruta?: string
+          sesion_id?: string | null
           subido_desde?: string
           tamano?: number | null
           tarea_etapa_id?: string | null
@@ -254,6 +260,13 @@ export type Database = {
             columns: ["accion_id"]
             isOneToOne: false
             referencedRelation: "acciones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "adjuntos_asistente_id_fkey"
+            columns: ["asistente_id"]
+            isOneToOne: false
+            referencedRelation: "asistentes"
             referencedColumns: ["id"]
           },
           {
@@ -299,6 +312,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "adjuntos_sesion_id_fkey"
+            columns: ["sesion_id"]
+            isOneToOne: false
+            referencedRelation: "sesiones"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "adjuntos_tarea_etapa_id_fkey"
             columns: ["tarea_etapa_id"]
             isOneToOne: false
@@ -310,6 +330,82 @@ export type Database = {
             columns: ["vencimiento_id"]
             isOneToOne: false
             referencedRelation: "vencimientos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      asistentes: {
+        Row: {
+          actualizado_en: string
+          asistio: boolean
+          calificacion: number | null
+          creado_en: string
+          creado_por: string | null
+          curp: string | null
+          dc3_recibido_en: string | null
+          folio_dc3: string | null
+          id: string
+          nombre: string
+          notas: string | null
+          ocupacion: string | null
+          org_id: string
+          puesto: string | null
+          sesion_id: string
+        }
+        Insert: {
+          actualizado_en?: string
+          asistio?: boolean
+          calificacion?: number | null
+          creado_en?: string
+          creado_por?: string | null
+          curp?: string | null
+          dc3_recibido_en?: string | null
+          folio_dc3?: string | null
+          id?: string
+          nombre: string
+          notas?: string | null
+          ocupacion?: string | null
+          org_id: string
+          puesto?: string | null
+          sesion_id: string
+        }
+        Update: {
+          actualizado_en?: string
+          asistio?: boolean
+          calificacion?: number | null
+          creado_en?: string
+          creado_por?: string | null
+          curp?: string | null
+          dc3_recibido_en?: string | null
+          folio_dc3?: string | null
+          id?: string
+          nombre?: string
+          notas?: string | null
+          ocupacion?: string | null
+          org_id?: string
+          puesto?: string | null
+          sesion_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asistentes_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asistentes_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizaciones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asistentes_sesion_id_fkey"
+            columns: ["sesion_id"]
+            isOneToOne: false
+            referencedRelation: "sesiones"
             referencedColumns: ["id"]
           },
         ]
@@ -1247,6 +1343,146 @@ export type Database = {
           },
           {
             foreignKeyName: "contactos_sitio_id_fkey"
+            columns: ["sitio_id"]
+            isOneToOne: false
+            referencedRelation: "sitios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cursos: {
+        Row: {
+          activo: boolean
+          actualizado_en: string
+          clave: string | null
+          creado_en: string
+          creado_por: string | null
+          duracion_horas: number | null
+          es_demo: boolean
+          id: string
+          modalidad: string
+          nom_id: string | null
+          nombre: string
+          temario: string | null
+          tipo: string
+        }
+        Insert: {
+          activo?: boolean
+          actualizado_en?: string
+          clave?: string | null
+          creado_en?: string
+          creado_por?: string | null
+          duracion_horas?: number | null
+          es_demo?: boolean
+          id?: string
+          modalidad?: string
+          nom_id?: string | null
+          nombre: string
+          temario?: string | null
+          tipo?: string
+        }
+        Update: {
+          activo?: boolean
+          actualizado_en?: string
+          clave?: string | null
+          creado_en?: string
+          creado_por?: string | null
+          duracion_horas?: number | null
+          es_demo?: boolean
+          id?: string
+          modalidad?: string
+          nom_id?: string | null
+          nombre?: string
+          temario?: string | null
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cursos_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cursos_nom_id_fkey"
+            columns: ["nom_id"]
+            isOneToOne: false
+            referencedRelation: "noms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dnc: {
+        Row: {
+          actualizado_en: string
+          anio: number
+          cancelada: boolean
+          creado_en: string
+          creado_por: string | null
+          curso_id: string
+          id: string
+          mes: number
+          motivo_cancelacion: string | null
+          notas: string | null
+          org_id: string
+          participantes: number | null
+          sitio_id: string | null
+        }
+        Insert: {
+          actualizado_en?: string
+          anio: number
+          cancelada?: boolean
+          creado_en?: string
+          creado_por?: string | null
+          curso_id: string
+          id?: string
+          mes: number
+          motivo_cancelacion?: string | null
+          notas?: string | null
+          org_id: string
+          participantes?: number | null
+          sitio_id?: string | null
+        }
+        Update: {
+          actualizado_en?: string
+          anio?: number
+          cancelada?: boolean
+          creado_en?: string
+          creado_por?: string | null
+          curso_id?: string
+          id?: string
+          mes?: number
+          motivo_cancelacion?: string | null
+          notas?: string | null
+          org_id?: string
+          participantes?: number | null
+          sitio_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dnc_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dnc_curso_id_fkey"
+            columns: ["curso_id"]
+            isOneToOne: false
+            referencedRelation: "cursos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dnc_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizaciones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dnc_sitio_id_fkey"
             columns: ["sitio_id"]
             isOneToOne: false
             referencedRelation: "sitios"
@@ -2787,6 +3023,65 @@ export type Database = {
           },
         ]
       }
+      proveedores_capacitacion: {
+        Row: {
+          activo: boolean
+          actualizado_en: string
+          contacto: string | null
+          correo: string | null
+          creado_en: string
+          creado_por: string | null
+          es_demo: boolean
+          id: string
+          nombre: string
+          notas: string | null
+          razon_social: string | null
+          registro_stps: string | null
+          rfc: string | null
+          telefono: string | null
+        }
+        Insert: {
+          activo?: boolean
+          actualizado_en?: string
+          contacto?: string | null
+          correo?: string | null
+          creado_en?: string
+          creado_por?: string | null
+          es_demo?: boolean
+          id?: string
+          nombre: string
+          notas?: string | null
+          razon_social?: string | null
+          registro_stps?: string | null
+          rfc?: string | null
+          telefono?: string | null
+        }
+        Update: {
+          activo?: boolean
+          actualizado_en?: string
+          contacto?: string | null
+          correo?: string | null
+          creado_en?: string
+          creado_por?: string | null
+          es_demo?: boolean
+          id?: string
+          nombre?: string
+          notas?: string | null
+          razon_social?: string | null
+          registro_stps?: string | null
+          rfc?: string | null
+          telefono?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proveedores_capacitacion_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       proyecto_normas: {
         Row: {
           creado_en: string
@@ -3327,6 +3622,109 @@ export type Database = {
             columns: ["responsable_id"]
             isOneToOne: false
             referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sesiones: {
+        Row: {
+          actualizado_en: string
+          creado_en: string
+          creado_por: string | null
+          curso_id: string
+          dnc_id: string | null
+          duracion_horas: number | null
+          estado: string
+          fecha_fin: string
+          fecha_inicio: string
+          id: string
+          instructor: string | null
+          motivo_cancelacion: string | null
+          notas: string | null
+          org_id: string
+          proveedor_id: string | null
+          sede: string | null
+          sitio_id: string | null
+        }
+        Insert: {
+          actualizado_en?: string
+          creado_en?: string
+          creado_por?: string | null
+          curso_id: string
+          dnc_id?: string | null
+          duracion_horas?: number | null
+          estado?: string
+          fecha_fin: string
+          fecha_inicio: string
+          id?: string
+          instructor?: string | null
+          motivo_cancelacion?: string | null
+          notas?: string | null
+          org_id: string
+          proveedor_id?: string | null
+          sede?: string | null
+          sitio_id?: string | null
+        }
+        Update: {
+          actualizado_en?: string
+          creado_en?: string
+          creado_por?: string | null
+          curso_id?: string
+          dnc_id?: string | null
+          duracion_horas?: number | null
+          estado?: string
+          fecha_fin?: string
+          fecha_inicio?: string
+          id?: string
+          instructor?: string | null
+          motivo_cancelacion?: string | null
+          notas?: string | null
+          org_id?: string
+          proveedor_id?: string | null
+          sede?: string | null
+          sitio_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sesiones_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sesiones_curso_id_fkey"
+            columns: ["curso_id"]
+            isOneToOne: false
+            referencedRelation: "cursos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sesiones_dnc_id_fkey"
+            columns: ["dnc_id"]
+            isOneToOne: false
+            referencedRelation: "dnc"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sesiones_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizaciones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sesiones_proveedor_id_fkey"
+            columns: ["proveedor_id"]
+            isOneToOne: false
+            referencedRelation: "proveedores_capacitacion"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sesiones_sitio_id_fkey"
+            columns: ["sitio_id"]
+            isOneToOne: false
+            referencedRelation: "sitios"
             referencedColumns: ["id"]
           },
         ]

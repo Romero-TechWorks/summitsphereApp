@@ -56,9 +56,8 @@ de dominio cuelga de una `org_id`. Ver §Reglas críticas, regla 1.
 
 - ✅ **`F05·B2` ESTÁ ESCRITO, Y TRAE UNA MIGRACIÓN QUE NO ESTABA EN LA SPEC**
   (23 sep 2026). `20260923120000_renovacion_de_vencimientos.sql` —tarea `F00b`,
-  la **decimonovena**— añade el estado `renovado` y `vencimientos.renueva_id`.
-  ⚠️ **Primero la migración, después el push**: registrar una renovación manda
-  `renueva_id`. Probada en Docker: **94 comprobaciones** con datos previos y
+  la **decimonovena**, ✅ **aplicada el 23 sep 2026**— añade el estado
+  `renovado` y `vencimientos.renueva_id`. Probada en Docker: **94 comprobaciones** con datos previos y
   **80 de regresión** con las diecinueve desde cero; tipos regenerados, **10
   líneas añadidas**. `lint` y `build` en verde. **Lo que hay que saber:**
   - ⚠️ **UNA FILA POR EMISIÓN; RENOVAR NO REESCRIBE.** Reescribir la fecha
@@ -80,9 +79,38 @@ de dominio cuelga de una `org_id`. Ver §Reglas críticas, regla 1.
   - **La advertencia de datos personales (hueco 42)** va en el adjunto del
     vencimiento, corta y sin bloquear. `docs/08` §7 declara el resto como deuda.
   - `docs/13` §0 tabula las doce diferencias de B1+B2 con la spec.
-- ▶️ **LO SIGUIENTE**: `F05·B3` (capacitación) sigue esperando la respuesta de
-  `F03` —¿Summit emite DC-3?—, y el **informe de levantamiento** de `B1` espera
-  a que se decida dónde vive su prosa (docs/13 §0, #6). Todo lo necesario para escribir la migración y las pantallas
+- ✅ **`F05·B3` ESTÁ ESCRITO, CON SU MIGRACIÓN `F00c` POR APLICAR** (23 sep 2026).
+  `20260924120000_capacitacion.sql` —la **vigésima**—. ⚠️ **Primero la
+  migración, después el push**. Probada en Docker: **125 comprobaciones** con
+  datos previos y **94 de regresión** desde cero; tipos regenerados, **398
+  líneas añadidas**. `lint` y `build` en verde. La especificación de lo
+  construido es **`docs/14_ESPECIFICACION_F05_B3.md`**. **Lo que hay que saber:**
+  - ⚠️ **LA APP REGISTRA DC-3, NO LOS GENERA.** Las cuatro respuestas de Summit:
+    **instructor externo** (texto, no usuario), **catálogo de proveedores** con
+    su registro STPS, **solicitud genérica** (CSV armado en el navegador, sale
+    sin señal) y **sólo DC-3**, sin constancia propia.
+  - **`cursos` y `proveedores_capacitacion` nacen vacías** y sólo las escribe el
+    socio, con partición de pruebas. ⚠️ Como no tienen `org_id`, la validación
+    compara **`es_demo`** del curso y del proveedor contra el del cliente.
+  - **El estado del DC-3 se DERIVA** (`estadoDc3()`): recibido, pendiente,
+    reforzamiento (< 80, no reprueba) o no asistió. Y **«impartido» del programa
+    anual también se deriva** de las sesiones.
+  - **La ficha de una sesión es `?sesion=<id>`**, sin ruta propia (§2.1).
+  - **`CAMPOS_DOMINANTES`** suma `asistente_id` y `sesion_id` entre
+    `obligacion_id` y `documento_id`.
+  - ⚠️ **Sin precarga**: la lista de asistencia sin señal funciona si la sesión
+    se abrió antes con señal. Si hace falta capturarla sin haberla abierto nunca,
+    toca una precarga como la del recorrido.
+- ✅ **`F03` SE RESOLVIÓ EL 23 SEP 2026: SUMMIT NO EMITE DC-3**, lo contrata a
+  un agente capacitador externo. Por eso ya no hacen falta el formato oficial
+  vigente, el registro STPS de Summit, los catálogos STPS ni el bucket
+  `constancias` (si ya se creó, no estorba; nada lo usa).
+- ▶️ **LO SIGUIENTE**: con B3, **la Fase 05 está escrita entera**. Falta
+  aplicar `F00c`, y la prueba del criterio de cierre en el teléfono. ⚠️ **El
+  informe de levantamiento de `B1` sigue esperando** a que se decida dónde vive
+  su prosa (docs/13 §0, #6).
+- 📋 **B1 y B2 se especificaron en `docs/13_ESPECIFICACION_F05_B1_B2.md`** —y su
+  §0 manda sobre el resto—. Todo lo necesario para escribir la migración y las pantallas
   **sin volver a leer el catálogo del cliente** está en
   **`docs/13_ESPECIFICACION_F05_B1_B2.md`**: DDL tabla por tabla, las cinco
   reglas que no se rompen, la RPC, las pantallas, los avisos, la precarga, la
@@ -101,11 +129,9 @@ de dominio cuelga de una `org_id`. Ver §Reglas críticas, regla 1.
   USUARIO.** `noms`, `nom_requisitos`, `obligacion_tipos` y `cursos` **nacen
   vacías**, sin un solo `INSERT` de siembra. Se arranca con las **ocho NOMs ya
   procesadas** del levantamiento del cliente 02.
-  ⚠️ **`B3` NO entra, pero NO bloquea nada de `B1` ni `B2`.** Sólo su generador
-  de constancias depende de `F03`: falta saber **si Summit emite DC-3 o sólo los
-  recibe**. ✅ **Nada más está bloqueado**: el control de vencimientos que se le
-  pidió a Summit mejora los valores propuestos, no falta como pieza — el usuario
-  captura sus tipos y vigencias igual que sus NOMs.
+  ✅ **El control de vencimientos que se le pidió a Summit mejora los valores
+  propuestos, no falta como pieza** — el usuario captura sus tipos y vigencias
+  igual que sus NOMs.
 
 - ⚠️ **LLEGÓ UN SEGUNDO CLIENTE Y CAMBIA EL ENCUADRE** (22 sep 2026, quinta
   tanda): **César Roel Abogados**, despacho jurídico, con un **SGI multinorma**
@@ -185,8 +211,9 @@ de dominio cuelga de una `org_id`. Ver §Reglas críticas, regla 1.
     indicadores de `/sistemas` se diseñaron sin un número delante: van con
     descarga completa y **filtro en memoria** (regla offline 7), como la cartera.
 
-- ✅ **LAS DIECIOCHO PRIMERAS MIGRACIONES ESTÁN APLICADAS** (`F00` el 22 sep
-  2026). La decimonovena (`F00b`, arriba) es la única pendiente.
+- ✅ **LAS DIECINUEVE PRIMERAS MIGRACIONES ESTÁN APLICADAS.** `F00` el 22 sep
+  2026 y `F00b` —la renovación de vencimientos— el 23 sep 2026. La vigésima
+  (`F00c`, capacitación) es la única pendiente.
   `20260909120000_avisos_y_notificaciones.sql` —tarea `E06`, la de **F04·B3+B4**—
   se aplicó **~15 sep 2026**, y con ella **la Fase 04 quedó cerrada**: su criterio
   exigía que «el responsable reciba la notificación en su teléfono».
@@ -950,6 +977,7 @@ de dominio cuelga de una `org_id`. Ver §Reglas críticas, regla 1.
 | `docs/07_ASISTENTE_Y_AUTOMATIZACION.md` | Módulos A, B y C |
 | `docs/08_SEGURIDAD_Y_RLS.md` | Roles, políticas, secretos |
 | `docs/09_TAREAS_DEL_DUENO.md` | Pasos manuales y **técnicos** del dueño (Supabase, Vercel, Cloudflare) |
+| `docs/14_ESPECIFICACION_F05_B3.md` | Capacitación: lo construido con las cuatro respuestas de Summit sobre el DC-3 |
 | `docs/13_ESPECIFICACION_F05_B1_B2.md` | ▶️ **La especificación de lo siguiente.** Matriz de obligaciones y vencimientos: DDL, reglas, RPC, pantallas, migración y comprobaciones. **Se lee entero antes de empezar `F05`** |
 | `docs/11_TAREAS_DEL_CLIENTE.md` | Lo que el cliente **captura dentro de la app**, paso a paso y sin jerga |
 | `docs/12_GUIA_DE_PRUEBAS.md` | **Qué probar**, para el equipo de Summit. Siete recorridos, lo que todavía no existe, y las pruebas negativas. ⚠️ Si cambias una etiqueta o un candado que aparezca ahí, corrígelo en el mismo commit |
@@ -1249,6 +1277,7 @@ src/
   lib/auditorias/      → catálogos · precarga · informe  [Fase 03]
   lib/acciones/        → catálogos del ciclo de mejora  [F04·B1]
   lib/cumplimiento/    → catálogos · precarga del recorrido  [F05·B1]
+  lib/capacitacion/    → catálogos · estado del DC-3 · solicitud CSV  [F05·B3]
   lib/asistente/       → proveedor, esquemas Zod, instrucciones, herramientas
   lib/plantillas/      → impresion.ts + los cinco formatos de la firma:
                          informeAuditoria [B5] · programaAnual · listaAsistencia

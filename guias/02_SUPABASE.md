@@ -108,14 +108,17 @@ Es lo que exige `src/proxy.ts` a los roles `socio` y `administracion`.
 
 ## §4 · Storage — los cinco buckets
 
-*Storage* → *New bucket*. **Los cinco privados.**
+*Storage* → *New bucket*. **Los cuatro privados.**
+
+⚠️ **`constancias` ya no se crea** (23 sep 2026): Summit no emite DC-3 —los expide
+un agente capacitador externo—, y el PDF que llega se guarda en `evidencias`. Si
+ya lo creaste, no estorba; ninguna pantalla lo usa.
 
 | Bucket | Guarda | Público | Tamaño máx. |
 |---|---|---|---|
 | `documentos` | Documentos del SGC | ❌ | 50 MB |
 | `evidencias` | Fotos y archivos de auditoría | ❌ | 25 MB |
 | `biblioteca` | PDFs normativos | ❌ | 100 MB |
-| `constancias` | DC-3 emitidas | ❌ | 5 MB |
 | `fiscal` | CSD (`.cer`, `.key`) | ❌ | 1 MB |
 
 ⚠️ **Verifica que cada uno diga "Private".** Un bucket público deja los documentos

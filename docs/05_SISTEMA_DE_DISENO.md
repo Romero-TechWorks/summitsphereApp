@@ -318,8 +318,10 @@ web. Sin librería de iconos: son treinta iconos, no tres mil.
 
 ## §6 · Impresión
 
-Los entregables imprimibles (informe de auditoría, matriz, constancia DC-3) se
-renderizan en una ventana aparte.
+Los entregables imprimibles (informe de auditoría, matriz, programa anual) se
+renderizan en una ventana aparte. El DC-3 **no** es uno de ellos: lo expide el
+agente capacitador externo que Summit contrata, y la app sólo lo registra
+(`F03`, 23 sep 2026).
 
 ⚠️ **La ventana de impresión no hereda `globals.css`.** Los colores van
 **literales** en el HTML de la plantilla, no como `var(--verde)`. Es la trampa que

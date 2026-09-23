@@ -844,6 +844,50 @@ cartera.
 
 ---
 
+# Paso 15 · Capacitación y DC-3
+
+> **Necesita la migración `F00c`** (`docs/09`).
+
+### Qué es
+
+Los cursos que la firma imparte a sus clientes **por medio de un proveedor
+externo**, que es quien da el curso y **expide el DC-3**. Summit no emite
+constancias: la app lleva la lista de asistencia, **arma la solicitud** para el
+proveedor y **guarda los DC-3** cuando llegan.
+
+### Cómo se hace
+
+1. **Capacitación** → **Cursos y proveedores**: da de alta el curso (nombre,
+   horas, NOM) y el proveedor, **con su registro STPS**. Una sola vez; después
+   se reusan.
+2. **Programa anual** → elige el cliente → **Agregar al programa**: qué curso,
+   en qué mes, para cuántos.
+3. En el renglón, **Programar sesión**: fecha, proveedor, instructor, sede.
+4. El día del curso, en la ficha de la sesión, captura a los asistentes en la
+   fila de arriba —nombre, CURP, puesto, ocupación— y pulsa **Agregar** por cada
+   uno. Puesto y ocupación se quedan puestos para el siguiente.
+5. **Marcar impartida**. Si el instructor calificó, abre a cada quien y pon su
+   calificación.
+6. **Descargar solicitud de DC-3** y mándasela al proveedor.
+7. Cuando lleguen los DC-3: abre a cada asistente, escribe el **folio** y la
+   **fecha**, y **adjunta el PDF**.
+
+### Cosas que conviene saber
+
+- **Menos de 80 no reprueba**: queda en «Reforzamiento» y no entra en la
+  solicitud hasta que se le vuelva a evaluar.
+- ⚠️ **Sin CURP no hay DC-3.** La solicitud te avisa cuántos van sin ella.
+- La CURP es un dato personal: captúrala si el cliente lo autorizó.
+- Un asistente con su DC-3 registrado no se puede quitar de la lista; una sesión
+  impartida, tampoco.
+
+### Cómo sabes que quedó
+
+En **Sesiones → Con DC-3 pendientes** ya no aparece la sesión, y en el
+**Programa anual** el renglón dice **Impartido**.
+
+---
+
 # Lo que tienes que decidirme o entregarme
 
 Esto no se captura en la app: son documentos o decisiones tuyas que yo tengo que
@@ -859,8 +903,7 @@ meter en el sistema.
 
 **Más adelante, cuando lleguen sus fases** — no hace falta ahora, pero ve
 juntándolo: el catálogo de cursos (se captura en la app, como las NOMs del
-Paso 14), el formato DC-3 vigente con el registro de la firma ante la STPS, y la
-decisión de qué ve el cliente en su portal.
+Paso 14) y la decisión de qué ve el cliente en su portal.
 
 ---
 

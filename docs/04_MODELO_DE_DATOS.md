@@ -1186,7 +1186,13 @@ las copias por área que el consultor hace en el recorrido no cuentan.
 ⚠️ **Sexta excepción consciente a `offlineWrite`**, por los mismos motivos que
 `generar_lista_verificacion()`.
 
-## `cursos` · `dnc` · `sesiones` · `asistentes` — B3
+## `cursos` · `proveedores_capacitacion` · `dnc` · `sesiones` · `asistentes` — B3  ✅ *23 sep 2026*
+
+📋 **El modelo construido está en [`14_ESPECIFICACION_F05_B3.md`](14_ESPECIFICACION_F05_B3.md) §2**
+—manda sobre este resumen—. Lo nuevo respecto a lo planeado: **`proveedores_capacitacion`**
+(catálogo de la firma con `registro_stps`), `sesiones.instructor` **en texto**
+(es del proveedor), `asistentes.dc3_recibido_en`, y `adjuntos.sesion_id` /
+`adjuntos.asistente_id`. «Impartido» en `dnc` **se deriva**, no se guarda.
 ⚠️ **`cursos` también nace vacía y la llena el usuario** (decisión del dueño).
 Son seis campos: clave, nombre, tipo, NOM relacionada, duración, temario,
 modalidad.
@@ -1198,9 +1204,11 @@ asistencia, folio DC-3.
 
 ⚠️ **La calificación la CAPTURA el instructor, no la calcula la app**: el
 `SGI-F-RH-06` tiene preguntas abiertas. Umbral **≥ 80 %** (`SGI-P-RH-01` §5.4).
-⚠️ **El DC-3 es un formato oficial de la STPS** y depende de `F03`, que sigue
-abierta: falta saber **si Summit lo emite**. `B3` se construye entero salvo el
-generador de constancias.
+⚠️ **El DC-3 se REGISTRA, no se genera** (`F03`, 23 sep 2026): lo expide un
+agente capacitador externo que Summit contrata. Por asistente basta el **folio**,
+**quién lo expidió** y el **PDF** —un adjunto en `evidencias`, no un bucket
+propio—, más saber cuáles faltan. Las columnas exactas se deciden al
+especificar B3, con las cuatro preguntas abiertas de `docs/09` · `F03`.
 
 # FASE 06 · Portal y administración
 

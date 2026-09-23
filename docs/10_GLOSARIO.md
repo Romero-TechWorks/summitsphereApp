@@ -95,8 +95,8 @@ corrección; que exista un programa de recargas es la acción correctiva.
 | Término | Qué es | En la app |
 |---|---|---|
 | **DNC** | Detección de Necesidades de Capacitación | `dnc` |
-| **DC-3** | Constancia oficial de competencias, formato STPS | `asistentes.folio_dc3` |
-| **Agente capacitador externo** | Registro de la firma ante la STPS para emitir DC-3 | `config_firma` |
+| **DC-3** | Constancia oficial de competencias, formato STPS. **Summit no la emite**: la expide el agente externo y la app la registra | `asistentes.folio_dc3` [F05·B3] |
+| **Agente capacitador externo** | Quien tiene registro ante la STPS para expedir DC-3. **Es un proveedor que Summit contrata**, no Summit (`F03`, 23 sep 2026) | `proveedores_capacitacion.registro_stps` |
 | **Brigada** | Grupo entrenado para emergencias | Cursos `tipo = 'brigada'` |
 
 ## Términos de la app

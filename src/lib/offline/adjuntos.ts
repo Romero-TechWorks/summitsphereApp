@@ -40,7 +40,8 @@ export const BUCKET_EVIDENCIAS = 'evidencias'
  * coinciden. Se filtra por el campo que manda, y ya.
  *
  * ⚠️ Todos existen ya en la tabla: `accion_id` llegó con F04·B1 y
- * `vencimiento_id` + `obligacion_id` con F05·B1. (`tarea_id` nunca llegó:
+ * `vencimiento_id` + `obligacion_id` con F05·B1, y `asistente_id` +
+ * `sesion_id` con F05·B3. (`tarea_id` nunca llegó:
  * `tareas` no se creó, ver CLAUDE.md · F04·B1.) Añadir uno es una línea aquí y
  * una rama en `heredar_org_del_adjunto()`.
  *
@@ -68,6 +69,11 @@ export const CAMPOS_DOMINANTES = [
   // `20260922120000_cumplimiento_normativo.sql`.
   'vencimiento_id',
   'obligacion_id',
+  // [F05·B3] El PDF del DC-3 es del asistente, y el asistente cuelga de la
+  // sesión: por eso va antes. Mismo orden que el trigger de
+  // `20260924120000_capacitacion.sql`.
+  'asistente_id',
+  'sesion_id',
   'documento_id',
 ] as const
 

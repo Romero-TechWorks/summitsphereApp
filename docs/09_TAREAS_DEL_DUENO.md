@@ -997,7 +997,7 @@ confirmar que no hay diferencia: `npx supabase gen types typescript --linked`.
 > Lo del cliente (`F-CM-02`, la serie `RH`, la serie `MT`) sólo sirve para
 > contrastar.
 
-### `F00b` — Aplicar la migración de la renovación · **Bloquea: la pestaña Vencimientos** · 📝 **LISTA PARA APLICAR** (23 sep 2026)
+### `F00b` — Aplicar la migración de la renovación · ✅ **HECHA** (23 sep 2026)
 
 `20260923120000_renovacion_de_vencimientos.sql`. ⚠️ **Va después de `F00`**, y
 **antes del push** del código de B2: la pestaña Vencimientos manda la columna
@@ -1027,6 +1027,27 @@ organización ni a sí mismo, el papel `lectura` no renueva—; y con las diecin
 aplicadas desde cero, **las 80 de regresión**. `src/types/database.ts`: **10 líneas
 añadidas, ninguna quitada**.
 
+### `F00c` — Aplicar la migración de capacitación · **Bloquea: `/capacitacion`** · 📝 **LISTA PARA APLICAR** (23 sep 2026)
+
+`20260924120000_capacitacion.sql`. ⚠️ **Va después de `F00b`, y antes del push**:
+la pantalla `/capacitacion` consulta tablas que sin ella no existen.
+
+**Qué crea:** los catálogos de la firma `cursos` y `proveedores_capacitacion`
+(**vacíos**, los llenas tú), y por cliente `dnc` (programa anual), `sesiones` y
+`asistentes` —con el folio y la fecha del DC-3 que manda el proveedor—; más
+`adjuntos.sesion_id` y `adjuntos.asistente_id` para las fotos y el PDF del DC-3.
+Ahora una organización con **sesiones impartidas** tampoco se borra.
+
+✅ **Es aditiva.** Cómo se aplica: igual que las anteriores.
+
+**Comprobado antes de mandártela** (23 sep 2026): sobre una base con todo lo de
+B1 y B2 ya capturado, **125 comprobaciones** (las 94 anteriores más 31 de
+capacitación: la CURP mal formada se rechaza, no hay DC-3 para quien no asistió,
+un curso de pruebas no se cuela en un cliente real, un asistente con su DC-3
+registrado no se quita, el papel `lectura` no captura…); y con las veinte
+aplicadas desde cero, **las 94 de regresión**. `src/types/database.ts`: **398
+líneas añadidas, ninguna quitada**. Especificación: `docs/14`.
+
 ### `F01` — Dar de alta tus primeras NOMs · **Ya NO bloquea la fase**
 
 ⚠️ **CAMBIÓ DE FORMA EL 22 SEP 2026.** Era «entregar el catálogo»; ahora es
@@ -1054,17 +1075,34 @@ reescribe, porque hay hallazgos citándola.
 duración en horas, temario, modalidad y a qué NOM responde. Son seis campos; ni
 siquiera hace falta subir un archivo.
 
-### `F03` — Validar el DC-3 y el registro ante la STPS · ⛔ **LA ÚNICA QUE BLOQUEA**
+### `F03` — ¿Summit emite el DC-3? · ✅ **RESUELTA** (23 sep 2026): **NO. Lo emite un externo que Summit contrata**
 
-⚠️ **Y la pregunta de fondo va primero: ¿Summit EMITE constancias DC-3?** En
-César Roel, el despacho se las **pide a su proveedor** de capacitación. Si Summit
-no está registrada como agente capacitador externo, la app **no debe generar
-DC-3** y `F05·B3` se construye distinto. Hay que saberlo antes, no después.
+La respuesta de Summit: **el DC-3 lo expide un agente capacitador externo**, con
+su propio registro ante la STPS. Summit no lo emite, pero **sí lo contrata**. Es
+el mismo arreglo que César Roel tiene con su proveedor.
 
-Si sí las emite, dos cosas:
-1. El **formato DC-3 vigente** (cambia; hay que usar el actual).
-2. El **registro de la firma como agente capacitador externo** ante la STPS, con
-   su número. Va impreso en cada constancia.
+**Lo que esto quita del plan** — ya no hace falta nada de esto:
+- El **formato DC-3 vigente** y generarlo en la app.
+- El **número de registro de Summit** como agente capacitador.
+- Los catálogos de área temática y ocupación de la STPS.
+- ⚠️ **El bucket `constancias`** de `guias/02_SUPABASE.md`: si ya lo creaste, no
+  estorba, pero **ninguna pantalla lo va a usar**. El PDF del DC-3 que manda el
+  externo se guarda como evidencia, igual que una foto o un dictamen.
+
+**Lo que cambia en B3:** la app **registra** los DC-3 que llegan —folio y PDF,
+por asistente—, dice **quién no tiene todavía la suya**, y prepara **la lista de
+datos que el externo necesita para expedirlas** (hoy se le manda a mano).
+
+**Las cuatro preguntas que quedaban, y sus respuestas** (23 sep 2026) — con ellas
+se construyó B3 (`docs/14`):
+
+1. **¿Quién imparte?** → **El instructor es externo**, y es quien imparte. En
+   la app es un nombre, no una cuenta de la firma.
+2. **¿Uno o varios proveedores?** → **Un catálogo de proveedores**, con su
+   registro STPS.
+3. **¿Qué piden para expedir?** → **Una lista genérica**: la app la descarga en
+   CSV desde la sesión.
+4. **¿Constancia propia?** → **No, sólo el DC-3.**
 
 ---
 

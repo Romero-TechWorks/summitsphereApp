@@ -435,7 +435,7 @@ su fase:
 | `documentos` | Documentos del SGC de los clientes | Lectura por URL firmada |
 | `evidencias` | Fotos y archivos de auditoría y de acciones | ⚠️ **Lo ya subido no se ve sin señal**; tomarlo sí |
 | `biblioteca` | PDFs normativos por organización | ⚠️ Normas bajo licencia |
-| `constancias` | DC-3 emitidas | |
+| ~~`constancias`~~ | ⚠️ **Ya no se crea** (`F03`, 23 sep 2026): Summit no emite DC-3. El PDF que manda el agente externo es evidencia y va a `evidencias` | |
 | `fiscal` | CSD: `.cer` y `.key` | ⚠️ **Sin política de SELECT para nadie.** Se sube y no se vuelve a bajar |
 
 Las políticas de Storage filtran por el **primer segmento de la ruta**, que es la

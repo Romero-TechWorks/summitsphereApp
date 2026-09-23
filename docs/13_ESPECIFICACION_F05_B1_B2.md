@@ -8,8 +8,9 @@
 > [`SGI-P-COM-02_obligaciones_de_compliance.md`](formatos_informeAuditorias/SGI-P-COM-02_obligaciones_de_compliance.md)
 > y [`DECISIONES_22_SEP_2026.md`](formatos_informeAuditorias/DECISIONES_22_SEP_2026.md).
 >
-> ⚠️ **`B3` (capacitación) NO entra aquí**: su entregable de cierre es el DC-3 y
-> depende de la tarea `F03` del dueño, que sigue abierta. Ver §12.
+> ⚠️ **`B3` (capacitación) NO entra aquí.** `F03` se resolvió el 23 sep 2026
+> —Summit no emite DC-3, lo contrata a un externo— y B3 se especifica aparte.
+> Ver §12.
 
 ---
 
@@ -497,7 +498,7 @@ commit**.
 
 | Fuera | Motivo |
 |---|---|
-| **`B3` capacitación** | ⚠️ **Y no bloquea NADA de lo de aquí.** Sólo su generador de constancias depende de `F03`: falta saber **si Summit emite DC-3 o sólo los recibe** (César Roel se los pide a su proveedor). Un **«no»** lo desbloquea del todo —constancia de formato propio—; un **«sí»** pide el **número de registro**, el **formato oficial vigente** y los dos catálogos cerrados de la STPS. El resto de `B3` —`cursos`, `dnc`, `sesiones`, `asistentes`— se construye sin esperar |
+| **`B3` capacitación** | ✅ **`F03` resuelta el 23 sep 2026: Summit NO emite DC-3**, lo contrata a un agente capacitador externo. B3 ya no genera constancias: las **registra** (folio + PDF por asistente) y prepara los datos que el externo necesita. Especificado y construido en `docs/14` |
 | **Matriz IPERC** | Es riesgo ocupacional y usa la escala de [`SGI-F-CA-23`](formatos_informeAuditorias/SGI-F-CA-23_matriz_de_riesgos.md), que es Fase 02. `B1` sólo engancha el **requisito legal por peligro** |
 | **Calculador de días hábiles** | Los vencimientos son días naturales. Los días hábiles son de ARCO, que es privacidad y está fuera de fase |
 | **Continuidad y privacidad** | Son **servicios**, no dominios (hueco 39). Hasta que exista `servicios`/`org_servicios`, no se pintan |
