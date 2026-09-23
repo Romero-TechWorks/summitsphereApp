@@ -301,6 +301,15 @@ export const queryKeys = {
      * señal en la puerta de la planta. La fila del recorrido filtra en memoria.
      */
     adjuntos: (orgId: string) => ['cumplimiento', 'adjuntos', orgId] as const,
+    /**
+     * **Los vencimientos de TODA la cartera** [F05·B2].
+     *
+     * ⚠️ Al revés que las obligaciones, **sin `orgId`**: la comparten la pestaña
+     * Vencimientos —que filtra el cliente en memoria— y el widget «Vencimientos
+     * críticos», que cruza la cartera. Así el tablero no estrena clave (§8.10) y
+     * abrir una deja lista la otra. Son decenas por cliente, no miles.
+     */
+    vencimientos: () => ['cumplimiento', 'vencimientos'] as const,
   },
   /**
    * El catálogo de normas. Fuera de `cartera` porque no es de nadie: lo usan

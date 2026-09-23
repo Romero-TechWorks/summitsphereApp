@@ -142,7 +142,7 @@ export const WIDGETS: readonly Widget[] = [
   {
     id: 'vencimientos_criticos',
     titulo: 'Vencimientos críticos',
-    descripcion: 'Obligaciones normativas de la cartera que vencen este mes.',
+    descripcion: 'Estudios, dictámenes y licencias de la cartera vencidos o que vencen en los próximos 30 días.',
     fase: 5,
     roles: ['socio', 'consultor'],
     icono: 'cumplimiento',

@@ -940,7 +940,7 @@ en paralelo "por si acaso" — eso garantiza que ninguno de los dos esté comple
 
 # FASE 05 · Cumplimiento y capacitación
 
-### `F00` — Aplicar la migración de la fase · **Bloquea: `B1` y `B2`** · 📝 **LISTA PARA APLICAR** (22 sep 2026)
+### `F00` — Aplicar la migración de la fase · ✅ **HECHA** (22 sep 2026)
 
 `20260922120000_cumplimiento_normativo.sql`. ⚠️ **Va después de la de avisos**
 (`20260909120000`, aplicada el ~15 sep 2026), que es la decimoséptima.
@@ -996,6 +996,36 @@ confirmar que no hay diferencia: `npx supabase gen types typescript --linked`.
 > diseña y ellos corrigen. Ahí está el mensaje de WhatsApp listo para mandar.
 > Lo del cliente (`F-CM-02`, la serie `RH`, la serie `MT`) sólo sirve para
 > contrastar.
+
+### `F00b` — Aplicar la migración de la renovación · **Bloquea: la pestaña Vencimientos** · 📝 **LISTA PARA APLICAR** (23 sep 2026)
+
+`20260923120000_renovacion_de_vencimientos.sql`. ⚠️ **Va después de `F00`**, y
+**antes del push** del código de B2: la pestaña Vencimientos manda la columna
+`renueva_id` al registrar una renovación, y sin la migración esa escritura se
+rechaza.
+
+**Qué hace.** Un estado más, `renovado`, y una columna, `renueva_id`. Cuando se
+registra la renovación de un estudio, se da de alta **la emisión nueva** apuntando
+a la anterior, y la base marca la anterior como renovada en la misma escritura.
+
+**Por qué hacía falta, y no se vio al especificar.** Con lo que había, renovar un
+estudio tenía dos caminos y los dos fallaban:
+
+| Camino | Qué salía mal |
+|---|---|
+| Reescribir la misma fila con la fecha nueva | **Los avisos del ciclo nuevo no se mandaban nunca**: el cron marca cada aviso con el id del vencimiento para no repetirlo, y el de «vence en 90» ya se había mandado en el ciclo anterior. Y el estudio viejo, con su PDF, dejaba de verse |
+| Dar de alta otro | El viejo se quedaba **en rojo como vencido para siempre**, en la lista, en el widget del tablero y en el semáforo |
+
+✅ **Es aditiva**: una columna nullable y un CHECK que se amplía. El cron no se
+toca — ya no mira los renovados.
+
+**Comprobado antes de mandártela** (23 sep 2026), en dos corridas sobre Postgres 17:
+aplicándola sobre una base que ya tenía vencimientos, **94 comprobaciones** —las 80
+de `F00` más 14 nuevas: la anterior pasa a renovada, el cron no la toca ni avisa,
+quitar la renovación la devuelve a su ciclo, no se renueva uno de otra
+organización ni a sí mismo, el papel `lectura` no renueva—; y con las diecinueve
+aplicadas desde cero, **las 80 de regresión**. `src/types/database.ts`: **10 líneas
+añadidas, ninguna quitada**.
 
 ### `F01` — Dar de alta tus primeras NOMs · **Ya NO bloquea la fase**
 

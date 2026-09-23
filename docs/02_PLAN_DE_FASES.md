@@ -929,8 +929,8 @@ algo que ya está entregado.
   clave es **hermana** de `sistemas.documentos(orgId)`, no su hija, así que
   invalidar la del cliente no la toca: aprobar una versión invalida las dos.
 
-Quedan dos placeholders y los dos son de verdad: *Acciones de la semana* [F04] y
-*Vencimientos críticos* [F05].
+Quedaban dos placeholders y ya no queda ninguno: *Acciones de la semana* se
+conectó con F04·B1 y *Vencimientos críticos* con F05·B2 (23 sep 2026).
 
 ### Criterio de cierre — Fase 03
 
@@ -1271,7 +1271,11 @@ oportunidad de mejora. `E04` **Declarar la app en producción** y migrar al equi
 > **3 semanas.** Puede solaparse con la Fase 06.
 > Es el servicio que más urgencia genera en el cliente: aquí hay multas de por medio.
 
-## F05·B1 — Matriz de obligaciones y evaluación de cumplimiento
+## F05·B1 — Matriz de obligaciones y evaluación de cumplimiento  ✅ *código listo y migración aplicada, 22 sep 2026*
+
+> ⚠️ Lo que cambió al implementarlo —`aplica` nullable, la RPC que no decide,
+> el informe de levantamiento aplazado— está en `docs/13` §0 y manda sobre esta
+> lista.
 
 > ⚠️ **REESCRITO EL 22 SEP 2026** con el catálogo del cliente 02 delante.
 > 📋 **Especificación completa para implementar:**
@@ -1311,9 +1315,21 @@ oportunidad de mejora. `E04` **Declarar la app en producción** y migrar al equi
   [`SGI-F-CA-23`](formatos_informeAuditorias/SGI-F-CA-23_matriz_de_riesgos.md),
   que es **Fase 02**. De ahí `B1` sólo toma el **requisito legal por peligro**.
 
-## F05·B2 — Vencimientos
+## F05·B2 — Vencimientos  ✅ *código listo, 23 sep 2026 · migración `F00b` por aplicar*
 
 La pantalla que evita una clausura.
+
+- ⚠️ **Una fila por EMISIÓN, y renovar no reescribe** (23 sep 2026, migración
+  `20260923120000_renovacion_de_vencimientos.sql`). Reescribir la fila dejaba sin
+  avisos el ciclo nuevo —la `clave_evento` del cron lleva el id— y borraba el
+  estudio anterior con su PDF; dar de alta otra dejaba la vieja en rojo para
+  siempre. La emisión nueva lleva `renueva_id` y la base marca la anterior como
+  `renovado` en la misma escritura. Mismo patrón que `documento_versiones`.
+- La pestaña **Vencimientos** de `/cumplimiento`: críticos por defecto, lista y
+  vista **por mes**, filtros en memoria, adjunto del dictamen con la
+  **advertencia de datos personales** (decisión 6, hueco 42).
+- ⚠️ **Una sola clave para toda la cartera** (`cumplimiento.vencimientos()`),
+  compartida con el widget: el tablero no estrena clave.
 
 - `vencimientos`: todo lo que caduca — estudios (ruido, iluminación, térmicas,
   psicosocial), dictámenes (eléctrico, estructural), licencias (ambiental, de

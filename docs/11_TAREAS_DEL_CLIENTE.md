@@ -745,10 +745,10 @@ vuelves a entregar, vuelve a pulsarlo: vale la fecha de la última entrega.
 
 ---
 
-# Paso 14 · Tu biblioteca de NOMs y el recorrido de cumplimiento
+# Paso 14 · Tu biblioteca de NOMs, el recorrido y los vencimientos
 
-> **Necesita la migración `F00`** (`docs/09`). Sin ella, la pantalla Cumplimiento
-> no carga.
+> **Necesita las migraciones `F00` y `F00b`** (`docs/09`). Sin la segunda, registrar
+> una renovación se rechaza.
 
 ### Qué es
 
@@ -801,8 +801,25 @@ completa para empezar: arranca con las ocho del levantamiento STPS (001, 002, 01
    extintor en cada una—, pulsa **Evaluar en (área)**.
 5. Al terminar, pestaña **Semáforo**: cuánto cumple, por NOM y por sitio.
 
+**D · Lo que vence (en la oficina)**
+
+1. **Cumplimiento** → pestaña **Vencimientos** → elige el cliente →
+   **Nuevo vencimiento**.
+2. Qué vence, el tipo y —si lo tienes— la obligación que satisface. Pon **Emitido
+   el** y **Vigencia (meses)**: la app calcula **Vence el**. Si no sabes la
+   emisión, escribe la fecha de vencimiento a mano.
+3. Elige al **Responsable**: es a quien le llegan los avisos a **90, 60, 30 y 7
+   días**. Sin responsable, nadie recibe aviso.
+4. Guarda, vuelve a abrirlo y **adjunta el PDF** del estudio o dictamen.
+5. Cuando llegue el nuevo: ábrelo → **Registrar renovación**. El anterior queda
+   como «Renovado», con su PDF, y los avisos empiezan de cero con la fecha nueva.
+
 ### Cosas que conviene saber
 
+- ⚠️ **No cambies la fecha de un estudio para «renovarlo»**: usa **Registrar
+  renovación**. Si reescribes la fecha, los avisos del estudio nuevo no llegan.
+- Si la renovación ya está pedida pero no llega, márcalo **En trámite**: sigue
+  avisando, pero la pantalla deja claro que alguien ya se está ocupando.
 - ⚠️ **Cuando salga una versión nueva de una NOM, no cambies la clave de la que
   tienes**: da de alta la nueva y desmarca **Vigente** en la vieja. Las
   evaluaciones que ya hiciste la siguen citando.
@@ -821,7 +838,9 @@ completa para empezar: arranca con las ocho del levantamiento STPS (001, 002, 01
 ### Cómo sabes que quedó
 
 En el **Recorrido** el contador dice «X de Y evaluadas · todo guardado», y en el
-**Semáforo** aparece el porcentaje de cumplimiento por NOM.
+**Semáforo** aparece el porcentaje de cumplimiento por NOM. En el **Inicio**, el widget **Vencimientos
+críticos** enseña lo vencido y lo que vence en los próximos 30 días de toda tu
+cartera.
 
 ---
 

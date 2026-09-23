@@ -3653,6 +3653,7 @@ export type Database = {
           notas: string | null
           obligacion_id: string | null
           org_id: string
+          renueva_id: string | null
           responsable_id: string | null
           sitio_id: string | null
           tipo_id: string | null
@@ -3672,6 +3673,7 @@ export type Database = {
           notas?: string | null
           obligacion_id?: string | null
           org_id: string
+          renueva_id?: string | null
           responsable_id?: string | null
           sitio_id?: string | null
           tipo_id?: string | null
@@ -3691,6 +3693,7 @@ export type Database = {
           notas?: string | null
           obligacion_id?: string | null
           org_id?: string
+          renueva_id?: string | null
           responsable_id?: string | null
           sitio_id?: string | null
           tipo_id?: string | null
@@ -3731,6 +3734,13 @@ export type Database = {
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizaciones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vencimientos_renueva_id_fkey"
+            columns: ["renueva_id"]
+            isOneToOne: false
+            referencedRelation: "vencimientos"
             referencedColumns: ["id"]
           },
           {

@@ -12,14 +12,15 @@ import PanelMatriz from './PanelMatriz'
 import PanelRecorridoCumplimiento from './PanelRecorridoCumplimiento'
 import PanelSemaforo from './PanelSemaforo'
 import PanelBiblioteca from './PanelBiblioteca'
+import PanelVencimientos from './PanelVencimientos'
 
 /**
  * Las pestañas del dominio (docs/13 §8). Agregar una sección es una entrada
  * aquí, no una ruta nueva.
  *
- * ⚠️ **«Vencimientos» todavía no está**, y no por olvido: es `F05·B2`. Una
- * pestaña que abre una pantalla vacía es un interruptor muerto (regla 11) y se
- * lee como que la fase está rota. Entra con su bloque.
+ * «Vencimientos» entró con `F05·B2`. Va después del semáforo: la matriz, el
+ * recorrido y el semáforo son el ciclo de una visita; los vencimientos son el
+ * seguimiento de oficina del resto del año.
  *
  * ⚠️ La biblioteca va al final, igual que «Normas» en `/sistemas`: es de la
  * firma y casi nadie la toca a diario.
@@ -28,17 +29,18 @@ const PESTANAS: readonly Pestana[] = [
   { clave: 'matriz', etiqueta: 'Matriz' },
   { clave: 'recorrido', etiqueta: 'Recorrido' },
   { clave: 'semaforo', etiqueta: 'Semáforo' },
+  { clave: 'vencimientos', etiqueta: 'Vencimientos' },
   { clave: 'noms', etiqueta: 'Catálogo de NOMs' },
 ]
 
 /** Las que son el expediente de un cliente. La biblioteca no. */
-const PIDEN_CLIENTE = new Set(['matriz', 'recorrido', 'semaforo'])
+const PIDEN_CLIENTE = new Set(['matriz', 'recorrido', 'semaforo', 'vencimientos'])
 
 /**
  * `/cumplimiento` — **el cumplimiento normativo de cada cliente** [F05·B1].
  *
  * ⚠️ **Pide cliente en la URL (`?org=`), como `/sistemas` y al revés que
- * `/auditorias`** (docs/13 §8): tres de sus cuatro pestañas son el expediente de
+ * `/auditorias`** (docs/13 §8): cuatro de sus cinco pestañas son el expediente de
  * una organización. Una `org` que ya no está cae en «ninguna», nunca en una
  * pantalla consultando con un id fantasma — de eso se encarga
  * `useOrganizacionSeleccionada()`.
@@ -91,7 +93,7 @@ export default function PantallaCumplimiento() {
               ? 'Un momento.'
               : organizaciones.length === 0
                 ? 'Todavía no tienes ninguna organización asignada. Un socio de la firma reparte los expedientes desde la pestaña Equipo de cada cliente.'
-                : 'La matriz, el recorrido y el semáforo son de una organización concreta. Elígela arriba.'
+                : 'La matriz, el recorrido, el semáforo y los vencimientos son de una organización concreta. Elígela arriba.'
           }
         />
       ) : (
@@ -99,6 +101,7 @@ export default function PantallaCumplimiento() {
           {activa === 'matriz' && <PanelMatriz orgId={orgId} />}
           {activa === 'recorrido' && <PanelRecorridoCumplimiento orgId={orgId} />}
           {activa === 'semaforo' && <PanelSemaforo orgId={orgId} />}
+          {activa === 'vencimientos' && <PanelVencimientos orgId={orgId} />}
           {activa === 'noms' && <PanelBiblioteca esSocio={esSocio} />}
         </>
       )}

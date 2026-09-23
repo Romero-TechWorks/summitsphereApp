@@ -45,6 +45,17 @@ diferencias con lo de abajo, y **mandan sobre el texto de las secciones**:
   vencimientos; un vencimiento, mientras no tenga adjunto.
 - **Probada con 80 comprobaciones**, no catorce: §11 más su regresión.
 
+### Y al implementar `B2` (23 sep 2026)
+
+| # | Qué decía la spec | Qué se hizo | Por qué |
+|---|---|---|---|
+| 7 | Nada sobre renovar | ⚠️ **Migración `F00b`**: estado `renovado` + `vencimientos.renueva_id`; la emisión nueva jubila a la anterior por trigger | Reescribir la fila dejaba **sin avisos el ciclo nuevo** (la `clave_evento` lleva el id) y borraba el estudio anterior; otra fila dejaba la vieja vencida para siempre |
+| 8 | «Lista, calendario y filtros» (§8) | Lista y vista **por mes**, con «Críticos» por defecto | Un calendario de cuadrícula en un teléfono no se lee; agrupado por mes, sí |
+| 9 | Nada sobre la clave | **Una clave para toda la cartera**, `cumplimiento.vencimientos()`, compartida con el widget | El tablero no estrena clave (§8.10); son decenas por cliente |
+| 10 | El widget «vencen este mes» | Vencidos, en trámite y **por vencer a 30 días** | «Por vencer» empieza a 90, y tres meses de la cartera entera no distinguen lo urgente |
+| 11 | — | El estado que se **pinta** se recalcula contra hoy (`estadoVisible()`) | El cron lo actualiza una vez al día y la caché puede tener días |
+| 12 | Advertencia de datos personales (hueco 42) | En el adjunto del vencimiento, corta y sin bloquear | Decisión 6 del dueño; `docs/08` §7 la declara como deuda |
+
 ---
 
 ## 1 · Las tres decisiones del dueño que fijan el diseño

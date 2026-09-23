@@ -143,7 +143,7 @@ export const AREAS_SUGERIDAS: readonly string[] = [
 export function claveDeNombre(nombre: string): string {
   return nombre
     .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
+    .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
     .trim()
     .replace(/[^a-z0-9]+/g, '_')
@@ -205,25 +205,88 @@ export function proponerAplica(
 }
 
 /**
+ * Suma meses a una fecha `YYYY-MM-DD` **como lo hace Postgres**: si el día no
+ * existe en el mes de llegada, se recorta al último (31-ene + 1 mes = 28/29-feb).
+ *
+ * ⚠️ Trabaja sobre el texto y `Date.UTC`, nunca con `new Date('2026-03-10')`:
+ * una columna `date` leída así corre un día en México (CLAUDE.md · trampas).
+ */
+export function sumarMeses(fechaISO: string, meses: number): string {
+  const [a, m, d] = fechaISO.split('-').map(Number)
+  const total = a * 12 + (m - 1) + meses
+  const anio = Math.floor(total / 12)
+  const mes = (total % 12) + 1
+  const ultimo = new Date(Date.UTC(anio, mes, 0)).getUTCDate()
+  const dia = Math.min(d, ultimo)
+  return `${anio}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`
+}
+
+/** Días de `desde` a `hasta`, las dos `YYYY-MM-DD`. Negativo si ya pasó. */
+export function diasEntre(desde: string, hasta: string): number {
+  const [a1, m1, d1] = desde.split('-').map(Number)
+  const [a2, m2, d2] = hasta.split('-').map(Number)
+  return Math.round((Date.UTC(a2, m2 - 1, d2) - Date.UTC(a1, m1 - 1, d1)) / 86_400_000)
+}
+
+/**
  * La próxima verificación, para la fila optimista.
  *
  * ⚠️ **La autoridad es la base** (`sellar_evaluacion_obligacion()`): esto sólo
  * existe para que la fecha salga sin señal mientras la evaluación espera en la
- * cola. Recibe y devuelve fechas `YYYY-MM-DD` y no pasa por `new Date()` con
- * zona: una columna `date` formateada así corre un día en México.
+ * cola.
  */
 export function proximaVerificacion(fechaISO: string, frecuencia: string | null): string | null {
   const meses: Record<string, number> = { anual: 12, semestral: 6, trimestral: 3, mensual: 1 }
   const n = frecuencia ? meses[frecuencia] : undefined
-  if (!n) return null
+  return n ? sumarMeses(fechaISO, n) : null
+}
 
-  const [a, m, d] = fechaISO.split('-').map(Number)
-  const total = a * 12 + (m - 1) + n
-  const anio = Math.floor(total / 12)
-  const mes = (total % 12) + 1
-  // Postgres recorta al último día del mes (31-ene + 1 mes = 28/29-feb).
-  const ultimo = new Date(Date.UTC(anio, mes, 0)).getUTCDate()
-  const dia = Math.min(d, ultimo)
+// ══════════════════════════════════════════════════════ vencimientos · B2 ══
 
-  return `${anio}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`
+/**
+ * `vencimientos.estado`.
+ *
+ * ⚠️ Los tres primeros los mantiene **la base contra la fecha** (trigger y cron
+ * diario); `en_tramite` y `no_aplica` son decisiones de una persona, y
+ * `renovado` lo pone la emisión que lo sustituye
+ * (`20260923120000_renovacion_de_vencimientos.sql`).
+ */
+export const ESTADOS_VENCIMIENTO: readonly Opcion[] = [
+  { valor: 'vigente',    etiqueta: 'Vigente',    tono: 'exito' },
+  { valor: 'por_vencer', etiqueta: 'Por vencer', tono: 'advertencia' },
+  { valor: 'vencido',    etiqueta: 'Vencido',    tono: 'error' },
+  { valor: 'en_tramite', etiqueta: 'En trámite', tono: 'info' },
+  { valor: 'no_aplica',  etiqueta: 'No aplica' },
+  { valor: 'renovado',   etiqueta: 'Renovado' },
+]
+
+/** Los que calcula la fecha. */
+export const ESTADOS_POR_FECHA: readonly string[] = ['vigente', 'por_vencer', 'vencido']
+
+/**
+ * A cuántos días un vencimiento pasa a «por vencer». ⚠️ Copia de
+ * `dias_por_vencer()` en la base, que es la autoridad: coincide con el primer
+ * aviso del cron.
+ */
+export const DIAS_POR_VENCER = 90
+
+/**
+ * El estado que se PINTA.
+ *
+ * ⚠️ **Se recalcula aquí contra la fecha**, no se lee tal cual de la fila: el
+ * cron lo pone al día una vez al día, y una lista que lleva tres días en la
+ * caché del teléfono diría «vigente» de algo que venció anteayer. Si la persona
+ * lo marcó en trámite, no aplica o renovado, eso manda.
+ */
+export function estadoVisible(v: { estado: string; vence_en: string }, hoy: string): string {
+  if (!ESTADOS_POR_FECHA.includes(v.estado)) return v.estado
+  const dias = diasEntre(hoy, v.vence_en)
+  if (dias < 0) return 'vencido'
+  if (dias <= DIAS_POR_VENCER) return 'por_vencer'
+  return 'vigente'
+}
+
+/** ¿Pide atención? Lo que vence o venció y nadie ha resuelto. */
+export function esCritico(estado: string): boolean {
+  return estado === 'vencido' || estado === 'por_vencer' || estado === 'en_tramite'
 }

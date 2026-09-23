@@ -21,8 +21,7 @@ de dominio cuelga de una `org_id`. Ver §Reglas críticas, regla 1.
 
 ## Estado actual — lee esto antes de pedir nada
 
-- ✅ **`F05·B1` ESTÁ ESCRITO POR EL LADO DEL CÓDIGO, Y SU MIGRACIÓN ESPERA AL
-  DUEÑO** (22 sep 2026). `20260922120000_cumplimiento_normativo.sql` —tarea
+- ✅ **`F05·B1` ESTÁ ESCRITO Y SU MIGRACIÓN (`F00`) APLICADA** (22 sep 2026). `20260922120000_cumplimiento_normativo.sql` —tarea
   `F00`— es la **decimoctava** y cubre **B1 y B2 enteros** (tablas, RPC, barrido
   del cron); las pantallas son **sólo B1**. ⚠️ **Primero la migración, después el
   push**: `/cumplimiento` consulta tablas que sin ella no existen.
@@ -54,12 +53,36 @@ de dominio cuelga de una `org_id`. Ver §Reglas críticas, regla 1.
   - ⚠️ **La sexta excepción a `offlineWrite` ya existe en código**:
     `generarObligacionesDeNom()`. Todo lo demás —evaluar, fotos, «Evaluar en
     (área)», áreas, alta manual, la biblioteca— pasa por la cola.
-  - **Falta B2**: la pestaña Vencimientos y el widget `vencimientos_criticos`,
-    que se conecta en el mismo commit que cierre ese bloque.
 
-- ▶️ **LO SIGUIENTE ES `F05·B2` —`B1` ya está escrito, arriba—, Y ESTÁ
-  ESPECIFICADO.** ⚠️ Lee primero `docs/13` §0: lo que cambió al implementar
-  `B1` manda sobre el resto de la spec. Todo lo necesario para escribir la migración y las pantallas
+- ✅ **`F05·B2` ESTÁ ESCRITO, Y TRAE UNA MIGRACIÓN QUE NO ESTABA EN LA SPEC**
+  (23 sep 2026). `20260923120000_renovacion_de_vencimientos.sql` —tarea `F00b`,
+  la **decimonovena**— añade el estado `renovado` y `vencimientos.renueva_id`.
+  ⚠️ **Primero la migración, después el push**: registrar una renovación manda
+  `renueva_id`. Probada en Docker: **94 comprobaciones** con datos previos y
+  **80 de regresión** con las diecinueve desde cero; tipos regenerados, **10
+  líneas añadidas**. `lint` y `build` en verde. **Lo que hay que saber:**
+  - ⚠️ **UNA FILA POR EMISIÓN; RENOVAR NO REESCRIBE.** Reescribir la fecha
+    dejaba **sin avisos el ciclo nuevo** —la `clave_evento` del cron lleva el
+    id, y el `vence_90` ya se había mandado— y borraba de la lista el estudio
+    viejo con su PDF. La emisión nueva lleva `renueva_id` y el trigger
+    `jubilar_vencimiento_anterior()` marca la anterior `renovado` **en la misma
+    escritura del cliente** (patrón `jubilar_version_anterior()`); quitar la
+    renovación la devuelve a su ciclo. El cron ya ignoraba `renovado`.
+  - **`cumplimiento.vencimientos()` es de TODA la cartera**, sin `orgId`: la
+    comparten la pestaña —que filtra cliente y sitio en memoria— y el widget.
+  - ⚠️ **El estado que se PINTA se recalcula contra hoy** (`estadoVisible()` en
+    `src/lib/cumplimiento/catalogos.ts`); `DIAS_POR_VENCER = 90` es copia de
+    `dias_por_vencer()` en la base, que manda.
+  - ✅ **`vencimientos_criticos` está conectado: ya NO queda ningún placeholder
+    en el tablero.** Enseña vencidos, en trámite y por vencer **a 30 días**.
+  - ✅ **`obligacion_proxima` está ENCENDIDA en `/admin` → Avisos**, con la
+    cadencia real 90/60/30/7.
+  - **La advertencia de datos personales (hueco 42)** va en el adjunto del
+    vencimiento, corta y sin bloquear. `docs/08` §7 declara el resto como deuda.
+  - `docs/13` §0 tabula las doce diferencias de B1+B2 con la spec.
+- ▶️ **LO SIGUIENTE**: `F05·B3` (capacitación) sigue esperando la respuesta de
+  `F03` —¿Summit emite DC-3?—, y el **informe de levantamiento** de `B1` espera
+  a que se decida dónde vive su prosa (docs/13 §0, #6). Todo lo necesario para escribir la migración y las pantallas
   **sin volver a leer el catálogo del cliente** está en
   **`docs/13_ESPECIFICACION_F05_B1_B2.md`**: DDL tabla por tabla, las cinco
   reglas que no se rompen, la RPC, las pantallas, los avisos, la precarga, la
@@ -162,8 +185,8 @@ de dominio cuelga de una `org_id`. Ver §Reglas críticas, regla 1.
     indicadores de `/sistemas` se diseñaron sin un número delante: van con
     descarga completa y **filtro en memoria** (regla offline 7), como la cartera.
 
-- ✅ **LAS DIECISIETE MIGRACIONES ANTERIORES ESTÁN APLICADAS.** La decimoctava
-  (`F00`, arriba) es la única pendiente.
+- ✅ **LAS DIECIOCHO PRIMERAS MIGRACIONES ESTÁN APLICADAS** (`F00` el 22 sep
+  2026). La decimonovena (`F00b`, arriba) es la única pendiente.
   `20260909120000_avisos_y_notificaciones.sql` —tarea `E06`, la de **F04·B3+B4**—
   se aplicó **~15 sep 2026**, y con ella **la Fase 04 quedó cerrada**: su criterio
   exigía que «el responsable reciba la notificación en su teléfono».
@@ -905,9 +928,8 @@ de dominio cuelga de una `org_id`. Ver §Reglas críticas, regla 1.
   widget funciona: si nadie lo conecta en `ContenidoWidget.tsx`, el tablero
   —que es lo primero que la firma abre cada mañana— sigue diciendo «llega en la
   Fase 03» con la fase entregada, y eso se lee como que la fase no está. Pasó con
-  la 02 y la 03 y se arregló el 30 ago 2026. ⚠️ **Queda UNO:
-  `vencimientos_criticos` [F05·B2]**, y se conecta en el mismo commit que cierre
-  ese bloque.
+  la 02 y la 03 y se arregló el 30 ago 2026. ✅ **Ya no queda ninguno**:
+  `vencimientos_criticos` se conectó con F05·B2 (23 sep 2026).
 - **El indicador de conexión sólo aparece cuando tiene algo que decir**
   (`EstadoConexion` en la Navbar): sin conexión, con cola pendiente o con algo
   rechazado. En verde y vacío no se pinta — un indicador permanente deja de

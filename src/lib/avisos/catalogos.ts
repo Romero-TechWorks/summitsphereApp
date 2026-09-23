@@ -118,10 +118,12 @@ export const CATEGORIAS_AVISO: readonly CategoriaAviso[] = [
   {
     valor: 'obligacion_proxima',
     etiqueta: 'Vencimiento normativo próximo',
-    cadencia: 'A 90, 30 y 7 días',
+    // 90/60/30 los tabula el cliente (SGI-P-TI-01 §5.17.3); el de 7 es de
+    // Summit. Encendida con F05·B2: el cron ya barre `vencimientos`.
+    cadencia: 'A 90, 60, 30 y 7 días',
     origen: 'summit',
-    ayuda: 'Llega con la Fase 05: dictámenes, licencias y estudios por caducar.',
-    activa: false,
+    ayuda: 'Estudios, dictámenes y licencias que tienes a tu cargo, antes de que caduquen. Y una vez el día que vencen.',
+    activa: true,
   },
   {
     valor: 'evidencia_evaluada',

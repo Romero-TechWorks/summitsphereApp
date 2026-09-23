@@ -597,6 +597,22 @@ Eso cae bajo la **LFPDPPP**. Lo mínimo, y no es opcional:
   **anonimizando** (el registro de la sesión de capacitación se queda; el nombre y
   la CURP se sustituyen), no borrando la fila.
 
+### ⚠️ Deuda declarada — hueco 42 (decisión del dueño, 22 sep 2026)
+
+**No se modela todavía** el plazo de conservación por tipo de documento, la
+supresión al vencer con acta, la notificación de vulneración en 72 h, ni si
+SummitApp entra al alcance de privacidad de Summit como encargado. **No es un
+olvido: es una decisión**, y está aquí para que nadie crea que se pasó por alto.
+
+Lo que **sí** está, desde F05·B2 (23 sep 2026): **una advertencia corta al
+adjuntar** el dictamen o el estudio de un vencimiento —exámenes médicos,
+expedientes de la NOM-035—, que **no bloquea**: *«Este expediente puede contener
+datos personales de trabajadores. Súbelo sólo si el cliente lo autorizó y no
+incluyas datos de salud si puedes evitarlo.»* Corta a propósito: una larga no se
+lee, y una que no se lee da falsa cobertura. Vive en `PanelVencimientos.tsx` y se
+pasa a `PanelAdjuntos` por su `ayuda`; si se quiere en más pantallas, es la misma
+constante.
+
 ---
 
 ## §8 · Respaldos

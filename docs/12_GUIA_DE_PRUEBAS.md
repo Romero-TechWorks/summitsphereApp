@@ -55,7 +55,7 @@ de quien lee los reportes.
 
 | Pantalla | Qué pasa |
 |---|---|
-| **Cumplimiento** | Matriz, Recorrido, Semáforo y Catálogo de NOMs **sí están** (recorrido G). Falta la pestaña **Vencimientos** (F05·B2) y el **informe de levantamiento** impreso |
+| **Cumplimiento** | Matriz, Recorrido, Semáforo, Vencimientos y Catálogo de NOMs **sí están** (recorrido G). Falta el **informe de levantamiento** impreso |
 | **Capacitación** | Vacía. Fase 05 |
 | **Admin**, salvo *Avisos* | Metas, finanzas, facturación, usuarios y bitácora son Fase 06 |
 | **Portal del cliente** | No existe todavía. Fase 06 |
@@ -70,8 +70,6 @@ Y dentro de lo que sí está:
   siguientes**, apagadas. Es a propósito: están enseñadas para que se sepa que la
   matriz de comunicación del cliente está contemplada, pero todavía no hay quién
   las dispare.
-- El widget **«Vencimientos críticos»** del tablero dice que llega en la Fase 05.
-  Correcto.
 
 ---
 
@@ -253,6 +251,7 @@ debería funcionar.
 | **Marcar «Parcial» sin observación** | Te pide qué falta antes de guardarlo |
 | **Quitar una obligación ya evaluada**, o un área que ya tiene obligaciones | No se ofrece el botón; el área sólo se da de baja |
 | **Generar desde una NOM en modo avión** | El botón no se activa y la pantalla dice por qué |
+| **Quitar un vencimiento que ya tiene su PDF adjunto** | No se ofrece el botón |
 
 ⚠️ **Ésa última es la más importante de todas.** Un cliente no puede ver los
 expedientes de otro, y es lo único que si falla no se arregla con una disculpa.
@@ -280,6 +279,16 @@ Al quitar el modo avión, el contador llega a «todo guardado» solo, y en
 
 > 🔴 **La hora de la evaluación tiene que ser la de cuando pulsaste**, no la de
 > cuando volvió la señal. Ábrela y compruébalo.
+
+7. Ya con señal, en **Vencimientos**: registra un *Estudio de ruido* **emitido
+   hace 21 meses con vigencia de 24** y ponte de responsable. Tiene que salir
+   **«Por vencer»** y aparecer en el widget **Vencimientos críticos** del Inicio.
+8. Ábrelo → **Registrar renovación** con la emisión de hoy. El viejo pasa a
+   **«Renovado»** y desaparece de los críticos.
+
+> Los avisos al teléfono de 90/60/30/7 días los manda el cron de la mañana:
+> para verlos llegar hace falta un vencimiento que caiga justo a 90 días de hoy y
+> esperar al día siguiente. Activa antes la categoría en *Admin → Avisos*.
 
 ---
 

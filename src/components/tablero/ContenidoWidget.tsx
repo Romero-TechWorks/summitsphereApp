@@ -39,6 +39,8 @@ import {
 import { ESTADOS_AUDITORIA } from '@/lib/auditorias/catalogos'
 import { ETAPAS_PROYECTO, etiquetaDe } from '@/lib/cartera/catalogos'
 import { formatDateOnly, hoyISO } from '@/lib/utils/dates'
+import { listarVencimientos } from '@/lib/queries/vencimientos'
+import { diasEntre, estadoVisible } from '@/lib/cumplimiento/catalogos'
 import Skeleton from '@/components/ui/Skeleton'
 
 /**
@@ -53,8 +55,9 @@ import Skeleton from '@/components/ui/Skeleton'
  * cabo que se quedó suelto al terminar la Fase 02 y la 03: el código estaba
  * entero y el tablero seguía diciendo «llega en la Fase 03», que es exactamente
  * lo que un usuario lee como «la fase no está». `acciones_semana` se conectó
- * con `F04·B1` (8 sep 2026); queda **un** placeholder y es de verdad:
- * `vencimientos_criticos` [F05].
+ * con `F04·B1` (8 sep 2026) y `vencimientos_criticos` con `F05·B2` (23 sep
+ * 2026), que era el último: **ya no queda ningún placeholder**. Un widget nuevo
+ * entra conectado en el mismo commit que su bloque.
  */
 /** Los cuatro que salen de la lista de proyectos [F01·B3]. */
 const WIDGETS_DE_CARTERA = new Set([
@@ -82,6 +85,7 @@ export default function ContenidoWidget({ widget }: { widget: Widget }) {
   if (widget.id === 'hallazgos_abiertos') return <HallazgosAbiertos />
   if (widget.id === 'acciones_semana') return <AccionesDeLaSemana />
   if (widget.id === 'documentos_por_aprobar') return <DocumentosPorAprobar />
+  if (widget.id === 'vencimientos_criticos') return <VencimientosCriticos />
 
   return (
     <div>
@@ -643,6 +647,82 @@ function AccionesDeLaSemana() {
           : `${abiertas.length} abiertas, ninguna vencida.`}
       </span>
     </Link>
+  )
+}
+
+/**
+ * **Vencimientos críticos** [F05·B2]: lo vencido y lo que vence en los próximos
+ * 30 días, en toda la cartera.
+ *
+ * ⚠️ Comparte `queryKeys.cumplimiento.vencimientos()` con la pestaña
+ * Vencimientos de `/cumplimiento`, que filtra el cliente en memoria: el tablero
+ * no estrena clave. Y el estado se recalcula contra la fecha de hoy
+ * (`estadoVisible()`), no se lee de la fila: el cron lo pone al día una vez al
+ * día y la caché puede tener días.
+ *
+ * ⚠️ **30 días, no 90.** «Por vencer» empieza a los 90 —el primer aviso—, pero
+ * un tablero con todo lo de los próximos tres meses de la cartera entera deja de
+ * distinguir lo urgente. Aquí va lo que hay que mover esta semana o este mes.
+ */
+function VencimientosCriticos() {
+  const { data: vencimientos = [], isPending, error } = useQuery({
+    queryKey: queryKeys.cumplimiento.vencimientos(),
+    queryFn: listarVencimientos,
+  })
+
+  if (isPending) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+        {[0, 1, 2].map((i) => <Skeleton key={i} alto={12} radio={3} />)}
+      </div>
+    )
+  }
+
+  if (error) return <Nota>{mensajeDeError(error)}</Nota>
+
+  const hoy = hoyISO()
+  const vivos = vencimientos
+    .map((v) => ({ v, estado: estadoVisible(v, hoy), dias: diasEntre(hoy, v.vence_en) }))
+    .filter((x) => x.estado === 'vencido' || x.estado === 'en_tramite' || (x.estado === 'por_vencer' && x.dias <= 30))
+
+  if (vivos.length === 0) {
+    return (
+      <Nota>
+        {vencimientos.length === 0
+          ? 'Todavía no hay vencimientos registrados en la cartera.'
+          : 'Nada vencido ni por vencer en los próximos 30 días.'}
+      </Nota>
+    )
+  }
+
+  const vencidos = vivos.filter((x) => x.dias < 0).length
+  const proximos = vivos.slice(0, 4)
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+      {proximos.map(({ v, dias }) => (
+        <Link
+          key={v.id}
+          href={`/cumplimiento?tab=vencimientos&org=${v.org_id}`}
+          style={{ display: 'flex', alignItems: 'baseline', gap: 8, textDecoration: 'none', color: 'inherit' }}
+        >
+          <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {v.nombre}
+            {v.organizacion && (
+              <span style={{ color: 'var(--texto-dim)' }}> · {nombreDeOrganizacion(v.organizacion)}</span>
+            )}
+          </span>
+          <span className="mono" style={{ fontSize: 11.5, color: dias < 0 ? 'var(--error)' : 'var(--texto-dim)', flexShrink: 0 }}>
+            {dias < 0 ? `−${-dias} d` : `${dias} d`}
+          </span>
+        </Link>
+      ))}
+      <span style={{ fontSize: 11.5, color: vencidos > 0 ? 'var(--error)' : 'var(--texto-dim)', marginTop: 2 }}>
+        {vencidos > 0
+          ? `${vencidos} vencido${vencidos === 1 ? '' : 's'} · ${vivos.length - vencidos} por atender este mes.`
+          : `${vivos.length} por atender en los próximos 30 días.`}
+      </span>
+    </div>
   )
 }
 

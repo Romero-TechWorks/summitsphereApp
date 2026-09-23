@@ -1158,7 +1158,14 @@ genera cero, uno o muchos.
 `obligacion_id` · `sitio_id` · `area_id` · `tipo_id` · `nombre` · `emitido_en` ·
 `vigencia_meses` · **`vence_en` date NOT NULL** · `responsable_id` ·
 `documento_id` · `estado` (`vigente · por_vencer · vencido · en_tramite ·
-no_aplica`) · `notas`.
+no_aplica · renovado`) · `notas` · `renueva_id`.
+
+⚠️ **Una fila por EMISIÓN** (`F00b`, 23 sep 2026). Renovar da de alta otra fila
+con `renueva_id` y el trigger `jubilar_vencimiento_anterior()` marca la anterior
+`renovado` en la misma escritura; quitar la renovación la devuelve a su ciclo.
+Reescribir la fila habría dejado sin avisos el ciclo nuevo: la `clave_evento`
+del cron lleva el id. `vigente · por_vencer · vencido` los mantiene la base
+contra la fecha (trigger + cron; «por vencer» desde 90 días).
 
 ⚠️ **`vence_en` se GUARDA calculada**, no se deriva al vuelo ni es generada:
 `emitido_en + interval` no es `IMMUTABLE`, y hay vencimientos que se capturan sin
